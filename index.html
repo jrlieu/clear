@@ -2,1813 +2,627 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Top 10 · editable</title>
-    <link href="https://fonts.googleapis.com/css2?family=Product+Sans&display=swap" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio visualizer · editable word</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
     <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: #0a0a0a;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    font-family: 'Product Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    padding: 12px;
-    overflow: hidden;
-    margin: 0;
-}
-
-#particleCanvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    background: #0a0a0a;
-    display: block;
-}
-
-.phone-frame {
-    aspect-ratio: 9 / 16;
-    width: 100%;
-    max-width: 500px;
-    background: transparent;
-    padding: 20px 18px 16px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow: hidden;
-    height: auto;
-    z-index: 1;
-    min-height: 0;
-    transform: scale(1);
-    transition: transform 0.2s ease;
-}
-
-/* ===== INTRO OVERLAY ===== */
-.intro-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 20;
-    border-radius: inherit;
-    pointer-events: none;
-    transition: opacity 0.6s ease, transform 0.6s ease;
-    opacity: 1;
-    transform: scale(1);
-    padding: 20px;
-}
-
-.intro-overlay.hide {
-    opacity: 0;
-    transform: scale(1.02);
-    pointer-events: none;
-}
-
-.intro-box {
-    text-align: center;
-    max-width: 360px;
-    padding: 28px 24px 22px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    position: relative;
-}
-
-.intro-box .paper-clip {
-    position: absolute;
-    top: -14px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: clamp(26px, 4vw, 36px);
-    filter: drop-shadow(0 6px 18px rgba(255, 215, 0, 0.3));
-    line-height: 1;
-    pointer-events: none;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    z-index: 2;
-}
-
-.intro-box .intro-title {
-    font-size: clamp(28px, 5vw, 40px);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    background: #fff;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 2px 30px rgba(180, 130, 70, 0.2);
-    line-height: 1.3;
-    text-transform: lowercase;
-    text-align: left;
-}
-
-/* ---- header ---- */
-.list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 8px;
-    margin-bottom: 6px;
-    flex-shrink: 0;
-    border-bottom: none;
-    min-height: 38px;
-}
-
-.list-header h1 {
-    font-weight: 600;
-    font-size: clamp(20px, 3.2vw, 28px);
-    letter-spacing: -0.3px;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.list-header h1 .title-text {
-    cursor: default;
-    padding: 0 4px;
-    background: transparent;
-}
-
-.list-header h1 span {
-    font-size: clamp(16px, 2.4vw, 22px);
-    letter-spacing: 0.2px;
-}
-
-.badge-date {
-    font-size: clamp(11px, 1.6vw, 15px);
-    font-weight: 450;
-    color: rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.04);
-    padding: 4px 14px;
-    border-radius: 30px;
-    letter-spacing: 0.2px;
-    border: 1px solid rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    cursor: default;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-/* ---- top list ---- */
-.top-list {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 0;
-    overflow: hidden;
-    justify-content: space-evenly;
-    min-height: 0;
-    flex: 1 1 auto;
-}
-
-.list-item {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    border-radius: clamp(14px, 2vw, 20px);
-    padding: clamp(6px, 0.8vh, 10px) clamp(12px, 2vw, 18px) clamp(6px, 0.8vh, 10px) clamp(14px, 2.2vw, 20px);
-    display: flex;
-    align-items: center;
-    gap: clamp(12px, 2vw, 18px);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    transition: all 0.15s ease;
-    will-change: transform, opacity;
-    transform: translateY(-60px);
-    opacity: 0;
-    flex: 1;
-    min-height: 0;
-    position: relative;
-    overflow: hidden;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-    cursor: default;
-}
-
-.list-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* Flag background - zoomed and centered, separate from numbering */
-.list-item .flag-overlay-bg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1.2);
-    font-size: clamp(180px, 30vw, 300px);
-    opacity: 0.12;
-    pointer-events: none;
-    z-index: 0;
-    letter-spacing: 0;
-    line-height: 1;
-    white-space: nowrap;
-    width: 100%;
-    text-align: center;
-}
-
-.list-item .flag-overlay-bg + * {
-    position: relative;
-    z-index: 1;
-}
-
-.list-item .rank-wrapper,
-.list-item .item-content,
-.list-item .trend-icon {
-    position: relative;
-    z-index: 1;
-}
-
-@keyframes dropIn {
-    0% {
-        transform: translateY(-60px);
-        opacity: 0;
-    }
-    55% {
-        transform: translateY(6px);
-        opacity: 1;
-    }
-    75% {
-        transform: translateY(-2px);
-    }
-    100% {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes textFlip {
-    0% { transform: rotateX(0deg); opacity: 0.3; }
-    20% { transform: rotateX(90deg); opacity: 0.6; }
-    40% { transform: rotateX(180deg); opacity: 0.9; }
-    60% { transform: rotateX(270deg); opacity: 1; }
-    80% { transform: rotateX(360deg); opacity: 1; }
-    100% { transform: rotateX(0deg); opacity: 1; }
-}
-
-@keyframes numberCount {
-    0% { transform: scale(0.5); opacity: 0; }
-    50% { transform: scale(1.3); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.list-item.animate-drop {
-    animation: dropIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.list-item .item-title.flipping {
-    animation: textFlip 0.3s ease-in-out 3;
-}
-
-.list-item .rank.counting {
-    animation: numberCount 0.8s ease-out forwards;
-}
-
-.rank-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: clamp(44px, 6vw, 56px);
-    height: clamp(44px, 6vw, 56px);
-    z-index: 1;
-    cursor: pointer;
-}
-
-.rank {
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: clamp(20px, 3vw, 28px);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    letter-spacing: -0.5px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.rank:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
-    transform: scale(1.05);
-}
-
-.rank .flag-emoji {
-    font-size: clamp(22px, 3.4vw, 32px);
-    line-height: 1;
-}
-
-.rank .rank-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-.item-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    padding: 0;
-    overflow: hidden;
-    z-index: 1;
-    pointer-events: auto;
-    cursor: text;
-}
-
-.item-title, .item-sub {
-    font-family: 'Product Sans', 'Inter', sans-serif;
-    cursor: text;
-    outline: none;
-    border: none;
-    background: transparent;
-    padding: 0 4px;
-    transition: background 0.1s ease;
-    border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.item-title {
-    font-weight: 600;
-    font-size: clamp(16px, 2.4vw, 20px);
-    color: rgba(255, 255, 255, 0.92);
-    letter-spacing: -0.2px;
-    line-height: 1.2;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-}
-
-.item-sub {
-    font-size: clamp(12px, 1.6vw, 15px);
-    color: rgba(255, 255, 255, 0.4);
-    font-weight: 450;
-    letter-spacing: 0.1px;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
-}
-
-.item-title:focus, .item-sub:focus {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-.item-title::selection, .item-sub::selection {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.trend-icon {
-    font-size: clamp(14px, 1.8vw, 18px);
-    opacity: 0.2;
-    padding-left: 4px;
-    color: rgba(255, 255, 255, 0.5);
-    flex-shrink: 0;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
-    z-index: 1;
-    pointer-events: none;
-}
-
-/* ===== FULL SCREEN FLAG OVERLAY ===== */
-.flag-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.88);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    z-index: 1000;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    padding: clamp(20px, 4vh, 40px) clamp(12px, 2vw, 24px);
-    animation: fadeIn 0.2s ease;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.flag-overlay.show {
-    display: flex;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.96);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.flag-overlay-content {
-    background: rgba(16, 16, 24, 0.95);
-    border-radius: clamp(20px, 3vw, 28px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    padding: clamp(18px, 2.5vw, 24px) clamp(16px, 2vw, 22px) clamp(14px, 1.8vw, 18px);
-    width: 100%;
-    max-width: clamp(380px, 55vw, 460px);
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.flag-overlay-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: clamp(10px, 1.4vw, 14px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    margin-bottom: clamp(8px, 1.2vw, 12px);
-    flex-shrink: 0;
-    gap: clamp(8px, 1vw, 12px);
-}
-
-.flag-overlay-header h2 {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: clamp(16px, 2.4vw, 20px);
-    font-weight: 600;
-    white-space: nowrap;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.flag-overlay-header .header-actions {
-    display: flex;
-    gap: clamp(6px, 0.8vw, 10px);
-    align-items: center;
-}
-
-.flag-overlay-close {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.5);
-    width: clamp(32px, 4.5vw, 38px);
-    height: clamp(32px, 4.5vw, 38px);
-    border-radius: 50%;
-    font-size: clamp(16px, 2.2vw, 20px);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-}
-
-.flag-overlay-close:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.flag-search {
-    width: 100%;
-    padding: clamp(8px, 1.2vw, 12px) clamp(12px, 1.8vw, 16px);
-    border-radius: clamp(12px, 1.8vw, 14px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.85);
-    font-size: clamp(14px, 1.8vw, 16px);
-    font-family: 'Product Sans', 'Inter', sans-serif;
-    outline: none;
-    transition: all 0.15s ease;
-    margin-bottom: clamp(8px, 1.2vw, 12px);
-    flex-shrink: 0;
-}
-
-.flag-search::placeholder {
-    color: rgba(255, 255, 255, 0.25);
-}
-
-.flag-search:focus {
-    border-color: rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.flag-grid-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 2px;
-    min-height: 0;
-}
-
-.flag-grid-container::-webkit-scrollbar {
-    width: 4px;
-}
-.flag-grid-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 4px;
-}
-.flag-grid-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-.flag-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: clamp(4px, 0.6vw, 8px);
-}
-
-.flag-grid-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: clamp(6px, 1vw, 10px) 2px;
-    border-radius: clamp(10px, 1.4vw, 14px);
-    cursor: pointer;
-    transition: all 0.12s ease;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid transparent;
-    min-height: clamp(48px, 7vw, 64px);
-    justify-content: center;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.flag-grid-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
-    transform: scale(1.04);
-}
-
-.flag-grid-item .flag-emoji-lg {
-    font-size: clamp(28px, 4.8vw, 36px);
-    line-height: 1.2;
-}
-
-.flag-grid-item .flag-country-sm {
-    font-size: clamp(8px, 1.2vw, 11px);
-    color: rgba(255, 255, 255, 0.3);
-    text-align: center;
-    line-height: 1.2;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.flag-grid-item.hidden {
-    display: none;
-}
-
-.flag-overlay-footer {
-    padding-top: clamp(10px, 1.4vw, 14px);
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    margin-top: clamp(8px, 1.2vw, 12px);
-    flex-shrink: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.flag-overlay-footer .hint {
-    font-size: clamp(10px, 1.2vw, 12px);
-    color: rgba(255, 255, 255, 0.15);
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.reset-number-btn {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.4);
-    padding: clamp(4px, 0.6vw, 6px) clamp(12px, 1.8vw, 16px);
-    border-radius: 30px;
-    font-size: clamp(11px, 1.4vw, 13px);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-}
-
-.reset-number-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.reset-number-btn:active {
-    transform: scale(0.95);
-}
-
-.upload-image-btn {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.4);
-    padding: clamp(4px, 0.6vw, 6px) clamp(10px, 1.4vw, 14px);
-    border-radius: 30px;
-    font-size: clamp(11px, 1.4vw, 13px);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-family: 'Product Sans', 'Inter', sans-serif;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.upload-image-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.upload-image-btn:active {
-    transform: scale(0.95);
-}
-
-#imageUploadInput {
-    display: none;
-}
-
-/* ===== RESPONSIVE ===== */
-/* iPad & large tablets - just slightly zoomed out */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .phone-frame {
-        max-width: 580px;
-        transform: scale(0.96);
-        padding: 22px 20px 18px;
-    }
-    .rank-wrapper {
-        width: 56px;
-        height: 56px;
-    }
-    .rank {
-        font-size: 26px;
-    }
-    .rank .flag-emoji {
-        font-size: 30px;
-    }
-    .item-title {
-        font-size: 20px;
-    }
-    .item-sub {
-        font-size: 14px;
-    }
-    .list-item {
-        padding: 7px 18px 7px 20px;
-        gap: 16px;
-        border-radius: 18px;
-    }
-    .top-list {
-        gap: 7px;
-    }
-    .list-header h1 {
-        font-size: 26px;
-    }
-    .badge-date {
-        font-size: 14px;
-        padding: 3px 14px;
-    }
-    .intro-box .paper-clip {
-        font-size: 32px;
-        top: -14px;
-    }
-    .intro-box .intro-title {
-        font-size: 32px;
-    }
-    .list-item .flag-overlay-bg {
-        font-size: clamp(200px, 32vw, 320px);
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-}
-
-@media (min-width: 1025px) {
-    .phone-frame {
-        max-width: 620px;
-        transform: scale(0.98);
-        padding: 26px 24px 20px;
-    }
-    .rank-wrapper {
-        width: 64px;
-        height: 64px;
-    }
-    .rank {
-        font-size: 30px;
-    }
-    .rank .flag-emoji {
-        font-size: 34px;
-    }
-    .item-title {
-        font-size: 22px;
-    }
-    .item-sub {
-        font-size: 16px;
-    }
-    .list-item {
-        padding: 9px 22px 9px 24px;
-        gap: 20px;
-        border-radius: 20px;
-    }
-    .top-list {
-        gap: 9px;
-    }
-    .list-header h1 {
-        font-size: 30px;
-    }
-    .badge-date {
-        font-size: 16px;
-        padding: 5px 16px;
-    }
-    .intro-box .paper-clip {
-        font-size: 38px;
-        top: -16px;
-    }
-    .intro-box .intro-title {
-        font-size: 38px;
-    }
-    .list-item .flag-overlay-bg {
-        font-size: clamp(240px, 36vw, 380px);
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-}
-
-@media (max-width: 480px) {
-    .phone-frame {
-        padding: 12px 8px 8px;
-        max-width: 100%;
-        transform: scale(1);
-    }
-    .rank-wrapper {
-        width: 34px;
-        height: 34px;
-    }
-    .rank {
-        font-size: 16px;
-    }
-    .rank .flag-emoji {
-        font-size: 18px;
-    }
-    .item-title {
-        font-size: 13px;
-    }
-    .item-sub {
-        font-size: 10px;
-    }
-    .list-item {
-        padding: 4px 8px 4px 10px;
-        gap: 8px;
-        border-radius: 10px;
-    }
-    .top-list {
-        gap: 3px;
-    }
-    .list-header h1 {
-        font-size: 16px;
-    }
-    .badge-date {
-        font-size: 9px;
-        padding: 2px 8px;
-    }
-    .trend-icon {
-        font-size: 11px;
-        padding-left: 2px;
-    }
-    .flag-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .intro-box .paper-clip {
-        font-size: 20px;
-        top: -10px;
-    }
-    .intro-box .intro-title {
-        font-size: 22px;
-    }
-    .list-item .flag-overlay-bg {
-        font-size: clamp(100px, 22vw, 160px);
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-}
-
-@media (max-height: 700px) {
-    .phone-frame {
-        padding: 10px 10px 6px;
-        transform: scale(1);
-    }
-    .list-header {
-        padding-bottom: 4px;
-        margin-bottom: 3px;
-        min-height: 28px;
-    }
-    .list-header h1 {
-        font-size: 16px;
-    }
-    .rank-wrapper {
-        width: 32px;
-        height: 32px;
-    }
-    .rank {
-        font-size: 14px;
-    }
-    .rank .flag-emoji {
-        font-size: 16px;
-    }
-    .item-title {
-        font-size: 12px;
-    }
-    .item-sub {
-        font-size: 9px;
-    }
-    .list-item {
-        padding: 3px 6px 3px 8px;
-        gap: 6px;
-        border-radius: 8px;
-    }
-    .top-list {
-        gap: 3px;
-    }
-    .badge-date {
-        font-size: 8px;
-        padding: 1px 6px;
-    }
-    .trend-icon {
-        font-size: 10px;
-        padding-left: 2px;
-    }
-    .intro-box .paper-clip {
-        font-size: 18px;
-        top: -8px;
-    }
-    .intro-box .intro-title {
-        font-size: 20px;
-    }
-    .list-item .flag-overlay-bg {
-        font-size: clamp(80px, 20vw, 140px);
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-}
-
-.top-list::-webkit-scrollbar {
-    display: none;
-}
-.top-list {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
+        /* ----- reset & base ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: black;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Roboto', sans-serif;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ----- main container to keep visualizer fixed ----- */
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 100vh;
+            padding: 1rem 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ----- word container with fixed height to prevent shifting ----- */
+        .word-container {
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        /* ----- main word – big, editable ----- */
+        .giant-word {
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2.8rem, 18vw, 7rem);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 95vw;
+            word-break: break-word;
+            text-shadow: none;
+            transition: border-color 0.2s ease;
+            cursor: text;
+            outline: none;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 0.2rem 0.6rem;
+            background: transparent;
+            user-select: none;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeInWord 0.8s ease forwards 1.2s;
+        }
+
+        @keyframes fadeInWord {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .giant-word.editing {
+            user-select: text;
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .giant-word:focus {
+            user-select: text;
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* ----- visualizer: centered vertically, FIXED position ----- */
+        .viz-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            height: 80px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            flex-shrink: 0;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            animation: fadeInWord 0.8s ease forwards 1.4s;
+        }
+
+        /* each bar: fully rounded (pill shape) - SOLID WHITE */
+        .bar {
+            width: 10px;
+            height: 18px;
+            background: white;
+            border-radius: 9999px;
+            transition: height 0.12s ease-out;
+            box-shadow: none;
+            transform: scaleY(1);
+            transform-origin: center;
+            will-change: height;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+
+        /* ----- INTRO "Pronounce" - SOLID WHITE ----- */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            background: black;
+            pointer-events: none;
+            animation: introFadeOut 0.8s ease forwards 1s;
+        }
+
+        @keyframes introFadeOut {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                pointer-events: none;
+            }
+        }
+
+        .intro-text {
+            font-family: 'Roboto', sans-serif;
+            background: white;
+            color: black;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 700;
+            padding: 1.2rem 3.5rem;
+            border: none;
+            border-radius: 60px;
+            box-shadow: none;
+            letter-spacing: 0.05em;
+            animation: introPulse 1s ease-in-out;
+            cursor: default;
+        }
+
+        @keyframes introPulse {
+            0% {
+                transform: scale(0.6);
+                opacity: 0;
+            }
+            30% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+            60% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ----- OVERLAY - hidden by default ----- */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ----- SUBSCRIBE BUTTON - SOLID WHITE ----- */
+        .subscribe-btn {
+            font-family: 'Roboto', sans-serif;
+            background: white;
+            color: black;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 700;
+            padding: 1.2rem 3.5rem;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: none;
+            transition: transform 0.2s ease;
+            letter-spacing: 0.05em;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .subscribe-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .subscribe-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* responsive */
+        @media (max-width: 500px) {
+            .viz-row {
+                gap: 6px;
+                height: 60px;
+            }
+            .bar {
+                width: 8px;
+            }
+            .word-container {
+                min-height: 80px;
+            }
+            .giant-word {
+                min-height: 60px;
+                font-size: clamp(2rem, 12vw, 4rem);
+            }
+            .subscribe-btn {
+                font-size: 1.3rem;
+                padding: 0.9rem 2rem;
+            }
+            .intro-text {
+                font-size: 1.3rem;
+                padding: 0.9rem 2rem;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <canvas id="particleCanvas"></canvas>
+    <!-- INTRO "Pronounce" - SOLID WHITE -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-text">Pronounce</div>
+    </div>
 
-    <!-- FULL SCREEN FLAG OVERLAY -->
-    <div class="flag-overlay" id="flagOverlay">
-        <div class="flag-overlay-content">
-            <div class="flag-overlay-header">
-                <h2>🏳️ Choose a Flag</h2>
-                <div class="header-actions">
-                    <button class="upload-image-btn" id="uploadImageBtn">🖼️ image</button>
-                    <button class="reset-number-btn" id="resetNumberBtn">↺ number</button>
-                    <button class="flag-overlay-close" id="flagOverlayClose">✕</button>
-                </div>
+    <div class="main-wrapper">
+        <!-- word with fixed container -->
+        <div class="word-container">
+            <div class="giant-word" id="wordDisplay" contenteditable="false" spellcheck="false">
+                Pneumonoultramicroscopicsilicovolcanoconiosis
             </div>
-            <input class="flag-search" id="flagSearch" type="text" placeholder="Search country or territory..." />
-            <div class="flag-grid-container">
-                <div class="flag-grid" id="flagGrid"></div>
-            </div>
-            <div class="flag-overlay-footer">
-                <span class="hint">tap a flag or upload image · tap "number" to revert</span>
-                <span class="hint" id="flagCount">0 flags</span>
-            </div>
+        </div>
+
+        <!-- 7‑bar visualizer - clickable -->
+        <div class="viz-row" id="visualizer">
+            <div class="bar" id="bar0"></div>
+            <div class="bar" id="bar1"></div>
+            <div class="bar" id="bar2"></div>
+            <div class="bar" id="bar3"></div>
+            <div class="bar" id="bar4"></div>
+            <div class="bar" id="bar5"></div>
+            <div class="bar" id="bar6"></div>
         </div>
     </div>
 
-    <input type="file" id="imageUploadInput" accept="image/*" />
-
-    <div class="phone-frame" id="phoneFrame">
-        <!-- INTRO OVERLAY -->
-        <div class="intro-overlay" id="introOverlay">
-            <div class="intro-box">
-                <div class="paper-clip">🟡</div>
-                <div class="intro-title">
-                    TOP 10<br />MOST FOLLOWED<br />FOOTBALL<br />PLAYERS<br />ON NSTAGRAM
-                </div>
-            </div>
-        </div>
-
-        <div class="list-header">
-            <h1>
-                <span class="title-text">TOP 10</span>
-                <span>🟡</span>
-            </h1>
-            <div class="badge-date">most followed players</div>
-        </div>
-
-        <div class="top-list" id="topList"></div>
+    <!-- OVERLAY with blur backdrop - no X button -->
+    <div class="overlay" id="overlay">
+        <button class="subscribe-btn" id="subscribeBtn">SUBSCRIBE</button>
     </div>
 
     <script>
-        // ===== TYPE MP3 AUDIO =====
-        let typeAudio = null;
-        let audioUnlocked = false;
+        (function() {
+            "use strict";
 
-        function getTypeAudio() {
-            if (!typeAudio) {
-                typeAudio = new Audio('type.mp3');
-                typeAudio.volume = 0.3;
-            }
-            return typeAudio;
-        }
+            // ----- DOM refs -----
+            const bars = [
+                document.getElementById('bar0'),
+                document.getElementById('bar1'),
+                document.getElementById('bar2'),
+                document.getElementById('bar3'),
+                document.getElementById('bar4'),
+                document.getElementById('bar5'),
+                document.getElementById('bar6')
+            ];
+            const wordDisplay = document.getElementById('wordDisplay');
+            const visualizer = document.getElementById('visualizer');
+            const overlay = document.getElementById('overlay');
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            const introOverlay = document.getElementById('introOverlay');
 
-        function unlockAudio() {
-            if (audioUnlocked) return;
-            const a = getTypeAudio();
-            const playPromise = a.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        a.pause();
-                        a.currentTime = 0;
-                        audioUnlocked = true;
-                    })
-                    .catch(() => {});
-            } else {
-                audioUnlocked = true;
-            }
-        }
+            // ----- audio context & analyser -----
+            let audioContext = null;
+            let analyser = null;
+            let dataArray = null;
+            let source = null;
+            let mediaStream = null; // store stream for reuse
+            let animationFrame = null;
+            let isRunning = false;
 
-        ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(evt => {
-            document.addEventListener(evt, unlockAudio, { once: true, passive: true });
-        });
+            // ----- bar height limits -----
+            const BAR_MIN = 8;
+            const BAR_MAX = 58;
+            const SMOOTHING = 0.78;
 
-        function playTypeSound() {
-            const a = getTypeAudio();
-            a.currentTime = 0;
-            a.play().catch(e => console.log('Audio play failed:', e));
-        }
+            // ----- update bars (centered) -----
+            function updateBars() {
+                if (!analyser) return;
 
-        // ===== WHITE PARTICLE SYSTEM =====
-        (function initParticles() {
-            const canvas = document.getElementById('particleCanvas');
-            const ctx = canvas.getContext('2d');
+                analyser.getByteFrequencyData(dataArray);
 
-            let width, height;
-            let particles = [];
-            const PARTICLE_COUNT = 100;
+                const binCount = analyser.frequencyBinCount;
+                const barCount = bars.length;
+                const step = Math.floor(binCount / barCount);
 
-            function resize() {
-                width = window.innerWidth;
-                height = window.innerHeight;
-                canvas.width = width;
-                canvas.height = height;
-            }
+                for (let i = 0; i < barCount; i++) {
+                    let sum = 0;
+                    let count = 0;
+                    const start = i * step;
+                    const end = (i === barCount - 1) ? binCount : start + step;
+                    for (let j = start; j < end; j++) {
+                        sum += dataArray[j] || 0;
+                        count++;
+                    }
+                    let avg = count > 0 ? sum / count : 0;
+                    const normalized = Math.min(1, avg / 200);
+                    const eased = 1 - Math.pow(1 - normalized, 1.8);
+                    let height = BAR_MIN + (BAR_MAX - BAR_MIN) * eased;
+                    height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
 
-            function createParticle() {
-                return {
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.6,
-                    vy: (Math.random() - 0.5) * 0.6,
-                    radius: 1.5 + Math.random() * 3,
-                    opacity: 0.4 + Math.random() * 0.6
-                };
-            }
-
-            function initParticles() {
-                particles = [];
-                for (let i = 0; i < PARTICLE_COUNT; i++) {
-                    particles.push(createParticle());
-                }
-            }
-
-            function drawParticles() {
-                ctx.clearRect(0, 0, width, height);
-
-                for (let i = 0; i < particles.length; i++) {
-                    for (let j = i + 1; j < particles.length; j++) {
-                        const dx = particles[i].x - particles[j].x;
-                        const dy = particles[i].y - particles[j].y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 140) {
-                            ctx.beginPath();
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 * (1 - dist / 140)})`;
-                            ctx.lineWidth = 0.5;
-                            ctx.stroke();
-                        }
+                    if (bars[i]) {
+                        bars[i].style.height = height + 'px';
+                        const intensity = 0.3 + 0.7 * (height - BAR_MIN) / (BAR_MAX - BAR_MIN);
+                        bars[i].style.opacity = 0.4 + 0.6 * intensity;
                     }
                 }
-
-                for (const p of particles) {
-                    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 5);
-                    grad.addColorStop(0, `rgba(255, 255, 255, ${p.opacity * 0.3})`);
-                    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius * 5, 0, Math.PI * 2);
-                    ctx.fillStyle = grad;
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius * 0.35, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * 0.6})`;
-                    ctx.fill();
-                }
-
-                for (const p of particles) {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    if (p.x < 0) p.x = width;
-                    if (p.x > width) p.x = 0;
-                    if (p.y < 0) p.y = height;
-                    if (p.y > height) p.y = 0;
-                }
-
-                requestAnimationFrame(drawParticles);
             }
 
-            window.addEventListener('resize', () => {
-                resize();
-                for (const p of particles) {
-                    p.x = Math.min(p.x, width);
-                    p.y = Math.min(p.y, height);
-                }
-            });
-
-            resize();
-            initParticles();
-            drawParticles();
-        })();
-
-        // ===== TEXT FLIPPING AND NUMBER COUNTING =====
-        function animateTextFlipping(titleElement) {
-            const originalText = titleElement.textContent;
-            const words = originalText.split(' ');
-            const randomWords = [
-                'LUMINA', 'AERO', 'EDGE', 'NOVA', 'VENTUS', 
-                'SPECTRUM', 'IONIC', 'FORGE', 'ZEN', 'VIBE',
-                'X1', '3S', 'PRO', 'SLIM', 'G', '7', '5G', 'X', 'DUAL', 'CORE'
-            ];
-            
-            let flipCount = 0;
-            const maxFlips = 6;
-            
-            titleElement.classList.add('flipping');
-            
-            const flipInterval = setInterval(() => {
-                if (flipCount >= maxFlips) {
-                    clearInterval(flipInterval);
-                    titleElement.textContent = originalText;
-                    titleElement.classList.remove('flipping');
-                    return;
-                }
-                
-                playTypeSound();
-                
-                const randomText = words.map(() => {
-                    return randomWords[Math.floor(Math.random() * randomWords.length)];
-                }).join(' ');
-                
-                titleElement.textContent = randomText;
-                flipCount++;
-            }, 100);
-        }
-
-        function animateNumberCounting(rankElement, targetNumber, preserveFlag = false) {
-            if (preserveFlag && rankElement.dataset.hasFlag === 'true') {
-                rankElement.classList.add('counting');
-                setTimeout(() => {
-                    rankElement.classList.remove('counting');
-                }, 800);
-                return;
+            // ----- animation loop -----
+            function animate() {
+                if (!isRunning) return;
+                updateBars();
+                animationFrame = requestAnimationFrame(animate);
             }
 
-            rankElement.classList.add('counting');
-            let current = 0;
-            
-            const countInterval = setInterval(() => {
-                current++;
-                if (current <= targetNumber) {
-                    playTypeSound();
-                    rankElement.textContent = current;
-                } else {
-                    clearInterval(countInterval);
-                    rankElement.textContent = targetNumber;
-                    rankElement.classList.remove('counting');
+            // ----- start microphone automatically -----
+            async function startMicrophone() {
+                try {
+                    // Check if we already have a stream stored
+                    if (mediaStream && mediaStream.active) {
+                        // Reuse existing stream
+                        console.log('Reusing existing microphone stream');
+                        await setupAudioFromStream(mediaStream);
+                        return;
+                    }
+
+                    // Try to get a new stream
+                    console.log('Requesting microphone access...');
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { 
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false
+                        } 
+                    });
+                    
+                    mediaStream = stream;
+                    await setupAudioFromStream(stream);
+                    
+                } catch (err) {
+                    console.warn('Mic error:', err);
+                    isRunning = false;
+                    if (animationFrame) {
+                        cancelAnimationFrame(animationFrame);
+                        animationFrame = null;
+                    }
+                    bars.forEach(bar => {
+                        if (bar) {
+                            bar.style.height = BAR_MIN + 'px';
+                            bar.style.opacity = 0.4;
+                        }
+                    });
+                    
+                    // Retry after a delay if permission was denied
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        console.log('Permission denied. Will retry on user interaction.');
+                        // Try again on any click
+                        const retryHandler = async function() {
+                            document.removeEventListener('click', retryHandler);
+                            await startMicrophone();
+                        };
+                        document.addEventListener('click', retryHandler);
+                    }
                 }
-            }, 50);
-        }
+            }
 
-        // ===== INTRO OVERLAY: hide after 1s, THEN start drops =====
-        (function initIntroAndDrops() {
-            const overlay = document.getElementById('introOverlay');
-            const listContainer = document.getElementById('topList');
-            if (!overlay || !listContainer) return;
+            async function setupAudioFromStream(stream) {
+                // Close existing context if any
+                if (audioContext && audioContext.state !== 'closed') {
+                    await audioContext.close();
+                }
 
+                audioContext = new(window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = SMOOTHING;
+
+                source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                if (animationFrame) cancelAnimationFrame(animationFrame);
+                isRunning = true;
+                animate();
+                console.log('Microphone is active!');
+            }
+
+            // ----- Resume audio context on user interaction (helps with autoplay policies) -----
+            async function resumeAudioContext() {
+                if (audioContext && audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+            }
+
+            // ----- auto-start on load after intro -----
             setTimeout(() => {
-                overlay.classList.add('hide');
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                    startDropAnimation();
-                }, 700);
-            }, 1000);
+                startMicrophone();
+            }, 1200);
 
-            function startDropAnimation() {
-                const items = listContainer.querySelectorAll('.list-item');
-                
-                items.forEach((item, index) => {
-                    const delay = (9 - index) * 1000;
-                    setTimeout(() => {
-                        item.classList.add('animate-drop');
-                        
-                        const title = item.querySelector('.item-title');
-                        if (title) {
-                            setTimeout(() => {
-                                animateTextFlipping(title);
-                            }, 200);
-                        }
-                        
-                        const rank = item.querySelector('.rank');
-                        if (rank && rank.dataset.rank) {
-                            const targetNumber = parseInt(rank.dataset.rank);
-                            setTimeout(() => {
-                                const hasFlag = rank.dataset.hasFlag === 'true';
-                                animateNumberCounting(rank, targetNumber, hasFlag);
-                            }, 400);
-                        }
-                    }, delay + 200);
-                });
-            }
-        })();
-
-        // ===== DOUBLE TAP RESET - restarts from intro, preserving edits =====
-        (function initDoubleTapReset() {
-            const phoneFrame = document.getElementById('phoneFrame');
-            const listContainer = document.getElementById('topList');
-            const overlay = document.getElementById('introOverlay');
-            let tapCount = 0;
-            let tapTimer = null;
-
-            function preserveItemState(item) {
-                const state = {};
-                const title = item.querySelector('.item-title');
-                const sub = item.querySelector('.item-sub');
-                const rank = item.querySelector('.rank');
-                const bg = item.querySelector('.flag-overlay-bg');
-                
-                if (title) state.title = title.textContent;
-                if (sub) state.sub = sub.textContent;
-                if (rank) {
-                    state.rankText = rank.textContent;
-                    state.hasFlag = rank.dataset.hasFlag === 'true';
-                    state.flag = rank.dataset.flag;
-                    state.type = rank.dataset.type;
-                    state.imageUrl = rank.dataset.imageUrl;
-                    state.rankNumber = rank.dataset.rank;
-                }
-                if (bg) state.bgFlag = bg.textContent;
-                return state;
-            }
-
-            function restoreItemState(item, state) {
-                const title = item.querySelector('.item-title');
-                const sub = item.querySelector('.item-sub');
-                const rank = item.querySelector('.rank');
-                let bg = item.querySelector('.flag-overlay-bg');
-                
-                if (title && state.title) title.textContent = state.title;
-                if (sub && state.sub) sub.textContent = state.sub;
-                
-                if (rank) {
-                    if (state.rankNumber) {
-                        rank.dataset.rank = state.rankNumber;
-                    }
-                    
-                    if (state.hasFlag) {
-                        rank.dataset.hasFlag = 'true';
-                        if (state.flag) {
-                            rank.dataset.flag = state.flag;
-                            rank.dataset.type = state.type || 'flag';
-                            if (state.type === 'flag' && state.flag) {
-                                rank.innerHTML = `<span class="flag-emoji">${state.flag}</span>`;
-                            } else if (state.type === 'image' && state.imageUrl) {
-                                rank.innerHTML = `<img class="rank-image" src="${state.imageUrl}" alt="custom" />`;
-                            } else {
-                                rank.innerHTML = `<span class="flag-emoji">${state.flag || '🏳️'}</span>`;
-                            }
-                        }
-                    } else {
-                        rank.dataset.hasFlag = 'false';
-                        delete rank.dataset.flag;
-                        delete rank.dataset.type;
-                        delete rank.dataset.imageUrl;
-                        rank.textContent = state.rankNumber || rank.dataset.rank;
-                    }
-                }
-                
-                if (state.bgFlag) {
-                    if (!bg) {
-                        bg = document.createElement('div');
-                        bg.className = 'flag-overlay-bg';
-                        item.appendChild(bg);
-                    }
-                    bg.textContent = state.bgFlag;
-                } else if (bg) {
-                    bg.remove();
-                }
-            }
-
-            phoneFrame.addEventListener('click', (e) => {
-                if (e.target.closest('.rank') || e.target.closest('.flag-overlay') ||
-                    e.target.closest('.badge-date') || e.target.closest('.title-text') ||
-                    e.target.closest('button') || e.target.closest('.intro-overlay') ||
-                    e.target.closest('.paper-clip') || e.target.closest('.flag-search') ||
-                    e.target.closest('.flag-grid-item') || e.target.closest('.flag-overlay-close') ||
-                    e.target.closest('.reset-number-btn') || e.target.closest('.upload-image-btn') ||
-                    e.target.closest('.item-title') || e.target.closest('.item-sub')) {
-                    return;
-                }
-
-                tapCount++;
-
-                if (tapCount === 1) {
-                    tapTimer = setTimeout(() => {
-                        tapCount = 0;
-                    }, 500);
-                } else if (tapCount === 2) {
-                    clearTimeout(tapTimer);
-                    tapCount = 0;
-                    resetFromIntro();
+            // ---- pre-set bars to minimum ----
+            bars.forEach(bar => {
+                if (bar) {
+                    bar.style.height = BAR_MIN + 'px';
+                    bar.style.opacity = 0.4;
                 }
             });
 
-            function resetFromIntro() {
-                const items = listContainer.querySelectorAll('.list-item');
-                
-                const states = [];
-                items.forEach(item => {
-                    states.push(preserveItemState(item));
-                });
+            // ----- Resume audio on user interaction (for browsers with strict autoplay) -----
+            document.addEventListener('click', resumeAudioContext);
+            document.addEventListener('touchstart', resumeAudioContext);
 
-                items.forEach((item, index) => {
-                    item.classList.remove('animate-drop');
-                    item.style.animation = 'none';
-                    item.style.transform = 'translateY(-60px)';
-                    item.style.opacity = '0';
-                    
-                    const title = item.querySelector('.item-title');
-                    if (title) {
-                        title.classList.remove('flipping');
-                    }
-                    
-                    const rank = item.querySelector('.rank');
-                    if (rank) {
-                        rank.classList.remove('counting');
-                    }
-                });
+            // ----- DOUBLE CLICK / DOUBLE TAP to edit -----
+            let clickTimer = null;
+            let isEditing = false;
 
-                void listContainer.offsetWidth;
+            function enableEditing() {
+                if (isEditing) return;
+                isEditing = true;
+                wordDisplay.contentEditable = true;
+                wordDisplay.classList.add('editing');
+                wordDisplay.focus();
 
-                items.forEach(item => {
-                    item.style.animation = '';
-                });
-
-                overlay.style.display = 'flex';
-                overlay.classList.remove('hide');
-
-                setTimeout(() => {
-                    overlay.classList.add('hide');
-                    setTimeout(() => {
-                        overlay.style.display = 'none';
-                        startDropAnimation(states);
-                    }, 700);
-                }, 1000);
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(wordDisplay);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
             }
 
-            function startDropAnimation(states) {
-                const items = listContainer.querySelectorAll('.list-item');
-                
-                items.forEach((item, index) => {
-                    const delay = (9 - index) * 1000;
-                    setTimeout(() => {
-                        if (states && states[index]) {
-                            restoreItemState(item, states[index]);
-                        }
-                        
-                        item.classList.add('animate-drop');
-                        
-                        const title = item.querySelector('.item-title');
-                        if (title) {
-                            setTimeout(() => {
-                                animateTextFlipping(title);
-                            }, 200);
-                        }
-                        
-                        const rank = item.querySelector('.rank');
-                        if (rank && rank.dataset.rank) {
-                            const targetNumber = parseInt(rank.dataset.rank);
-                            setTimeout(() => {
-                                const hasFlag = rank.dataset.hasFlag === 'true';
-                                animateNumberCounting(rank, targetNumber, hasFlag);
-                            }, 400);
-                        }
-                    }, delay + 200);
-                });
+            function disableEditing() {
+                if (!isEditing) return;
+                isEditing = false;
+                wordDisplay.contentEditable = false;
+                wordDisplay.classList.remove('editing');
+                wordDisplay.blur();
             }
-        })();
 
-        // ===== COMPLETE FLAG LIBRARY =====
-        const flagData = [
-            { emoji: '🇺🇸', country: 'United States' },
-            { emoji: '🇬🇧', country: 'United Kingdom' },
-            { emoji: '🇫🇷', country: 'France' },
-            { emoji: '🇩🇪', country: 'Germany' },
-            { emoji: '🇮🇹', country: 'Italy' },
-            { emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: 'England' },
-            { emoji: '🇪🇸', country: 'Spain' },
-            { emoji: '🇵🇹', country: 'Portugal' },
-            { emoji: '🇳🇱', country: 'Netherlands' },
-            { emoji: '🇧🇪', country: 'Belgium' },
-            { emoji: '🇨🇭', country: 'Switzerland' },
-            { emoji: '🇦🇹', country: 'Austria' },
-            { emoji: '🇸🇪', country: 'Sweden' },
-            { emoji: '🇳🇴', country: 'Norway' },
-            { emoji: '🇩🇰', country: 'Denmark' },
-            { emoji: '🇫🇮', country: 'Finland' },
-            { emoji: '🇮🇸', country: 'Iceland' },
-            { emoji: '🇵🇱', country: 'Poland' },
-            { emoji: '🇨🇿', country: 'Czech Republic' },
-            { emoji: '🇸🇰', country: 'Slovakia' },
-            { emoji: '🇭🇺', country: 'Hungary' },
-            { emoji: '🇷🇴', country: 'Romania' },
-            { emoji: '🇧🇬', country: 'Bulgaria' },
-            { emoji: '🇬🇷', country: 'Greece' },
-            { emoji: '🇹🇷', country: 'Turkey' },
-            { emoji: '🇮🇱', country: 'Israel' },
-            { emoji: '🇦🇪', country: 'United Arab Emirates' },
-            { emoji: '🇸🇦', country: 'Saudi Arabia' },
-            { emoji: '🇮🇳', country: 'India' },
-            { emoji: '🇨🇳', country: 'China' },
-            { emoji: '🇯🇵', country: 'Japan' },
-            { emoji: '🇰🇷', country: 'South Korea' },
-            { emoji: '🇧🇷', country: 'Brazil' },
-            { emoji: '🇦🇷', country: 'Argentina' },
-            { emoji: '🇲🇽', country: 'Mexico' },
-            { emoji: '🇨🇦', country: 'Canada' },
-            { emoji: '🇦🇺', country: 'Australia' },
-            { emoji: '🇳🇿', country: 'New Zealand' },
-            { emoji: '🇿🇦', country: 'South Africa' },
-            { emoji: '🇳🇬', country: 'Nigeria' },
-            { emoji: '🇰🇪', country: 'Kenya' },
-            { emoji: '🇪🇬', country: 'Egypt' },
-            { emoji: '🇲🇦', country: 'Morocco' },
-            { emoji: '🇩🇿', country: 'Algeria' },
-            { emoji: '🇹🇳', country: 'Tunisia' },
-            { emoji: '🇯🇴', country: 'Jordan' },
-            { emoji: '🇱🇧', country: 'Lebanon' },
-            { emoji: '🇮🇷', country: 'Iran' },
-            { emoji: '🇵🇰', country: 'Pakistan' },
-            { emoji: '🇧🇩', country: 'Bangladesh' },
-            { emoji: '🇱🇰', country: 'Sri Lanka' },
-            { emoji: '🇳🇵', country: 'Nepal' },
-            { emoji: '🇲🇾', country: 'Malaysia' },
-            { emoji: '🇸🇬', country: 'Singapore' },
-            { emoji: '🇵🇭', country: 'Philippines' },
-            { emoji: '🇻🇳', country: 'Vietnam' },
-            { emoji: '🇹🇭', country: 'Thailand' },
-            { emoji: '🇮🇩', country: 'Indonesia' },
-            { emoji: '🇷🇺', country: 'Russia' },
-            { emoji: '🇺🇦', country: 'Ukraine' },
-            { emoji: '🇵🇪', country: 'Peru' },
-            { emoji: '🇨🇱', country: 'Chile' },
-            { emoji: '🇨🇴', country: 'Colombia' },
-            { emoji: '🇻🇪', country: 'Venezuela' },
-            { emoji: '🇪🇨', country: 'Ecuador' },
-            { emoji: '🇬🇹', country: 'Guatemala' },
-            { emoji: '🇵🇦', country: 'Panama' },
-            { emoji: '🇨🇷', country: 'Costa Rica' },
-            { emoji: '🇯🇲', country: 'Jamaica' },
-            { emoji: '🇹🇹', country: 'Trinidad and Tobago' },
-            { emoji: '🇧🇸', country: 'Bahamas' },
-            { emoji: '🇧🇧', country: 'Barbados' },
-            { emoji: '🇫🇯', country: 'Fiji' },
-            { emoji: '🇵🇬', country: 'Papua New Guinea' },
-            { emoji: '🇸🇧', country: 'Solomon Islands' },
-            { emoji: '🇻🇺', country: 'Vanuatu' },
-            { emoji: '🇼🇸', country: 'Samoa' },
-            { emoji: '🇹🇴', country: 'Tonga' },
-            { emoji: '🇰🇮', country: 'Kiribati' },
-            { emoji: '🇳🇷', country: 'Nauru' },
-            { emoji: '🇫🇲', country: 'Micronesia' },
-            { emoji: '🇲🇭', country: 'Marshall Islands' },
-            { emoji: '🇵🇼', country: 'Palau' },
-            { emoji: '🇹🇻', country: 'Tuvalu' },
-            { emoji: '🇮🇪', country: 'Ireland' },
-            { emoji: '🇱🇺', country: 'Luxembourg' },
-            { emoji: '🇲🇹', country: 'Malta' },
-            { emoji: '🇨🇾', country: 'Cyprus' },
-            { emoji: '🇪🇪', country: 'Estonia' },
-            { emoji: '🇱🇻', country: 'Latvia' },
-            { emoji: '🇱🇹', country: 'Lithuania' },
-            { emoji: '🇸🇮', country: 'Slovenia' },
-            { emoji: '🇭🇷', country: 'Croatia' },
-            { emoji: '🇧🇦', country: 'Bosnia' },
-            { emoji: '🇷🇸', country: 'Serbia' },
-            { emoji: '🇲🇪', country: 'Montenegro' },
-            { emoji: '🇦🇱', country: 'Albania' },
-            { emoji: '🇲🇰', country: 'North Macedonia' },
-            { emoji: '🇺🇾', country: 'Uruguay' },
-            { emoji: '🇵🇾', country: 'Paraguay' },
-            { emoji: '🇧🇴', country: 'Bolivia' },
-            { emoji: '🇸🇻', country: 'El Salvador' },
-            { emoji: '🇭🇳', country: 'Honduras' },
-            { emoji: '🇳🇮', country: 'Nicaragua' },
-            { emoji: '🇩🇴', country: 'Dominican Republic' },
-            { emoji: '🇨🇺', country: 'Cuba' },
-            { emoji: '🇭🇹', country: 'Haiti' },
-            { emoji: '🇬🇭', country: 'Ghana' },
-            { emoji: '🇨🇮', country: 'Ivory Coast' },
-            { emoji: '🇸🇳', country: 'Senegal' },
-            { emoji: '🇨🇲', country: 'Cameroon' },
-            { emoji: '🇹🇩', country: 'Chad' },
-            { emoji: '🇳🇪', country: 'Niger' },
-            { emoji: '🇲🇱', country: 'Mali' },
-            { emoji: '🇧🇫', country: 'Burkina Faso' },
-            { emoji: '🇬🇳', country: 'Guinea' },
-            { emoji: '🇧🇯', country: 'Benin' },
-            { emoji: '🇹🇬', country: 'Togo' },
-            { emoji: '🇸🇱', country: 'Sierra Leone' },
-            { emoji: '🇱🇷', country: 'Liberia' },
-            { emoji: '🇨🇻', country: 'Cape Verde' },
-            { emoji: '🇸🇹', country: 'Sao Tome' },
-            { emoji: '🇬🇶', country: 'Equatorial Guinea' },
-            { emoji: '🇬🇦', country: 'Gabon' },
-            { emoji: '🇨🇬', country: 'Congo' },
-            { emoji: '🇨🇩', country: 'DR Congo' },
-            { emoji: '🇦🇴', country: 'Angola' },
-            { emoji: '🇲🇿', country: 'Mozambique' },
-            { emoji: '🇿🇼', country: 'Zimbabwe' },
-            { emoji: '🇿🇲', country: 'Zambia' },
-            { emoji: '🇲🇼', country: 'Malawi' },
-            { emoji: '🇹🇿', country: 'Tanzania' },
-            { emoji: '🇺🇬', country: 'Uganda' },
-            { emoji: '🇷🇼', country: 'Rwanda' },
-            { emoji: '🇧🇮', country: 'Burundi' },
-            { emoji: '🇸🇴', country: 'Somalia' },
-            { emoji: '🇪🇷', country: 'Eritrea' },
-            { emoji: '🇩🇯', country: 'Djibouti' },
-            { emoji: '🇸🇸', country: 'South Sudan' },
-            { emoji: '🇸🇩', country: 'Sudan' },
-            { emoji: '🇱🇾', country: 'Libya' },
-            { emoji: '🇦🇫', country: 'Afghanistan' },
-            { emoji: '🇦🇲', country: 'Armenia' },
-            { emoji: '🇦🇿', country: 'Azerbaijan' },
-            { emoji: '🇧🇭', country: 'Bahrain' },
-            { emoji: '🇰🇭', country: 'Cambodia' },
-            { emoji: '🇬🇪', country: 'Georgia' },
-            { emoji: '🇮🇶', country: 'Iraq' },
-            { emoji: '🇰🇼', country: 'Kuwait' },
-            { emoji: '🇰🇬', country: 'Kyrgyzstan' },
-            { emoji: '🇱🇦', country: 'Laos' },
-            { emoji: '🇲🇻', country: 'Maldives' },
-            { emoji: '🇲🇳', country: 'Mongolia' },
-            { emoji: '🇲🇲', country: 'Myanmar' },
-            { emoji: '🇴🇲', country: 'Oman' },
-            { emoji: '🇶🇦', country: 'Qatar' },
-            { emoji: '🇸🇾', country: 'Syria' },
-            { emoji: '🇹🇯', country: 'Tajikistan' },
-            { emoji: '🇹🇲', country: 'Turkmenistan' },
-            { emoji: '🇺🇿', country: 'Uzbekistan' },
-            { emoji: '🇾🇪', country: 'Yemen' },
-            { emoji: '🇭🇰', country: 'Hong Kong' },
-            { emoji: '🇲🇴', country: 'Macau' },
-            { emoji: '🇹🇼', country: 'Taiwan' },
-            { emoji: '🇵🇷', country: 'Puerto Rico' },
-            { emoji: '🇬🇺', country: 'Guam' },
-            { emoji: '🇦🇸', country: 'American Samoa' },
-            { emoji: '🇻🇮', country: 'Virgin Islands' },
-            { emoji: '🇰🇾', country: 'Cayman Islands' },
-            { emoji: '🇧🇲', country: 'Bermuda' },
-            { emoji: '🇬🇮', country: 'Gibraltar' },
-            { emoji: '🇫🇴', country: 'Faroe Islands' },
-            { emoji: '🇦🇽', country: 'Aland Islands' },
-            { emoji: '🇬🇬', country: 'Guernsey' },
-            { emoji: '🇯🇪', country: 'Jersey' },
-            { emoji: '🇮🇲', country: 'Isle of Man' },
-            { emoji: '🇳🇨', country: 'New Caledonia' },
-            { emoji: '🇵🇫', country: 'French Polynesia' },
-            { emoji: '🇼🇫', country: 'Wallis & Futuna' },
-            { emoji: '🇹🇰', country: 'Tokelau' },
-            { emoji: '🇳🇺', country: 'Niue' },
-            { emoji: '🇨🇰', country: 'Cook Islands' },
-            { emoji: '🇸🇭', country: 'St Helena' },
-            { emoji: '🇦🇮', country: 'Anguilla' },
-            { emoji: '🇲🇸', country: 'Montserrat' },
-            { emoji: '🇫🇰', country: 'Falkland Islands' },
-            { emoji: '🇬🇸', country: 'S. Georgia' },
-            { emoji: '🇧🇶', country: 'Caribbean Netherlands' },
-            { emoji: '🇨🇼', country: 'Curacao' },
-            { emoji: '🇸🇽', country: 'Sint Maarten' },
-            { emoji: '🇲🇫', country: 'Saint Martin' },
-            { emoji: '🇧🇱', country: 'St Barthélemy' },
-            { emoji: '🇵🇲', country: 'St Pierre' },
-            { emoji: '🇻🇨', country: 'St Vincent' },
-            { emoji: '🇱🇨', country: 'St Lucia' },
-            { emoji: '🇰🇳', country: 'St Kitts & Nevis' },
-            { emoji: '🇦🇬', country: 'Antigua & Barbuda' },
-            { emoji: '🇬🇩', country: 'Grenada' },
-            { emoji: '🇩🇲', country: 'Dominica' }
-        ];
+            // --- Desktop: double click ---
+            wordDisplay.addEventListener('dblclick', function(e) {
+                e.preventDefault();
+                enableEditing();
+            });
 
-        flagData.sort((a, b) => a.country.localeCompare(b.country));
+            // --- Mobile: double tap detection ---
+            let lastTouchEnd = 0;
+            let touchTimeout = null;
 
-        // ===== FLAG OVERLAY =====
-        const overlay = document.getElementById('flagOverlay');
-        const overlayClose = document.getElementById('flagOverlayClose');
-        const flagGrid = document.getElementById('flagGrid');
-        const flagSearch = document.getElementById('flagSearch');
-        const flagCount = document.getElementById('flagCount');
-        const resetBtn = document.getElementById('resetNumberBtn');
-        const uploadBtn = document.getElementById('uploadImageBtn');
-        const fileInput = document.getElementById('imageUploadInput');
-        let activeItemElement = null;
-        let activeRankElement = null;
-        let activeMode = null;
+            wordDisplay.addEventListener('touchend', function(e) {
+                const now = Date.now();
+                const timeSince = now - lastTouchEnd;
+                lastTouchEnd = now;
 
-        function renderFlags(filter = '') {
-            flagGrid.innerHTML = '';
-            let visibleCount = 0;
-            const searchTerm = filter.toLowerCase().trim();
-
-            flagData.forEach(flag => {
-                const item = document.createElement('div');
-                item.className = 'flag-grid-item';
-
-                const emoji = document.createElement('div');
-                emoji.className = 'flag-emoji-lg';
-                emoji.textContent = flag.emoji;
-
-                const label = document.createElement('div');
-                label.className = 'flag-country-sm';
-                label.textContent = flag.country;
-
-                item.appendChild(emoji);
-                item.appendChild(label);
-
-                const match = flag.country.toLowerCase().includes(searchTerm) ||
-                             flag.emoji === searchTerm ||
-                             searchTerm === '';
-                if (!match && searchTerm !== '') {
-                    item.classList.add('hidden');
+                if (timeSince < 350 && timeSince > 20) {
+                    e.preventDefault();
+                    if (touchTimeout) {
+                        clearTimeout(touchTimeout);
+                        touchTimeout = null;
+                    }
+                    enableEditing();
                 } else {
-                    visibleCount++;
-                }
-
-                item.addEventListener('click', () => {
-                    if (activeMode === 'item' && activeItemElement) {
-                        setFlagOnItem(activeItemElement, flag.emoji);
-                        closeFlagOverlay();
-                    } else if (activeMode === 'rank' && activeRankElement) {
-                        setFlagOnRank(activeRankElement, flag.emoji);
-                        closeFlagOverlay();
+                    if (touchTimeout) {
+                        clearTimeout(touchTimeout);
+                        touchTimeout = null;
                     }
-                });
-
-                flagGrid.appendChild(item);
+                    touchTimeout = setTimeout(() => {
+                        touchTimeout = null;
+                    }, 400);
+                }
             });
 
-            flagCount.textContent = `${visibleCount} flags`;
-        }
-
-        function setFlagOnItem(itemElement, emoji) {
-            const existingBg = itemElement.querySelector('.flag-overlay-bg');
-            if (existingBg) existingBg.remove();
-
-            const bg = document.createElement('div');
-            bg.className = 'flag-overlay-bg';
-            bg.textContent = emoji;
-            itemElement.appendChild(bg);
-        }
-
-        function setFlagOnRank(rankElement, emoji) {
-            rankElement.innerHTML = '';
-            const flagEmoji = document.createElement('span');
-            flagEmoji.className = 'flag-emoji';
-            flagEmoji.textContent = emoji;
-            rankElement.appendChild(flagEmoji);
-            rankElement.dataset.hasFlag = 'true';
-            rankElement.dataset.flag = emoji;
-            rankElement.dataset.type = 'flag';
-        }
-
-        function setRankToImage(element, imageUrl) {
-            element.innerHTML = '';
-            const img = document.createElement('img');
-            img.className = 'rank-image';
-            img.src = imageUrl;
-            img.alt = 'custom';
-            element.appendChild(img);
-            element.dataset.hasFlag = 'true';
-            element.dataset.type = 'image';
-            element.dataset.imageUrl = imageUrl;
-        }
-
-        function resetRankToNumber(element) {
-            element.innerHTML = element.dataset.rank;
-            element.dataset.hasFlag = 'false';
-            delete element.dataset.flag;
-            delete element.dataset.country;
-            delete element.dataset.type;
-            delete element.dataset.imageUrl;
-        }
-
-        function resetFlagOnItem(itemElement) {
-            const bg = itemElement.querySelector('.flag-overlay-bg');
-            if (bg) bg.remove();
-        }
-
-        function openFlagOverlay(itemElement, rankElement, mode) {
-            activeItemElement = itemElement;
-            activeRankElement = rankElement;
-            activeMode = mode;
-            overlay.classList.add('show');
-            flagSearch.value = '';
-            renderFlags('');
-            setTimeout(() => flagSearch.focus(), 100);
-        }
-
-        function closeFlagOverlay() {
-            overlay.classList.remove('show');
-            activeItemElement = null;
-            activeRankElement = null;
-            activeMode = null;
-            flagSearch.value = '';
-            renderFlags('');
-        }
-
-        function resetNumber() {
-            if (activeMode === 'item' && activeItemElement) {
-                resetFlagOnItem(activeItemElement);
-                closeFlagOverlay();
-            } else if (activeMode === 'rank' && activeRankElement) {
-                resetRankToNumber(activeRankElement);
-                closeFlagOverlay();
-            }
-        }
-
-        function triggerUpload() {
-            fileInput.click();
-        }
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file && activeRankElement && activeMode === 'rank') {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    setRankToImage(activeRankElement, event.target.result);
-                    closeFlagOverlay();
-                    fileInput.value = '';
-                };
-                reader.readAsDataURL(file);
-            } else if (file && activeItemElement && activeMode === 'item') {
-                closeFlagOverlay();
-                fileInput.value = '';
-            }
-        });
-
-        flagSearch.addEventListener('input', (e) => {
-            renderFlags(e.target.value);
-        });
-
-        resetBtn.addEventListener('click', resetNumber);
-        uploadBtn.addEventListener('click', triggerUpload);
-        overlayClose.addEventListener('click', closeFlagOverlay);
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeFlagOverlay();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeFlagOverlay();
-        });
-
-        // ===== TOP 10 LIST with inline editing =====
-        (function initList() {
-            const itemsData = [
-                { rank: 1, title: 'LUMINA X1', subtitle: 'flagship · 4.8' },
-                { rank: 2, title: 'AERO 3S', subtitle: 'ultralight · 4.7' },
-                { rank: 3, title: 'EDGE PRO', subtitle: 'workstation · 4.6' },
-                { rank: 4, title: 'NOVA SLIM', subtitle: 'compact · 4.5' },
-                { rank: 5, title: 'VENTUS G', subtitle: 'gaming · 4.4' },
-                { rank: 6, title: 'SPECTRUM 7', subtitle: 'creator · 4.3' },
-                { rank: 7, title: 'IONIC 5G', subtitle: 'connect · 4.2' },
-                { rank: 8, title: 'FORGE X', subtitle: 'rugged · 4.1' },
-                { rank: 9, title: '92932', subtitle: 'hybrid · 4.0' },
-                { rank: 10, title: 'VIBE CORE', subtitle: 'essential · 3.9' }
-            ];
-
-            const listContainer = document.getElementById('topList');
-            if (!listContainer) return;
-
-            listContainer.innerHTML = '';
-
-            itemsData.forEach((item, index) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'list-item';
-
-                const rankWrapper = document.createElement('div');
-                rankWrapper.className = 'rank-wrapper';
-
-                const rankSpan = document.createElement('span');
-                rankSpan.className = 'rank';
-                rankSpan.textContent = item.rank;
-                rankSpan.dataset.rank = item.rank;
-                rankSpan.dataset.hasFlag = 'false';
-
-                rankWrapper.appendChild(rankSpan);
-
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'item-content';
-
-                const titleSpan = document.createElement('div');
-                titleSpan.className = 'item-title';
-                titleSpan.textContent = item.title;
-                titleSpan.contentEditable = true;
-                titleSpan.spellcheck = false;
-
-                const subSpan = document.createElement('div');
-                subSpan.className = 'item-sub';
-                subSpan.textContent = item.subtitle;
-                subSpan.contentEditable = true;
-                subSpan.spellcheck = false;
-
-                [titleSpan, subSpan].forEach(el => {
-                    el.addEventListener('blur', () => {
-                        el.textContent = el.textContent.trim() || el.dataset.fallback || el.textContent;
-                    });
-                    el.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            el.blur();
-                        }
-                    });
-                    el.dataset.fallback = el.textContent;
-                });
-
-                contentDiv.appendChild(titleSpan);
-                contentDiv.appendChild(subSpan);
-
-                const trend = document.createElement('span');
-                trend.className = 'trend-icon';
-                trend.textContent = '↗';
-
-                itemDiv.appendChild(rankWrapper);
-                itemDiv.appendChild(contentDiv);
-                itemDiv.appendChild(trend);
-
-                itemDiv.addEventListener('click', (e) => {
-                    if (e.target.closest('.rank')) return;
-                    if (e.target.closest('.item-title') || e.target.closest('.item-sub')) return;
-                    e.stopPropagation();
-                    openFlagOverlay(itemDiv, null, 'item');
-                });
-
-                rankSpan.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openFlagOverlay(null, rankSpan, 'rank');
-                });
-
-                listContainer.appendChild(itemDiv);
-
-                itemDiv.style.opacity = '0';
-                itemDiv.style.transform = 'translateY(-60px)';
+            // --- Blur / lose focus → disable editing ---
+            wordDisplay.addEventListener('blur', function() {
+                if (this.textContent.trim() === '') {
+                    this.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
+                }
+                disableEditing();
             });
+
+            // --- Press Escape or Enter to stop editing ---
+            wordDisplay.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' || e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+
+            // =============================================
+            // ----- CLICK VISUALIZER → SHOW OVERLAY -----
+            // =============================================
+            visualizer.addEventListener('click', function(e) {
+                e.stopPropagation();
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // ----- CLOSE OVERLAY by clicking outside the button -----
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // ----- Press Escape to close -----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // ----- SUBSCRIBE BUTTON action -----
+            subscribeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                alert('Thank you for subscribing!');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+
+            // --- Clean up on page unload ---
+            window.addEventListener('beforeunload', () => {
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close().catch(() => {});
+                }
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
+                }
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                }
+                if (touchTimeout) {
+                    clearTimeout(touchTimeout);
+                    touchTimeout = null;
+                }
+            });
+
+            console.log('🎙️ Microphone will auto-start. The browser will remember permission after first approval.');
         })();
     </script>
 </body>
