@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Top 10 · fixed layout</title>
+    <title>Top 10 · editable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Product+Sans&display=swap" rel="stylesheet" />
     <style>
         * {
             margin: 0;
@@ -17,7 +18,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Product Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             padding: 12px;
             overflow: hidden;
             margin: 0;
@@ -49,6 +50,74 @@
             min-height: 0;
         }
 
+        /* ===== INTRO OVERLAY ===== */
+        .intro-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            border-radius: inherit;
+            pointer-events: none;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            opacity: 1;
+            transform: scale(1);
+            padding: 20px;
+        }
+
+        .intro-overlay.hide {
+            opacity: 0;
+            transform: scale(1.02);
+            pointer-events: none;
+        }
+
+        .intro-box {
+            text-align: center;
+            max-width: 320px;
+            padding: 22px 20px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            position: relative;
+        }
+
+        .intro-box .paper-clip {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(20px, 3.5vw, 30px);
+            filter: drop-shadow(0 6px 18px rgba(255, 215, 0, 0.3));
+            line-height: 1;
+            pointer-events: none;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+
+        .intro-box .intro-title {
+            font-size: clamp(20px, 4.2vw, 32px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: #fff;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 30px rgba(180, 130, 70, 0.2);
+            line-height: 1.3;
+text-transform: lowercase;
+            text-align: left;
+        }
+
+        /* ---- header ---- */
         .list-header {
             display: flex;
             justify-content: space-between;
@@ -69,24 +138,13 @@
             align-items: center;
             gap: 4px;
             text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
-        .list-header h1 .editable-title {
-            cursor: text;
-            outline: none;
-            border-radius: 4px;
+        .list-header h1 .title-text {
+            cursor: default;
             padding: 0 4px;
-            transition: background 0.15s ease;
             background: transparent;
-        }
-
-        .list-header h1 .editable-title:hover {
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .list-header h1 .editable-title:focus {
-            background: rgba(255, 255, 255, 0.06);
-            outline: none;
         }
 
         .list-header h1 span {
@@ -105,20 +163,11 @@
             border: 1px solid rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            cursor: text;
-            outline: none;
-            transition: background 0.15s ease;
+            cursor: default;
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
-        .badge-date:hover {
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .badge-date:focus {
-            background: rgba(255, 255, 255, 0.08);
-            outline: none;
-        }
-
+        /* ---- top list ---- */
         .top-list {
             flex: 1;
             display: flex;
@@ -150,6 +199,42 @@
             min-height: 0;
             position: relative;
             overflow: hidden;
+            font-family: 'Product Sans', 'Inter', sans-serif;
+            cursor: default;
+        }
+
+        .list-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* Flag background - zoomed and centered, separate from numbering */
+        .list-item .flag-overlay-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.2);
+            font-size: clamp(150px, 30vw, 280px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 0;
+            letter-spacing: 0;
+            line-height: 1;
+            white-space: nowrap;
+            width: 100%;
+            text-align: center;
+        }
+
+        .list-item .flag-overlay-bg + * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .list-item .rank-wrapper,
+        .list-item .item-content,
+        .list-item .trend-icon {
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes dropIn {
@@ -170,8 +255,31 @@
             }
         }
 
+        @keyframes textFlip {
+            0% { transform: rotateX(0deg); opacity: 0.3; }
+            20% { transform: rotateX(90deg); opacity: 0.6; }
+            40% { transform: rotateX(180deg); opacity: 0.9; }
+            60% { transform: rotateX(270deg); opacity: 1; }
+            80% { transform: rotateX(360deg); opacity: 1; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        @keyframes numberCount {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
         .list-item.animate-drop {
             animation: dropIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .list-item .item-title.flipping {
+            animation: textFlip 0.3s ease-in-out 3;
+        }
+
+        .list-item .rank.counting {
+            animation: numberCount 0.8s ease-out forwards;
         }
 
         .rank-wrapper {
@@ -182,6 +290,8 @@
             flex-shrink: 0;
             width: clamp(34px, 5.5vw, 48px);
             height: clamp(34px, 5.5vw, 48px);
+            z-index: 1;
+            cursor: pointer;
         }
 
         .rank {
@@ -205,6 +315,7 @@
             position: relative;
             overflow: hidden;
             flex-shrink: 0;
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
         .rank:hover {
@@ -233,6 +344,23 @@
             min-width: 0;
             padding: 0;
             overflow: hidden;
+            z-index: 1;
+            pointer-events: auto;
+            cursor: text;
+        }
+
+        .item-title, .item-sub {
+            font-family: 'Product Sans', 'Inter', sans-serif;
+            cursor: text;
+            outline: none;
+            border: none;
+            background: transparent;
+            padding: 0 4px;
+            transition: background 0.1s ease;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .item-title {
@@ -242,24 +370,6 @@
             letter-spacing: -0.2px;
             line-height: 1.2;
             text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-            cursor: text;
-            outline: none;
-            border-radius: 4px;
-            padding: 0 4px;
-            transition: background 0.15s ease;
-            background: transparent;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .item-title:hover {
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .item-title:focus {
-            background: rgba(255, 255, 255, 0.06);
-            outline: none;
         }
 
         .item-sub {
@@ -268,24 +378,16 @@
             font-weight: 450;
             letter-spacing: 0.1px;
             text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
-            cursor: text;
-            outline: none;
-            border-radius: 4px;
-            padding: 0 4px;
-            transition: background 0.15s ease;
-            background: transparent;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        .item-sub:hover {
+        .item-title:focus, .item-sub:focus {
             background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
-        .item-sub:focus {
-            background: rgba(255, 255, 255, 0.06);
-            outline: none;
+        .item-title::selection, .item-sub::selection {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .trend-icon {
@@ -295,6 +397,8 @@
             color: rgba(255, 255, 255, 0.5);
             flex-shrink: 0;
             text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            pointer-events: none;
         }
 
         /* ===== FULL SCREEN FLAG OVERLAY ===== */
@@ -313,6 +417,7 @@
             align-items: center;
             padding: clamp(20px, 4vh, 40px) clamp(12px, 2vw, 24px);
             animation: fadeIn 0.2s ease;
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
         .flag-overlay.show {
@@ -358,6 +463,7 @@
             font-size: clamp(14px, 2.2vw, 18px);
             font-weight: 600;
             white-space: nowrap;
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
         .flag-overlay-header .header-actions {
@@ -395,7 +501,7 @@
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.85);
             font-size: clamp(12px, 1.6vw, 14px);
-            font-family: inherit;
+            font-family: 'Product Sans', 'Inter', sans-serif;
             outline: none;
             transition: all 0.15s ease;
             margin-bottom: clamp(6px, 1vw, 10px);
@@ -449,6 +555,7 @@
             border: 1px solid transparent;
             min-height: clamp(40px, 6vw, 56px);
             justify-content: center;
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
         .flag-grid-item:hover {
@@ -492,6 +599,7 @@
         .flag-overlay-footer .hint {
             font-size: clamp(8px, 1vw, 10px);
             color: rgba(255, 255, 255, 0.15);
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
         .reset-number-btn {
@@ -503,7 +611,7 @@
             font-size: clamp(9px, 1.2vw, 11px);
             cursor: pointer;
             transition: all 0.15s ease;
-            font-family: inherit;
+            font-family: 'Product Sans', 'Inter', sans-serif;
         }
 
         .reset-number-btn:hover {
@@ -524,7 +632,7 @@
             font-size: clamp(9px, 1.2vw, 11px);
             cursor: pointer;
             transition: all 0.15s ease;
-            font-family: inherit;
+            font-family: 'Product Sans', 'Inter', sans-serif;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -543,7 +651,7 @@
             display: none;
         }
 
-        /* iPad and larger screens */
+        /* ===== RESPONSIVE ===== */
         @media (min-width: 768px) {
             .phone-frame {
                 max-width: 420px;
@@ -580,9 +688,16 @@
                 font-size: 13px;
                 padding: 4px 14px;
             }
+            .intro-box .paper-clip {
+                font-size: 32px;
+                top: -14px;
+            }
+            .list-item .flag-overlay-bg {
+                font-size: clamp(180px, 30vw, 320px);
+                transform: translate(-50%, -50%) scale(1.2);
+            }
         }
 
-        /* Small phones */
         @media (max-width: 360px) {
             .phone-frame {
                 padding: 10px 6px 6px;
@@ -625,9 +740,16 @@
             .flag-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
+            .intro-box .paper-clip {
+                font-size: 18px;
+                top: -8px;
+            }
+            .list-item .flag-overlay-bg {
+                font-size: clamp(80px, 20vw, 140px);
+                transform: translate(-50%, -50%) scale(1.2);
+            }
         }
 
-        /* Very short screens */
         @media (max-height: 640px) {
             .phone-frame {
                 padding: 8px 8px 4px;
@@ -672,11 +794,14 @@
                 font-size: 9px;
                 padding-left: 2px;
             }
-        }
-
-        .list-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.06);
+            .intro-box .paper-clip {
+                font-size: 18px;
+                top: -8px;
+            }
+            .list-item .flag-overlay-bg {
+                font-size: clamp(70px, 18vw, 120px);
+                transform: translate(-50%, -50%) scale(1.2);
+            }
         }
 
         .top-list::-webkit-scrollbar {
@@ -717,18 +842,67 @@
     <input type="file" id="imageUploadInput" accept="image/*" />
 
     <div class="phone-frame" id="phoneFrame">
+        <!-- INTRO OVERLAY -->
+        <div class="intro-overlay" id="introOverlay">
+            <div class="intro-box">
+                <div class="paper-clip">🟡</div>
+                <div class="intro-title">
+                    TOP 10<br />MOST FOLLOWED<br />FOOTBALL<br />PLAYERS<br />ON NSTAGRAM
+                </div>
+            </div>
+        </div>
+
         <div class="list-header">
             <h1>
-                <span class="editable-title" contenteditable="true" spellcheck="false">TOP 10</span>
+                <span class="title-text">TOP 10</span>
                 <span>🟡</span>
             </h1>
-            <div class="badge-date" contenteditable="true" spellcheck="false">today</div>
+            <div class="badge-date">most followed players</div>
         </div>
 
         <div class="top-list" id="topList"></div>
     </div>
 
     <script>
+        // ===== TYPE MP3 AUDIO =====
+        let typeAudio = null;
+        let audioUnlocked = false;
+
+        function getTypeAudio() {
+            if (!typeAudio) {
+                typeAudio = new Audio('type.mp3');
+                typeAudio.volume = 0.3;
+            }
+            return typeAudio;
+        }
+
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            const a = getTypeAudio();
+            const playPromise = a.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        a.pause();
+                        a.currentTime = 0;
+                        audioUnlocked = true;
+                    })
+                    .catch(() => {});
+            } else {
+                audioUnlocked = true;
+            }
+        }
+
+        ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(evt => {
+            document.addEventListener(evt, unlockAudio, { once: true, passive: true });
+        });
+
+        function playTypeSound() {
+            const a = getTypeAudio();
+            a.currentTime = 0;
+            a.play().catch(e => console.log('Audio play failed:', e));
+        }
+
         // ===== WHITE PARTICLE SYSTEM =====
         (function initParticles() {
             const canvas = document.getElementById('particleCanvas');
@@ -827,39 +1001,290 @@
             drawParticles();
         })();
 
-        // ===== SINGLE TAP RESET =====
-        (function initSingleTapReset() {
+        // ===== TEXT FLIPPING AND NUMBER COUNTING =====
+        function animateTextFlipping(titleElement) {
+            const originalText = titleElement.textContent;
+            const words = originalText.split(' ');
+            const randomWords = [
+                'LUMINA', 'AERO', 'EDGE', 'NOVA', 'VENTUS', 
+                'SPECTRUM', 'IONIC', 'FORGE', 'ZEN', 'VIBE',
+                'X1', '3S', 'PRO', 'SLIM', 'G', '7', '5G', 'X', 'DUAL', 'CORE'
+            ];
+            
+            let flipCount = 0;
+            const maxFlips = 6;
+            
+            titleElement.classList.add('flipping');
+            
+            const flipInterval = setInterval(() => {
+                if (flipCount >= maxFlips) {
+                    clearInterval(flipInterval);
+                    titleElement.textContent = originalText;
+                    titleElement.classList.remove('flipping');
+                    return;
+                }
+                
+                playTypeSound();
+                
+                const randomText = words.map(() => {
+                    return randomWords[Math.floor(Math.random() * randomWords.length)];
+                }).join(' ');
+                
+                titleElement.textContent = randomText;
+                flipCount++;
+            }, 100);
+        }
+
+        function animateNumberCounting(rankElement, targetNumber, preserveFlag = false) {
+            // If preserveFlag is true and rank has a flag/image, don't overwrite it
+            if (preserveFlag && rankElement.dataset.hasFlag === 'true') {
+                // Just animate a scale effect on the existing content
+                rankElement.classList.add('counting');
+                setTimeout(() => {
+                    rankElement.classList.remove('counting');
+                }, 800);
+                return;
+            }
+
+            rankElement.classList.add('counting');
+            let current = 0;
+            
+            const countInterval = setInterval(() => {
+                current++;
+                if (current <= targetNumber) {
+                    playTypeSound();
+                    rankElement.textContent = current;
+                } else {
+                    clearInterval(countInterval);
+                    rankElement.textContent = targetNumber;
+                    rankElement.classList.remove('counting');
+                }
+            }, 50);
+        }
+
+        // ===== INTRO OVERLAY: hide after 1s, THEN start drops =====
+        (function initIntroAndDrops() {
+            const overlay = document.getElementById('introOverlay');
+            const listContainer = document.getElementById('topList');
+            if (!overlay || !listContainer) return;
+
+            setTimeout(() => {
+                overlay.classList.add('hide');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    startDropAnimation();
+                }, 700);
+            }, 1000);
+
+            function startDropAnimation() {
+                const items = listContainer.querySelectorAll('.list-item');
+                
+                items.forEach((item, index) => {
+                    const delay = (9 - index) * 1000;
+                    setTimeout(() => {
+                        item.classList.add('animate-drop');
+                        
+                        const title = item.querySelector('.item-title');
+                        if (title) {
+                            setTimeout(() => {
+                                animateTextFlipping(title);
+                            }, 200);
+                        }
+                        
+                        const rank = item.querySelector('.rank');
+                        if (rank && rank.dataset.rank) {
+                            const targetNumber = parseInt(rank.dataset.rank);
+                            setTimeout(() => {
+                                // Check if rank has a flag/image
+                                const hasFlag = rank.dataset.hasFlag === 'true';
+                                animateNumberCounting(rank, targetNumber, hasFlag);
+                            }, 400);
+                        }
+                    }, delay + 200);
+                });
+            }
+        })();
+
+        // ===== DOUBLE TAP RESET - restarts from intro, preserving edits =====
+        (function initDoubleTapReset() {
             const phoneFrame = document.getElementById('phoneFrame');
             const listContainer = document.getElementById('topList');
+            const overlay = document.getElementById('introOverlay');
+            let tapCount = 0;
+            let tapTimer = null;
+
+            // store current state before reset
+            function preserveItemState(item) {
+                const state = {};
+                const title = item.querySelector('.item-title');
+                const sub = item.querySelector('.item-sub');
+                const rank = item.querySelector('.rank');
+                const bg = item.querySelector('.flag-overlay-bg');
+                
+                if (title) state.title = title.textContent;
+                if (sub) state.sub = sub.textContent;
+                if (rank) {
+                    state.rankText = rank.textContent;
+                    state.hasFlag = rank.dataset.hasFlag === 'true';
+                    state.flag = rank.dataset.flag;
+                    state.type = rank.dataset.type;
+                    state.imageUrl = rank.dataset.imageUrl;
+                    state.rankNumber = rank.dataset.rank;
+                }
+                if (bg) state.bgFlag = bg.textContent;
+                return state;
+            }
+
+            function restoreItemState(item, state) {
+                const title = item.querySelector('.item-title');
+                const sub = item.querySelector('.item-sub');
+                const rank = item.querySelector('.rank');
+                let bg = item.querySelector('.flag-overlay-bg');
+                
+                if (title && state.title) title.textContent = state.title;
+                if (sub && state.sub) sub.textContent = state.sub;
+                
+                if (rank) {
+                    // Restore the rank number in dataset
+                    if (state.rankNumber) {
+                        rank.dataset.rank = state.rankNumber;
+                    }
+                    
+                    if (state.hasFlag) {
+                        rank.dataset.hasFlag = 'true';
+                        if (state.flag) {
+                            rank.dataset.flag = state.flag;
+                            rank.dataset.type = state.type || 'flag';
+                            // re-render flag emoji or image
+                            if (state.type === 'flag' && state.flag) {
+                                rank.innerHTML = `<span class="flag-emoji">${state.flag}</span>`;
+                            } else if (state.type === 'image' && state.imageUrl) {
+                                rank.innerHTML = `<img class="rank-image" src="${state.imageUrl}" alt="custom" />`;
+                            } else {
+                                // fallback: just show the flag
+                                rank.innerHTML = `<span class="flag-emoji">${state.flag || '🏳️'}</span>`;
+                            }
+                        }
+                    } else {
+                        rank.dataset.hasFlag = 'false';
+                        delete rank.dataset.flag;
+                        delete rank.dataset.type;
+                        delete rank.dataset.imageUrl;
+                        // Restore the number
+                        rank.textContent = state.rankNumber || rank.dataset.rank;
+                    }
+                }
+                
+                if (state.bgFlag) {
+                    if (!bg) {
+                        bg = document.createElement('div');
+                        bg.className = 'flag-overlay-bg';
+                        item.appendChild(bg);
+                    }
+                    bg.textContent = state.bgFlag;
+                } else if (bg) {
+                    bg.remove();
+                }
+            }
 
             phoneFrame.addEventListener('click', (e) => {
-                // Ignore clicks on interactive elements
-                if (e.target.closest('.rank') || e.target.closest('.flag-overlay') || 
-                    e.target.closest('.badge-date') || e.target.closest('.editable-title') ||
-                    e.target.closest('.item-title') || e.target.closest('.item-sub') ||
-                    e.target.closest('button')) {
+                if (e.target.closest('.rank') || e.target.closest('.flag-overlay') ||
+                    e.target.closest('.badge-date') || e.target.closest('.title-text') ||
+                    e.target.closest('button') || e.target.closest('.intro-overlay') ||
+                    e.target.closest('.paper-clip') || e.target.closest('.flag-search') ||
+                    e.target.closest('.flag-grid-item') || e.target.closest('.flag-overlay-close') ||
+                    e.target.closest('.reset-number-btn') || e.target.closest('.upload-image-btn') ||
+                    e.target.closest('.item-title') || e.target.closest('.item-sub')) {
                     return;
                 }
 
-                resetDropAnimation();
+                tapCount++;
+
+                if (tapCount === 1) {
+                    tapTimer = setTimeout(() => {
+                        tapCount = 0;
+                    }, 500);
+                } else if (tapCount === 2) {
+                    clearTimeout(tapTimer);
+                    tapCount = 0;
+                    resetFromIntro();
+                }
             });
 
-            function resetDropAnimation() {
+            function resetFromIntro() {
                 const items = listContainer.querySelectorAll('.list-item');
+                
+                // preserve state before reset
+                const states = [];
                 items.forEach(item => {
+                    states.push(preserveItemState(item));
+                });
+
+                // reset animations
+                items.forEach((item, index) => {
                     item.classList.remove('animate-drop');
                     item.style.animation = 'none';
                     item.style.transform = 'translateY(-60px)';
                     item.style.opacity = '0';
+                    
+                    const title = item.querySelector('.item-title');
+                    if (title) {
+                        title.classList.remove('flipping');
+                    }
+                    
+                    const rank = item.querySelector('.rank');
+                    if (rank) {
+                        rank.classList.remove('counting');
+                    }
                 });
 
-                void listContainer.offsetHeight;
+                void listContainer.offsetWidth;
 
+                items.forEach(item => {
+                    item.style.animation = '';
+                });
+
+                // show intro
+                overlay.style.display = 'flex';
+                overlay.classList.remove('hide');
+
+                setTimeout(() => {
+                    overlay.classList.add('hide');
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        startDropAnimation(states);
+                    }, 700);
+                }, 1000);
+            }
+
+            function startDropAnimation(states) {
+                const items = listContainer.querySelectorAll('.list-item');
+                
                 items.forEach((item, index) => {
                     const delay = (9 - index) * 1000;
                     setTimeout(() => {
-                        item.style.animation = '';
+                        // restore state before animation
+                        if (states && states[index]) {
+                            restoreItemState(item, states[index]);
+                        }
+                        
                         item.classList.add('animate-drop');
+                        
+                        const title = item.querySelector('.item-title');
+                        if (title) {
+                            setTimeout(() => {
+                                animateTextFlipping(title);
+                            }, 200);
+                        }
+                        
+                        const rank = item.querySelector('.rank');
+                        if (rank && rank.dataset.rank) {
+                            const targetNumber = parseInt(rank.dataset.rank);
+                            setTimeout(() => {
+                                const hasFlag = rank.dataset.hasFlag === 'true';
+                                animateNumberCounting(rank, targetNumber, hasFlag);
+                            }, 400);
+                        }
                     }, delay + 200);
                 });
             }
@@ -872,6 +1297,7 @@
             { emoji: '🇫🇷', country: 'France' },
             { emoji: '🇩🇪', country: 'Germany' },
             { emoji: '🇮🇹', country: 'Italy' },
+            { emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: 'England' },
             { emoji: '🇪🇸', country: 'Spain' },
             { emoji: '🇵🇹', country: 'Portugal' },
             { emoji: '🇳🇱', country: 'Netherlands' },
@@ -1078,7 +1504,9 @@
         const resetBtn = document.getElementById('resetNumberBtn');
         const uploadBtn = document.getElementById('uploadImageBtn');
         const fileInput = document.getElementById('imageUploadInput');
+        let activeItemElement = null;
         let activeRankElement = null;
+        let activeMode = null;
 
         function renderFlags(filter = '') {
             flagGrid.innerHTML = '';
@@ -1110,8 +1538,11 @@
                 }
 
                 item.addEventListener('click', () => {
-                    if (activeRankElement) {
-                        setRankToFlag(activeRankElement, flag.emoji);
+                    if (activeMode === 'item' && activeItemElement) {
+                        setFlagOnItem(activeItemElement, flag.emoji);
+                        closeFlagOverlay();
+                    } else if (activeMode === 'rank' && activeRankElement) {
+                        setFlagOnRank(activeRankElement, flag.emoji);
                         closeFlagOverlay();
                     }
                 });
@@ -1122,15 +1553,25 @@
             flagCount.textContent = `${visibleCount} flags`;
         }
 
-        function setRankToFlag(element, emoji) {
-            element.innerHTML = '';
+        function setFlagOnItem(itemElement, emoji) {
+            const existingBg = itemElement.querySelector('.flag-overlay-bg');
+            if (existingBg) existingBg.remove();
+
+            const bg = document.createElement('div');
+            bg.className = 'flag-overlay-bg';
+            bg.textContent = emoji;
+            itemElement.appendChild(bg);
+        }
+
+        function setFlagOnRank(rankElement, emoji) {
+            rankElement.innerHTML = '';
             const flagEmoji = document.createElement('span');
             flagEmoji.className = 'flag-emoji';
             flagEmoji.textContent = emoji;
-            element.appendChild(flagEmoji);
-            element.dataset.hasFlag = 'true';
-            element.dataset.flag = emoji;
-            element.dataset.type = 'flag';
+            rankElement.appendChild(flagEmoji);
+            rankElement.dataset.hasFlag = 'true';
+            rankElement.dataset.flag = emoji;
+            rankElement.dataset.type = 'flag';
         }
 
         function setRankToImage(element, imageUrl) {
@@ -1154,8 +1595,15 @@
             delete element.dataset.imageUrl;
         }
 
-        function openFlagOverlay(rankElement) {
+        function resetFlagOnItem(itemElement) {
+            const bg = itemElement.querySelector('.flag-overlay-bg');
+            if (bg) bg.remove();
+        }
+
+        function openFlagOverlay(itemElement, rankElement, mode) {
+            activeItemElement = itemElement;
             activeRankElement = rankElement;
+            activeMode = mode;
             overlay.classList.add('show');
             flagSearch.value = '';
             renderFlags('');
@@ -1164,13 +1612,18 @@
 
         function closeFlagOverlay() {
             overlay.classList.remove('show');
+            activeItemElement = null;
             activeRankElement = null;
+            activeMode = null;
             flagSearch.value = '';
             renderFlags('');
         }
 
         function resetNumber() {
-            if (activeRankElement) {
+            if (activeMode === 'item' && activeItemElement) {
+                resetFlagOnItem(activeItemElement);
+                closeFlagOverlay();
+            } else if (activeMode === 'rank' && activeRankElement) {
                 resetRankToNumber(activeRankElement);
                 closeFlagOverlay();
             }
@@ -1182,7 +1635,7 @@
 
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file && activeRankElement) {
+            if (file && activeRankElement && activeMode === 'rank') {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     setRankToImage(activeRankElement, event.target.result);
@@ -1190,6 +1643,9 @@
                     fileInput.value = '';
                 };
                 reader.readAsDataURL(file);
+            } else if (file && activeItemElement && activeMode === 'item') {
+                closeFlagOverlay();
+                fileInput.value = '';
             }
         });
 
@@ -1208,7 +1664,7 @@
             if (e.key === 'Escape') closeFlagOverlay();
         });
 
-        // ===== TOP 10 LIST =====
+        // ===== TOP 10 LIST with inline editing =====
         (function initList() {
             const itemsData = [
                 { rank: 1, title: 'LUMINA X1', subtitle: 'flagship · 4.8' },
@@ -1219,7 +1675,7 @@
                 { rank: 6, title: 'SPECTRUM 7', subtitle: 'creator · 4.3' },
                 { rank: 7, title: 'IONIC 5G', subtitle: 'connect · 4.2' },
                 { rank: 8, title: 'FORGE X', subtitle: 'rugged · 4.1' },
-                { rank: 9, title: 'ZEN DUAL', subtitle: 'hybrid · 4.0' },
+                { rank: 9, title: '92932', subtitle: 'hybrid · 4.0' },
                 { rank: 10, title: 'VIBE CORE', subtitle: 'essential · 3.9' }
             ];
 
@@ -1241,11 +1697,6 @@
                 rankSpan.dataset.rank = item.rank;
                 rankSpan.dataset.hasFlag = 'false';
 
-                rankSpan.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openFlagOverlay(rankSpan);
-                });
-
                 rankWrapper.appendChild(rankSpan);
 
                 const contentDiv = document.createElement('div');
@@ -1254,14 +1705,29 @@
                 const titleSpan = document.createElement('div');
                 titleSpan.className = 'item-title';
                 titleSpan.textContent = item.title;
-                titleSpan.contentEditable = 'true';
+                titleSpan.contentEditable = true;
                 titleSpan.spellcheck = false;
 
                 const subSpan = document.createElement('div');
                 subSpan.className = 'item-sub';
                 subSpan.textContent = item.subtitle;
-                subSpan.contentEditable = 'true';
+                subSpan.contentEditable = true;
                 subSpan.spellcheck = false;
+
+                // Commit edit on blur or Enter
+                [titleSpan, subSpan].forEach(el => {
+                    el.addEventListener('blur', () => {
+                        el.textContent = el.textContent.trim() || el.dataset.fallback || el.textContent;
+                    });
+                    el.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            el.blur();
+                        }
+                    });
+                    // Store fallback
+                    el.dataset.fallback = el.textContent;
+                });
 
                 contentDiv.appendChild(titleSpan);
                 contentDiv.appendChild(subSpan);
@@ -1274,12 +1740,23 @@
                 itemDiv.appendChild(contentDiv);
                 itemDiv.appendChild(trend);
 
+                // Click on item body (not rank, not editable text) opens flag overlay
+                itemDiv.addEventListener('click', (e) => {
+                    if (e.target.closest('.rank')) return;
+                    if (e.target.closest('.item-title') || e.target.closest('.item-sub')) return;
+                    e.stopPropagation();
+                    openFlagOverlay(itemDiv, null, 'item');
+                });
+
+                rankSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openFlagOverlay(null, rankSpan, 'rank');
+                });
+
                 listContainer.appendChild(itemDiv);
 
-                const delay = (9 - index) * 1000;
-                setTimeout(() => {
-                    itemDiv.classList.add('animate-drop');
-                }, delay + 200);
+                itemDiv.style.opacity = '0';
+                itemDiv.style.transform = 'translateY(-60px)';
             });
         })();
     </script>
