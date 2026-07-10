@@ -38,9 +38,9 @@
         .phone-frame {
             aspect-ratio: 9 / 16;
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
             background: transparent;
-            padding: 16px 12px 12px;
+            padding: 20px 18px 16px;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -48,6 +48,9 @@
             height: auto;
             z-index: 1;
             min-height: 0;
+            /* scale up on ipad / large screens */
+            transform: scale(1);
+            transition: transform 0.2s ease;
         }
 
         /* ===== INTRO OVERLAY ===== */
@@ -80,10 +83,10 @@
 
         .intro-box {
             text-align: center;
-            max-width: 320px;
-            padding: 22px 20px 18px;
+            max-width: 360px;
+            padding: 28px 24px 22px;
             background: rgba(255, 255, 255, 0.03);
-            border-radius: 24px;
+            border-radius: 28px;
             border: 1px solid rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -92,10 +95,10 @@
 
         .intro-box .paper-clip {
             position: absolute;
-            top: -12px;
+            top: -14px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: clamp(20px, 3.5vw, 30px);
+            font-size: clamp(26px, 4vw, 36px);
             filter: drop-shadow(0 6px 18px rgba(255, 215, 0, 0.3));
             line-height: 1;
             pointer-events: none;
@@ -104,7 +107,7 @@
         }
 
         .intro-box .intro-title {
-            font-size: clamp(20px, 4.2vw, 32px);
+            font-size: clamp(28px, 5vw, 40px);
             font-weight: 700;
             letter-spacing: -0.02em;
             background: #fff;
@@ -113,7 +116,7 @@
             background-clip: text;
             text-shadow: 0 2px 30px rgba(180, 130, 70, 0.2);
             line-height: 1.3;
-text-transform: lowercase;
+            text-transform: lowercase;
             text-align: left;
         }
 
@@ -122,21 +125,21 @@ text-transform: lowercase;
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            padding-bottom: 6px;
-            margin-bottom: 4px;
+            padding-bottom: 8px;
+            margin-bottom: 6px;
             flex-shrink: 0;
             border-bottom: none;
-            min-height: 32px;
+            min-height: 38px;
         }
 
         .list-header h1 {
             font-weight: 600;
-            font-size: clamp(16px, 2.8vw, 22px);
+            font-size: clamp(20px, 3.2vw, 28px);
             letter-spacing: -0.3px;
             color: #ffffff;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
             font-family: 'Product Sans', 'Inter', sans-serif;
         }
@@ -148,16 +151,16 @@ text-transform: lowercase;
         }
 
         .list-header h1 span {
-            font-size: clamp(12px, 2vw, 18px);
+            font-size: clamp(16px, 2.4vw, 22px);
             letter-spacing: 0.2px;
         }
 
         .badge-date {
-            font-size: clamp(9px, 1.5vw, 13px);
+            font-size: clamp(11px, 1.6vw, 15px);
             font-weight: 450;
             color: rgba(255, 255, 255, 0.4);
             background: rgba(255, 255, 255, 0.04);
-            padding: 2px 10px;
+            padding: 4px 14px;
             border-radius: 30px;
             letter-spacing: 0.2px;
             border: 1px solid rgba(255, 255, 255, 0.03);
@@ -172,7 +175,7 @@ text-transform: lowercase;
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             padding: 0;
             overflow: hidden;
             justify-content: space-evenly;
@@ -184,11 +187,11 @@ text-transform: lowercase;
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            border-radius: clamp(10px, 1.5vw, 16px);
-            padding: clamp(4px, 0.6vh, 7px) clamp(8px, 1.5vw, 14px) clamp(4px, 0.6vh, 7px) clamp(10px, 1.8vw, 16px);
+            border-radius: clamp(14px, 2vw, 20px);
+            padding: clamp(6px, 0.8vh, 10px) clamp(12px, 2vw, 18px) clamp(6px, 0.8vh, 10px) clamp(14px, 2.2vw, 20px);
             display: flex;
             align-items: center;
-            gap: clamp(8px, 1.5vw, 14px);
+            gap: clamp(12px, 2vw, 18px);
             box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.04);
             transition: all 0.15s ease;
@@ -214,7 +217,7 @@ text-transform: lowercase;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(1.2);
-            font-size: clamp(150px, 30vw, 280px);
+            font-size: clamp(180px, 30vw, 300px);
             opacity: 0.12;
             pointer-events: none;
             z-index: 0;
@@ -288,8 +291,8 @@ text-transform: lowercase;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            width: clamp(34px, 5.5vw, 48px);
-            height: clamp(34px, 5.5vw, 48px);
+            width: clamp(44px, 6vw, 56px);
+            height: clamp(44px, 6vw, 56px);
             z-index: 1;
             cursor: pointer;
         }
@@ -303,7 +306,7 @@ text-transform: lowercase;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: clamp(16px, 2.8vw, 24px);
+            font-size: clamp(20px, 3vw, 28px);
             color: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(4px);
@@ -325,7 +328,7 @@ text-transform: lowercase;
         }
 
         .rank .flag-emoji {
-            font-size: clamp(18px, 3vw, 28px);
+            font-size: clamp(22px, 3.4vw, 32px);
             line-height: 1;
         }
 
@@ -340,7 +343,7 @@ text-transform: lowercase;
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 1px;
+            gap: 2px;
             min-width: 0;
             padding: 0;
             overflow: hidden;
@@ -365,7 +368,7 @@ text-transform: lowercase;
 
         .item-title {
             font-weight: 600;
-            font-size: clamp(12px, 2vw, 17px);
+            font-size: clamp(16px, 2.4vw, 20px);
             color: rgba(255, 255, 255, 0.92);
             letter-spacing: -0.2px;
             line-height: 1.2;
@@ -373,7 +376,7 @@ text-transform: lowercase;
         }
 
         .item-sub {
-            font-size: clamp(9px, 1.4vw, 13px);
+            font-size: clamp(12px, 1.6vw, 15px);
             color: rgba(255, 255, 255, 0.4);
             font-weight: 450;
             letter-spacing: 0.1px;
@@ -391,7 +394,7 @@ text-transform: lowercase;
         }
 
         .trend-icon {
-            font-size: clamp(11px, 1.6vw, 15px);
+            font-size: clamp(14px, 1.8vw, 18px);
             opacity: 0.2;
             padding-left: 4px;
             color: rgba(255, 255, 255, 0.5);
@@ -437,11 +440,11 @@ text-transform: lowercase;
 
         .flag-overlay-content {
             background: rgba(16, 16, 24, 0.95);
-            border-radius: clamp(16px, 2.5vw, 24px);
+            border-radius: clamp(20px, 3vw, 28px);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: clamp(14px, 2vw, 20px) clamp(12px, 1.8vw, 16px) clamp(12px, 1.8vw, 16px);
+            padding: clamp(18px, 2.5vw, 24px) clamp(16px, 2vw, 22px) clamp(14px, 1.8vw, 18px);
             width: 100%;
-            max-width: clamp(320px, 50vw, 420px);
+            max-width: clamp(380px, 55vw, 460px);
             max-height: 85vh;
             display: flex;
             flex-direction: column;
@@ -451,16 +454,16 @@ text-transform: lowercase;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: clamp(8px, 1.2vw, 12px);
+            padding-bottom: clamp(10px, 1.4vw, 14px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            margin-bottom: clamp(6px, 1vw, 10px);
+            margin-bottom: clamp(8px, 1.2vw, 12px);
             flex-shrink: 0;
-            gap: clamp(6px, 1vw, 10px);
+            gap: clamp(8px, 1vw, 12px);
         }
 
         .flag-overlay-header h2 {
             color: rgba(255, 255, 255, 0.9);
-            font-size: clamp(14px, 2.2vw, 18px);
+            font-size: clamp(16px, 2.4vw, 20px);
             font-weight: 600;
             white-space: nowrap;
             font-family: 'Product Sans', 'Inter', sans-serif;
@@ -468,7 +471,7 @@ text-transform: lowercase;
 
         .flag-overlay-header .header-actions {
             display: flex;
-            gap: clamp(4px, 0.6vw, 8px);
+            gap: clamp(6px, 0.8vw, 10px);
             align-items: center;
         }
 
@@ -476,10 +479,10 @@ text-transform: lowercase;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.06);
             color: rgba(255, 255, 255, 0.5);
-            width: clamp(28px, 4vw, 34px);
-            height: clamp(28px, 4vw, 34px);
+            width: clamp(32px, 4.5vw, 38px);
+            height: clamp(32px, 4.5vw, 38px);
             border-radius: 50%;
-            font-size: clamp(14px, 2vw, 18px);
+            font-size: clamp(16px, 2.2vw, 20px);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -495,16 +498,16 @@ text-transform: lowercase;
 
         .flag-search {
             width: 100%;
-            padding: clamp(6px, 1vw, 10px) clamp(10px, 1.5vw, 14px);
-            border-radius: clamp(10px, 1.5vw, 12px);
+            padding: clamp(8px, 1.2vw, 12px) clamp(12px, 1.8vw, 16px);
+            border-radius: clamp(12px, 1.8vw, 14px);
             border: 1px solid rgba(255, 255, 255, 0.06);
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.85);
-            font-size: clamp(12px, 1.6vw, 14px);
+            font-size: clamp(14px, 1.8vw, 16px);
             font-family: 'Product Sans', 'Inter', sans-serif;
             outline: none;
             transition: all 0.15s ease;
-            margin-bottom: clamp(6px, 1vw, 10px);
+            margin-bottom: clamp(8px, 1.2vw, 12px);
             flex-shrink: 0;
         }
 
@@ -539,21 +542,21 @@ text-transform: lowercase;
         .flag-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: clamp(3px, 0.5vw, 6px);
+            gap: clamp(4px, 0.6vw, 8px);
         }
 
         .flag-grid-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1px;
-            padding: clamp(4px, 0.8vw, 8px) 2px;
-            border-radius: clamp(8px, 1.2vw, 12px);
+            gap: 2px;
+            padding: clamp(6px, 1vw, 10px) 2px;
+            border-radius: clamp(10px, 1.4vw, 14px);
             cursor: pointer;
             transition: all 0.12s ease;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid transparent;
-            min-height: clamp(40px, 6vw, 56px);
+            min-height: clamp(48px, 7vw, 64px);
             justify-content: center;
             font-family: 'Product Sans', 'Inter', sans-serif;
         }
@@ -565,12 +568,12 @@ text-transform: lowercase;
         }
 
         .flag-grid-item .flag-emoji-lg {
-            font-size: clamp(22px, 4vw, 30px);
+            font-size: clamp(28px, 4.8vw, 36px);
             line-height: 1.2;
         }
 
         .flag-grid-item .flag-country-sm {
-            font-size: clamp(6px, 1vw, 9px);
+            font-size: clamp(8px, 1.2vw, 11px);
             color: rgba(255, 255, 255, 0.3);
             text-align: center;
             line-height: 1.2;
@@ -585,9 +588,9 @@ text-transform: lowercase;
         }
 
         .flag-overlay-footer {
-            padding-top: clamp(8px, 1.2vw, 12px);
+            padding-top: clamp(10px, 1.4vw, 14px);
             border-top: 1px solid rgba(255, 255, 255, 0.04);
-            margin-top: clamp(6px, 1vw, 10px);
+            margin-top: clamp(8px, 1.2vw, 12px);
             flex-shrink: 0;
             display: flex;
             justify-content: space-between;
@@ -597,7 +600,7 @@ text-transform: lowercase;
         }
 
         .flag-overlay-footer .hint {
-            font-size: clamp(8px, 1vw, 10px);
+            font-size: clamp(10px, 1.2vw, 12px);
             color: rgba(255, 255, 255, 0.15);
             font-family: 'Product Sans', 'Inter', sans-serif;
         }
@@ -606,9 +609,9 @@ text-transform: lowercase;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.06);
             color: rgba(255, 255, 255, 0.4);
-            padding: clamp(3px, 0.5vw, 5px) clamp(10px, 1.5vw, 14px);
+            padding: clamp(4px, 0.6vw, 6px) clamp(12px, 1.8vw, 16px);
             border-radius: 30px;
-            font-size: clamp(9px, 1.2vw, 11px);
+            font-size: clamp(11px, 1.4vw, 13px);
             cursor: pointer;
             transition: all 0.15s ease;
             font-family: 'Product Sans', 'Inter', sans-serif;
@@ -627,9 +630,9 @@ text-transform: lowercase;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.06);
             color: rgba(255, 255, 255, 0.4);
-            padding: clamp(3px, 0.5vw, 5px) clamp(8px, 1.2vw, 12px);
+            padding: clamp(4px, 0.6vw, 6px) clamp(10px, 1.4vw, 14px);
             border-radius: 30px;
-            font-size: clamp(9px, 1.2vw, 11px);
+            font-size: clamp(11px, 1.4vw, 13px);
             cursor: pointer;
             transition: all 0.15s ease;
             font-family: 'Product Sans', 'Inter', sans-serif;
@@ -652,154 +655,218 @@ text-transform: lowercase;
         }
 
         /* ===== RESPONSIVE ===== */
-        @media (min-width: 768px) {
+        /* iPad & large tablets: scale up the phone frame */
+        @media (min-width: 768px) and (max-width: 1024px) {
             .phone-frame {
-                max-width: 420px;
-                padding: 20px 18px 16px;
+                max-width: 600px;
+                transform: scale(1.1);
+                padding: 24px 22px 20px;
             }
             .rank-wrapper {
-                width: 50px;
-                height: 50px;
+                width: 60px;
+                height: 60px;
             }
             .rank {
-                font-size: 26px;
+                font-size: 28px;
             }
             .rank .flag-emoji {
-                font-size: 30px;
+                font-size: 34px;
             }
             .item-title {
-                font-size: 19px;
+                font-size: 22px;
             }
             .item-sub {
-                font-size: 14px;
+                font-size: 16px;
             }
             .list-item {
-                padding: 6px 16px 6px 18px;
-                gap: 16px;
-                border-radius: 18px;
+                padding: 8px 20px 8px 22px;
+                gap: 18px;
+                border-radius: 20px;
             }
             .top-list {
-                gap: 5px;
+                gap: 8px;
             }
             .list-header h1 {
-                font-size: 24px;
+                font-size: 28px;
             }
             .badge-date {
-                font-size: 13px;
-                padding: 4px 14px;
+                font-size: 15px;
+                padding: 4px 16px;
             }
             .intro-box .paper-clip {
-                font-size: 32px;
-                top: -14px;
+                font-size: 36px;
+                top: -16px;
+            }
+            .intro-box .intro-title {
+                font-size: 36px;
             }
             .list-item .flag-overlay-bg {
-                font-size: clamp(180px, 30vw, 320px);
+                font-size: clamp(220px, 35vw, 360px);
                 transform: translate(-50%, -50%) scale(1.2);
             }
         }
 
-        @media (max-width: 360px) {
+        @media (min-width: 1025px) {
             .phone-frame {
-                padding: 10px 6px 6px;
+                max-width: 650px;
+                transform: scale(1.15);
+                padding: 28px 26px 22px;
             }
             .rank-wrapper {
-                width: 28px;
-                height: 28px;
+                width: 68px;
+                height: 68px;
             }
             .rank {
-                font-size: 13px;
+                font-size: 32px;
             }
             .rank .flag-emoji {
-                font-size: 14px;
+                font-size: 38px;
             }
             .item-title {
-                font-size: 10px;
+                font-size: 24px;
             }
             .item-sub {
-                font-size: 8px;
+                font-size: 18px;
             }
             .list-item {
-                padding: 3px 5px 3px 6px;
-                gap: 5px;
-                border-radius: 8px;
+                padding: 10px 24px 10px 26px;
+                gap: 22px;
+                border-radius: 22px;
             }
             .top-list {
-                gap: 2px;
+                gap: 10px;
             }
             .list-header h1 {
-                font-size: 14px;
+                font-size: 32px;
             }
             .badge-date {
-                font-size: 8px;
-                padding: 1px 6px;
+                font-size: 17px;
+                padding: 6px 18px;
+            }
+            .intro-box .paper-clip {
+                font-size: 40px;
+                top: -18px;
+            }
+            .intro-box .intro-title {
+                font-size: 42px;
+            }
+            .list-item .flag-overlay-bg {
+                font-size: clamp(260px, 38vw, 400px);
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .phone-frame {
+                padding: 12px 8px 8px;
+                max-width: 100%;
+                transform: scale(1);
+            }
+            .rank-wrapper {
+                width: 34px;
+                height: 34px;
+            }
+            .rank {
+                font-size: 16px;
+            }
+            .rank .flag-emoji {
+                font-size: 18px;
+            }
+            .item-title {
+                font-size: 13px;
+            }
+            .item-sub {
+                font-size: 10px;
+            }
+            .list-item {
+                padding: 4px 8px 4px 10px;
+                gap: 8px;
+                border-radius: 10px;
+            }
+            .top-list {
+                gap: 3px;
+            }
+            .list-header h1 {
+                font-size: 16px;
+            }
+            .badge-date {
+                font-size: 9px;
+                padding: 2px 8px;
             }
             .trend-icon {
-                font-size: 9px;
+                font-size: 11px;
                 padding-left: 2px;
             }
             .flag-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
             .intro-box .paper-clip {
-                font-size: 18px;
-                top: -8px;
+                font-size: 20px;
+                top: -10px;
+            }
+            .intro-box .intro-title {
+                font-size: 22px;
             }
             .list-item .flag-overlay-bg {
-                font-size: clamp(80px, 20vw, 140px);
+                font-size: clamp(100px, 22vw, 160px);
                 transform: translate(-50%, -50%) scale(1.2);
             }
         }
 
-        @media (max-height: 640px) {
+        @media (max-height: 700px) {
             .phone-frame {
-                padding: 8px 8px 4px;
+                padding: 10px 10px 6px;
+                transform: scale(1);
             }
             .list-header {
-                padding-bottom: 3px;
-                margin-bottom: 2px;
-                min-height: 24px;
+                padding-bottom: 4px;
+                margin-bottom: 3px;
+                min-height: 28px;
             }
             .list-header h1 {
-                font-size: 14px;
+                font-size: 16px;
             }
             .rank-wrapper {
-                width: 26px;
-                height: 26px;
+                width: 32px;
+                height: 32px;
             }
             .rank {
-                font-size: 12px;
+                font-size: 14px;
             }
             .rank .flag-emoji {
-                font-size: 13px;
+                font-size: 16px;
             }
             .item-title {
-                font-size: 10px;
+                font-size: 12px;
             }
             .item-sub {
-                font-size: 8px;
+                font-size: 9px;
             }
             .list-item {
-                padding: 2px 5px 2px 6px;
-                gap: 5px;
+                padding: 3px 6px 3px 8px;
+                gap: 6px;
                 border-radius: 8px;
             }
             .top-list {
-                gap: 2px;
+                gap: 3px;
             }
             .badge-date {
                 font-size: 8px;
                 padding: 1px 6px;
             }
             .trend-icon {
-                font-size: 9px;
+                font-size: 10px;
                 padding-left: 2px;
             }
             .intro-box .paper-clip {
                 font-size: 18px;
                 top: -8px;
             }
+            .intro-box .intro-title {
+                font-size: 20px;
+            }
             .list-item .flag-overlay-bg {
-                font-size: clamp(70px, 18vw, 120px);
+                font-size: clamp(80px, 20vw, 140px);
                 transform: translate(-50%, -50%) scale(1.2);
             }
         }
@@ -1036,9 +1103,7 @@ text-transform: lowercase;
         }
 
         function animateNumberCounting(rankElement, targetNumber, preserveFlag = false) {
-            // If preserveFlag is true and rank has a flag/image, don't overwrite it
             if (preserveFlag && rankElement.dataset.hasFlag === 'true') {
-                // Just animate a scale effect on the existing content
                 rankElement.classList.add('counting');
                 setTimeout(() => {
                     rankElement.classList.remove('counting');
@@ -1095,7 +1160,6 @@ text-transform: lowercase;
                         if (rank && rank.dataset.rank) {
                             const targetNumber = parseInt(rank.dataset.rank);
                             setTimeout(() => {
-                                // Check if rank has a flag/image
                                 const hasFlag = rank.dataset.hasFlag === 'true';
                                 animateNumberCounting(rank, targetNumber, hasFlag);
                             }, 400);
@@ -1113,7 +1177,6 @@ text-transform: lowercase;
             let tapCount = 0;
             let tapTimer = null;
 
-            // store current state before reset
             function preserveItemState(item) {
                 const state = {};
                 const title = item.querySelector('.item-title');
@@ -1145,7 +1208,6 @@ text-transform: lowercase;
                 if (sub && state.sub) sub.textContent = state.sub;
                 
                 if (rank) {
-                    // Restore the rank number in dataset
                     if (state.rankNumber) {
                         rank.dataset.rank = state.rankNumber;
                     }
@@ -1155,13 +1217,11 @@ text-transform: lowercase;
                         if (state.flag) {
                             rank.dataset.flag = state.flag;
                             rank.dataset.type = state.type || 'flag';
-                            // re-render flag emoji or image
                             if (state.type === 'flag' && state.flag) {
                                 rank.innerHTML = `<span class="flag-emoji">${state.flag}</span>`;
                             } else if (state.type === 'image' && state.imageUrl) {
                                 rank.innerHTML = `<img class="rank-image" src="${state.imageUrl}" alt="custom" />`;
                             } else {
-                                // fallback: just show the flag
                                 rank.innerHTML = `<span class="flag-emoji">${state.flag || '🏳️'}</span>`;
                             }
                         }
@@ -1170,7 +1230,6 @@ text-transform: lowercase;
                         delete rank.dataset.flag;
                         delete rank.dataset.type;
                         delete rank.dataset.imageUrl;
-                        // Restore the number
                         rank.textContent = state.rankNumber || rank.dataset.rank;
                     }
                 }
@@ -1214,13 +1273,11 @@ text-transform: lowercase;
             function resetFromIntro() {
                 const items = listContainer.querySelectorAll('.list-item');
                 
-                // preserve state before reset
                 const states = [];
                 items.forEach(item => {
                     states.push(preserveItemState(item));
                 });
 
-                // reset animations
                 items.forEach((item, index) => {
                     item.classList.remove('animate-drop');
                     item.style.animation = 'none';
@@ -1244,7 +1301,6 @@ text-transform: lowercase;
                     item.style.animation = '';
                 });
 
-                // show intro
                 overlay.style.display = 'flex';
                 overlay.classList.remove('hide');
 
@@ -1263,7 +1319,6 @@ text-transform: lowercase;
                 items.forEach((item, index) => {
                     const delay = (9 - index) * 1000;
                     setTimeout(() => {
-                        // restore state before animation
                         if (states && states[index]) {
                             restoreItemState(item, states[index]);
                         }
@@ -1714,7 +1769,6 @@ text-transform: lowercase;
                 subSpan.contentEditable = true;
                 subSpan.spellcheck = false;
 
-                // Commit edit on blur or Enter
                 [titleSpan, subSpan].forEach(el => {
                     el.addEventListener('blur', () => {
                         el.textContent = el.textContent.trim() || el.dataset.fallback || el.textContent;
@@ -1725,7 +1779,6 @@ text-transform: lowercase;
                             el.blur();
                         }
                     });
-                    // Store fallback
                     el.dataset.fallback = el.textContent;
                 });
 
@@ -1740,7 +1793,6 @@ text-transform: lowercase;
                 itemDiv.appendChild(contentDiv);
                 itemDiv.appendChild(trend);
 
-                // Click on item body (not rank, not editable text) opens flag overlay
                 itemDiv.addEventListener('click', (e) => {
                     if (e.target.closest('.rank')) return;
                     if (e.target.closest('.item-title') || e.target.closest('.item-sub')) return;
