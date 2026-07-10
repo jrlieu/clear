@@ -119,7 +119,7 @@
             animation: fadeInWord 0.8s ease forwards 1.4s;
         }
 
-        /* each bar: fully rounded (pill shape) - SOLID WHITE */
+        /* each bar: fully rounded (pill shape) - PURE WHITE with full opacity */
         .bar {
             width: 10px;
             height: 18px;
@@ -132,6 +132,7 @@
             will-change: height;
             flex-shrink: 0;
             pointer-events: none;
+            opacity: 1 !important;
         }
 
         /* ----- INTRO "Pronounce" - SOLID WHITE ----- */
@@ -355,7 +356,7 @@
             const BAR_MAX = 58;
             const SMOOTHING = 0.78;
 
-            // ----- update bars (centered) -----
+            // ----- update bars (centered) - FULL WHITE, NO OPACITY VARIATION -----
             function updateBars() {
                 if (!analyser) return;
 
@@ -382,8 +383,8 @@
 
                     if (bars[i]) {
                         bars[i].style.height = height + 'px';
-                        const intensity = 0.3 + 0.7 * (height - BAR_MIN) / (BAR_MAX - BAR_MIN);
-                        bars[i].style.opacity = 0.4 + 0.6 * intensity;
+                        // Keep bars pure white, no opacity change
+                        bars[i].style.opacity = '1';
                     }
                 }
             }
@@ -398,14 +399,12 @@
             // ----- start microphone with permission check -----
             async function startMicrophone() {
                 try {
-                    // Check if we already have permission granted in this session
                     const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
                     
                     if (permissionStatus.state === 'granted' && !isMicInitialized) {
                         console.log('Microphone permission already granted. Attempting to start...');
                     }
 
-                    // Try to get stream - if permission was granted before, this won't prompt again
                     const stream = await navigator.mediaDevices.getUserMedia({ 
                         audio: { 
                             echoCancellation: false,
@@ -418,7 +417,6 @@
                     isMicInitialized = true;
                     await setupAudioFromStream(stream);
                     
-                    // Store in sessionStorage that we have permission
                     sessionStorage.setItem('micPermissionGranted', 'true');
                     
                 } catch (err) {
@@ -431,16 +429,14 @@
                     bars.forEach(bar => {
                         if (bar) {
                             bar.style.height = BAR_MIN + 'px';
-                            bar.style.opacity = 0.4;
+                            bar.style.opacity = '1';
                         }
                     });
                     
-                    // If permission was denied, try again on user interaction
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                         console.log('Permission denied. Will retry on user interaction.');
                         sessionStorage.removeItem('micPermissionGranted');
                         
-                        // Try again on any click
                         const retryHandler = async function() {
                             document.removeEventListener('click', retryHandler);
                             document.removeEventListener('touchstart', retryHandler);
@@ -453,7 +449,6 @@
             }
 
             async function setupAudioFromStream(stream) {
-                // Close existing context if any
                 if (audioContext && audioContext.state !== 'closed') {
                     await audioContext.close();
                 }
@@ -478,24 +473,20 @@
                 console.log('Microphone is active!');
             }
 
-            // ----- Resume audio context on user interaction -----
             async function resumeAudioContext() {
                 if (audioContext && audioContext.state === 'suspended') {
                     await audioContext.resume();
                 }
             }
 
-            // ----- Try to start mic without user interaction first -----
             async function tryAutoStart() {
                 try {
-                    // Check if we have permission stored in session
                     const hasStoredPermission = sessionStorage.getItem('micPermissionGranted') === 'true';
                     
                     if (hasStoredPermission) {
                         console.log('Stored permission found, attempting to start mic...');
                         await startMicrophone();
                     } else {
-                        // Check permission status
                         try {
                             const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
                             if (permissionStatus.state === 'granted') {
@@ -507,7 +498,6 @@
                             // permissions API might not be supported
                         }
                         
-                        // If we can't auto-start, wait for user interaction
                         console.log('Waiting for user interaction to start mic...');
                         const startOnInteraction = async function() {
                             document.removeEventListener('click', startOnInteraction);
@@ -538,7 +528,7 @@
             bars.forEach(bar => {
                 if (bar) {
                     bar.style.height = BAR_MIN + 'px';
-                    bar.style.opacity = 0.4;
+                    bar.style.opacity = '1';
                 }
             });
 
@@ -674,7 +664,6 @@
             });
 
             console.log('🎙️ Microphone will try to auto-start. If prompted, grant permission once and it will be remembered for this session.');
-            console.log('ℹ️ Note: Browsers will always ask for permission on new sessions for security reasons.');
         })();
     </script>
 </body>
