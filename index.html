@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Top 10 · responsive</title>
+    <title>Top 10 · fixed layout</title>
     <style>
         * {
             margin: 0;
@@ -39,28 +39,30 @@
             width: 100%;
             max-width: 400px;
             background: transparent;
-            padding: 16px 14px 14px;
+            padding: 16px 12px 12px;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
             height: auto;
             z-index: 1;
+            min-height: 0;
         }
 
         .list-header {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            padding-bottom: 8px;
-            margin-bottom: 6px;
+            padding-bottom: 6px;
+            margin-bottom: 4px;
             flex-shrink: 0;
             border-bottom: none;
+            min-height: 32px;
         }
 
         .list-header h1 {
             font-weight: 600;
-            font-size: clamp(18px, 3.5vw, 26px);
+            font-size: clamp(16px, 2.8vw, 22px);
             letter-spacing: -0.3px;
             color: #ffffff;
             display: flex;
@@ -88,16 +90,16 @@
         }
 
         .list-header h1 span {
-            font-size: clamp(14px, 2.5vw, 20px);
+            font-size: clamp(12px, 2vw, 18px);
             letter-spacing: 0.2px;
         }
 
         .badge-date {
-            font-size: clamp(10px, 1.8vw, 14px);
+            font-size: clamp(9px, 1.5vw, 13px);
             font-weight: 450;
             color: rgba(255, 255, 255, 0.4);
             background: rgba(255, 255, 255, 0.04);
-            padding: 3px 10px;
+            padding: 2px 10px;
             border-radius: 30px;
             letter-spacing: 0.2px;
             border: 1px solid rgba(255, 255, 255, 0.03);
@@ -121,19 +123,20 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: clamp(3px, 0.6vh, 6px);
-            padding-top: 2px;
+            gap: 4px;
+            padding: 0;
             overflow: hidden;
             justify-content: space-evenly;
             min-height: 0;
+            flex: 1 1 auto;
         }
 
         .list-item {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            border-radius: clamp(10px, 2vw, 16px);
-            padding: clamp(4px, 0.8vh, 8px) clamp(8px, 1.5vw, 14px) clamp(4px, 0.8vh, 8px) clamp(10px, 1.8vw, 16px);
+            border-radius: clamp(10px, 1.5vw, 16px);
+            padding: clamp(4px, 0.6vh, 7px) clamp(8px, 1.5vw, 14px) clamp(4px, 0.6vh, 7px) clamp(10px, 1.8vw, 16px);
             display: flex;
             align-items: center;
             gap: clamp(8px, 1.5vw, 14px);
@@ -146,6 +149,7 @@
             flex: 1;
             min-height: 0;
             position: relative;
+            overflow: hidden;
         }
 
         @keyframes dropIn {
@@ -174,21 +178,23 @@
             position: relative;
             display: flex;
             align-items: center;
+            justify-content: center;
             flex-shrink: 0;
+            width: clamp(34px, 5.5vw, 48px);
+            height: clamp(34px, 5.5vw, 48px);
         }
 
         .rank {
-            width: clamp(32px, 6vw, 48px);
-            height: clamp(32px, 6vw, 48px);
+            width: 100%;
+            height: 100%;
             background: rgba(255, 255, 255, 0.04);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: clamp(16px, 3.2vw, 26px);
+            font-size: clamp(16px, 2.8vw, 24px);
             color: rgba(255, 255, 255, 0.9);
-            flex-shrink: 0;
             border: 1px solid rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -198,6 +204,7 @@
             user-select: none;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .rank:hover {
@@ -207,7 +214,7 @@
         }
 
         .rank .flag-emoji {
-            font-size: clamp(18px, 3.5vw, 28px);
+            font-size: clamp(18px, 3vw, 28px);
             line-height: 1;
         }
 
@@ -222,13 +229,15 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: clamp(1px, 0.2vh, 3px);
+            gap: 1px;
             min-width: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         .item-title {
             font-weight: 600;
-            font-size: clamp(13px, 2.2vw, 18px);
+            font-size: clamp(12px, 2vw, 17px);
             color: rgba(255, 255, 255, 0.92);
             letter-spacing: -0.2px;
             line-height: 1.2;
@@ -254,7 +263,7 @@
         }
 
         .item-sub {
-            font-size: clamp(10px, 1.6vw, 14px);
+            font-size: clamp(9px, 1.4vw, 13px);
             color: rgba(255, 255, 255, 0.4);
             font-weight: 450;
             letter-spacing: 0.1px;
@@ -280,7 +289,7 @@
         }
 
         .trend-icon {
-            font-size: clamp(11px, 1.8vw, 16px);
+            font-size: clamp(11px, 1.6vw, 15px);
             opacity: 0.2;
             padding-left: 4px;
             color: rgba(255, 255, 255, 0.5);
@@ -538,75 +547,80 @@
         @media (min-width: 768px) {
             .phone-frame {
                 max-width: 420px;
-                padding: 24px 20px 20px;
+                padding: 20px 18px 16px;
+            }
+            .rank-wrapper {
+                width: 50px;
+                height: 50px;
             }
             .rank {
-                width: 52px;
-                height: 52px;
-                font-size: 28px;
+                font-size: 26px;
             }
             .rank .flag-emoji {
                 font-size: 30px;
             }
             .item-title {
-                font-size: 20px;
+                font-size: 19px;
             }
             .item-sub {
-                font-size: 15px;
+                font-size: 14px;
             }
             .list-item {
-                padding: 8px 16px 8px 18px;
+                padding: 6px 16px 6px 18px;
                 gap: 16px;
                 border-radius: 18px;
             }
             .top-list {
-                gap: 8px;
+                gap: 5px;
             }
             .list-header h1 {
-                font-size: 26px;
+                font-size: 24px;
             }
             .badge-date {
-                font-size: 14px;
-                padding: 5px 14px;
+                font-size: 13px;
+                padding: 4px 14px;
             }
         }
 
         /* Small phones */
         @media (max-width: 360px) {
             .phone-frame {
-                padding: 12px 10px 10px;
+                padding: 10px 6px 6px;
             }
-            .rank {
+            .rank-wrapper {
                 width: 28px;
                 height: 28px;
-                font-size: 14px;
+            }
+            .rank {
+                font-size: 13px;
             }
             .rank .flag-emoji {
-                font-size: 16px;
+                font-size: 14px;
             }
             .item-title {
-                font-size: 12px;
+                font-size: 10px;
             }
             .item-sub {
-                font-size: 9px;
+                font-size: 8px;
             }
             .list-item {
-                padding: 4px 6px 4px 8px;
-                gap: 6px;
-                border-radius: 10px;
+                padding: 3px 5px 3px 6px;
+                gap: 5px;
+                border-radius: 8px;
             }
             .top-list {
-                gap: 3px;
+                gap: 2px;
             }
             .list-header h1 {
-                font-size: 16px;
+                font-size: 14px;
             }
             .badge-date {
-                font-size: 9px;
-                padding: 2px 8px;
+                font-size: 8px;
+                padding: 1px 6px;
             }
             .trend-icon {
-                font-size: 10px;
+                font-size: 9px;
+                padding-left: 2px;
             }
             .flag-grid {
                 grid-template-columns: repeat(3, 1fr);
@@ -616,43 +630,47 @@
         /* Very short screens */
         @media (max-height: 640px) {
             .phone-frame {
-                padding: 10px 10px 8px;
+                padding: 8px 8px 4px;
             }
             .list-header {
-                padding-bottom: 4px;
-                margin-bottom: 4px;
+                padding-bottom: 3px;
+                margin-bottom: 2px;
+                min-height: 24px;
             }
             .list-header h1 {
-                font-size: 16px;
-            }
-            .rank {
-                width: 26px;
-                height: 26px;
-                font-size: 13px;
-            }
-            .rank .flag-emoji {
                 font-size: 14px;
             }
+            .rank-wrapper {
+                width: 26px;
+                height: 26px;
+            }
+            .rank {
+                font-size: 12px;
+            }
+            .rank .flag-emoji {
+                font-size: 13px;
+            }
             .item-title {
-                font-size: 11px;
+                font-size: 10px;
             }
             .item-sub {
-                font-size: 9px;
+                font-size: 8px;
             }
             .list-item {
-                padding: 3px 6px 3px 8px;
-                gap: 6px;
-                border-radius: 10px;
+                padding: 2px 5px 2px 6px;
+                gap: 5px;
+                border-radius: 8px;
             }
             .top-list {
                 gap: 2px;
             }
             .badge-date {
-                font-size: 9px;
-                padding: 2px 8px;
+                font-size: 8px;
+                padding: 1px 6px;
             }
             .trend-icon {
-                font-size: 10px;
+                font-size: 9px;
+                padding-left: 2px;
             }
         }
 
