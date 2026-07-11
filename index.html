@@ -26,7 +26,7 @@
             overflow: hidden;
         }
 
-        /* ----- main container to keep visualizer fixed ----- */
+        /* ----- main container ----- */
         .main-wrapper {
             display: flex;
             flex-direction: column;
@@ -39,7 +39,7 @@
             z-index: 1;
         }
 
-        /* ----- word container with fixed height to prevent shifting ----- */
+        /* ----- word container ----- */
         .word-container {
             min-height: 120px;
             display: flex;
@@ -100,7 +100,7 @@
             background: rgba(255, 255, 255, 0.03);
         }
 
-        /* ----- visualizer: centered vertically, FIXED position ----- */
+        /* ----- visualizer - BLUISH ACCENT THEME ----- */
         .viz-row {
             display: flex;
             justify-content: center;
@@ -119,14 +119,13 @@
             animation: fadeInWord 0.8s ease forwards 1.4s;
         }
 
-        /* each bar: fully rounded (pill shape) - PURE WHITE with full opacity */
         .bar {
             width: 10px;
             height: 18px;
-            background: white;
+            background: #4a9eff;
             border-radius: 9999px;
-            transition: height 0.12s ease-out;
-            box-shadow: none;
+            transition: height 0.08s ease-out;
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
             transform: scaleY(1);
             transform-origin: center;
             will-change: height;
@@ -135,7 +134,57 @@
             opacity: 1 !important;
         }
 
-        /* ----- INTRO "Pronounce" - SOLID WHITE ----- */
+        /* Different shades for each bar - spectrum effect */
+        .bar:nth-child(1) { background: #4a9eff; box-shadow: 0 0 15px rgba(74, 158, 255, 0.3); }
+        .bar:nth-child(2) { background: #5aafff; box-shadow: 0 0 15px rgba(90, 175, 255, 0.35); }
+        .bar:nth-child(3) { background: #6abfff; box-shadow: 0 0 15px rgba(106, 191, 255, 0.4); }
+        .bar:nth-child(4) { background: #7acfff; box-shadow: 0 0 15px rgba(122, 207, 255, 0.45); }
+        .bar:nth-child(5) { background: #8adfff; box-shadow: 0 0 15px rgba(138, 223, 255, 0.4); }
+        .bar:nth-child(6) { background: #9aefff; box-shadow: 0 0 15px rgba(154, 239, 255, 0.35); }
+        .bar:nth-child(7) { background: #aaffff; box-shadow: 0 0 15px rgba(170, 255, 255, 0.3); }
+
+        /* ----- SHARED BUTTON STYLES for subscribe ----- */
+        .btn-gradient {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 700;
+            padding: 1.2rem 3.5rem;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            position: relative;
+            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
+            background-size: 300% 300%;
+            color: white;
+            animation: gradientMove 6s ease-in-out infinite;
+            transition: transform 0.2s ease;
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.2);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-gradient:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(74, 158, 255, 0.4);
+        }
+
+        .btn-gradient:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* ----- INTRO "Pronounce" - SOLID MATCHES DARKEST GRADIENT ----- */
         .intro-overlay {
             position: fixed;
             top: 0;
@@ -163,17 +212,81 @@
 
         .intro-text {
             font-family: 'Roboto', sans-serif;
-            background: white;
-            color: black;
             font-size: clamp(2rem, 6vw, 3.5rem);
             font-weight: 700;
             padding: 1.2rem 3.5rem;
             border: none;
             border-radius: 60px;
-            box-shadow: none;
             letter-spacing: 0.05em;
-            animation: introPulse 1s ease-in-out;
             cursor: default;
+            position: relative;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 40px rgba(74, 158, 255, 0.3);
+            overflow: hidden;
+            animation: introPulse 0.6s ease-in-out;
+            background: #4a9eff;
+            z-index: 1;
+        }
+
+        /* Solid blue background - NOW MATCHES DARKEST GRADIENT COLOR */
+        .intro-text .bg-solid {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: #4a9eff;
+            border-radius: 60px;
+            z-index: -1;
+        }
+
+        /* Gradient fill - MATCHES SUBSCRIBE BUTTON */
+        .intro-text .bg-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
+            background-size: 300% 100%;
+            border-radius: 0;
+            z-index: -1;
+            animation: fillGradient 0.6s ease-in-out forwards;
+        }
+
+        /* Glow effect - MATCHES SUBSCRIBE BUTTON */
+        .intro-text .glow {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
+            background-size: 300% 100%;
+            border-radius: 62px;
+            z-index: -2;
+            filter: blur(20px);
+            opacity: 0.4;
+            animation: glowFill 0.6s ease-in-out forwards;
+        }
+
+        @keyframes fillGradient {
+            0% {
+                width: 0%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+
+        @keyframes glowFill {
+            0% {
+                background-position: -200% 0%;
+            }
+            100% {
+                background-position: 0% 0%;
+            }
         }
 
         @keyframes introPulse {
@@ -194,7 +307,7 @@
             }
         }
 
-        /* ----- OVERLAY - hidden by default ----- */
+        /* ----- OVERLAY ----- */
         .overlay {
             position: fixed;
             top: 0;
@@ -224,31 +337,9 @@
             }
         }
 
-        /* ----- SUBSCRIBE BUTTON - SOLID WHITE ----- */
+        /* ----- SUBSCRIBE BUTTON ----- */
         .subscribe-btn {
-            font-family: 'Roboto', sans-serif;
-            background: white;
-            color: black;
-            font-size: clamp(2rem, 6vw, 3.5rem);
-            font-weight: 700;
-            padding: 1.2rem 3.5rem;
-            border: none;
-            border-radius: 60px;
-            cursor: pointer;
-            box-shadow: none;
-            transition: transform 0.2s ease;
-            letter-spacing: 0.05em;
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            z-index: 1000;
-        }
-
-        .subscribe-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .subscribe-btn:active {
-            transform: scale(0.95);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), gradientMove 6s ease-in-out infinite;
         }
 
         @keyframes popIn {
@@ -278,7 +369,7 @@
                 min-height: 60px;
                 font-size: clamp(2rem, 12vw, 4rem);
             }
-            .subscribe-btn {
+            .btn-gradient {
                 font-size: 1.3rem;
                 padding: 0.9rem 2rem;
             }
@@ -291,9 +382,14 @@
 </head>
 <body>
 
-    <!-- INTRO "Pronounce" - SOLID WHITE -->
+    <!-- INTRO "Pronounce" - SOLID MATCHES DARKEST GRADIENT -->
     <div class="intro-overlay" id="introOverlay">
-        <div class="intro-text">Pronounce</div>
+        <div class="intro-text">
+            PONOUNCE
+            <div class="bg-solid"></div>
+            <div class="bg-gradient"></div>
+            <div class="glow"></div>
+        </div>
     </div>
 
     <div class="main-wrapper">
@@ -304,7 +400,7 @@
             </div>
         </div>
 
-        <!-- 7‑bar visualizer - clickable -->
+        <!-- 7‑bar visualizer - BLUISH ACCENT -->
         <div class="viz-row" id="visualizer">
             <div class="bar" id="bar0"></div>
             <div class="bar" id="bar1"></div>
@@ -316,9 +412,9 @@
         </div>
     </div>
 
-    <!-- OVERLAY with blur backdrop - no X button -->
+    <!-- OVERLAY -->
     <div class="overlay" id="overlay">
-        <button class="subscribe-btn" id="subscribeBtn">SUBSCRIBE</button>
+        <button class="subscribe-btn btn-gradient" id="subscribeBtn">SUBSCRIBE</button>
     </div>
 
     <script>
@@ -339,7 +435,6 @@
             const visualizer = document.getElementById('visualizer');
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
-            const introOverlay = document.getElementById('introOverlay');
 
             // ========== LOCAL STORAGE: load saved word ==========
             const STORAGE_KEY = 'giant_word_text';
@@ -348,215 +443,148 @@
                     const saved = localStorage.getItem(STORAGE_KEY);
                     if (saved && saved.trim().length > 0) {
                         wordDisplay.textContent = saved.trim();
-                    } else {
-                        // fallback default (already set in html)
                     }
-                } catch (e) {
-                    // ignore
-                }
+                } catch (e) {}
             }
             loadSavedWord();
 
-            // ========== save word on edit ==========
             function saveWordToStorage() {
                 try {
                     const text = wordDisplay.textContent.trim();
                     if (text.length > 0) {
                         localStorage.setItem(STORAGE_KEY, text);
                     } else {
-                        // if empty, reset to default and store it
                         const fallback = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
                         wordDisplay.textContent = fallback;
                         localStorage.setItem(STORAGE_KEY, fallback);
                     }
-                } catch (e) {
-                    // ignore
-                }
+                } catch (e) {}
             }
 
-            // ----- audio context & analyser -----
-            let audioContext = null;
-            let analyser = null;
-            let dataArray = null;
-            let source = null;
-            let mediaStream = null;
-            let animationFrame = null;
-            let isRunning = false;
-            let isMicInitialized = false;
-
-            // ----- bar height limits -----
+            // ----- Bar height limits -----
             const BAR_MIN = 8;
             const BAR_MAX = 58;
-            const SMOOTHING = 0.78;
 
-            // ----- update bars (centered) - FULL WHITE, NO OPACITY VARIATION -----
-            function updateBars() {
-                if (!analyser) return;
-
-                analyser.getByteFrequencyData(dataArray);
-
-                const binCount = analyser.frequencyBinCount;
-                const barCount = bars.length;
-                const step = Math.floor(binCount / barCount);
-
-                for (let i = 0; i < barCount; i++) {
-                    let sum = 0;
-                    let count = 0;
-                    const start = i * step;
-                    const end = (i === barCount - 1) ? binCount : start + step;
-                    for (let j = start; j < end; j++) {
-                        sum += dataArray[j] || 0;
-                        count++;
+            // ----- Generate rhythmic audio patterns -----
+            function generateAudioData(time) {
+                const data = [];
+                const numBars = bars.length;
+                
+                // Main beat (like a kick drum)
+                const beat1 = Math.sin(time * 2.0 * Math.PI * 0.8);
+                const beat2 = Math.sin(time * 2.0 * Math.PI * 1.2 + 0.5);
+                const beat3 = Math.sin(time * 2.0 * Math.PI * 1.6 + 1.0);
+                
+                for (let i = 0; i < numBars; i++) {
+                    // Each bar has a different frequency response (like a spectrum analyzer)
+                    const freq = (i + 1) / numBars;
+                    
+                    // Low frequencies (left bars) respond to kick, high frequencies (right bars) respond to hi-hats
+                    let lowResponse = Math.max(0, 1 - freq * 2);
+                    let highResponse = Math.max(0, (freq - 0.3) * 2);
+                    
+                    // Build the waveform for this bar
+                    let value = 0;
+                    
+                    // Bass frequencies (bars 0-2)
+                    if (i < 3) {
+                        value += beat1 * beat1 * 0.7 * lowResponse;
+                        value += Math.sin(time * 0.5 + i) * 0.2 * lowResponse;
                     }
-                    let avg = count > 0 ? sum / count : 0;
-                    const normalized = Math.min(1, avg / 200);
-                    const eased = 1 - Math.pow(1 - normalized, 1.8);
-                    let height = BAR_MIN + (BAR_MAX - BAR_MIN) * eased;
-                    height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
+                    
+                    // Mid frequencies (bars 2-4)
+                    if (i >= 2 && i <= 4) {
+                        const midResponse = 1 - Math.abs(i - 3) / 2;
+                        value += beat2 * beat2 * 0.6 * midResponse;
+                        value += Math.sin(time * 1.0 + i * 1.5) * 0.3 * midResponse;
+                    }
+                    
+                    // High frequencies (bars 4-6)
+                    if (i >= 4) {
+                        value += beat3 * beat3 * 0.5 * highResponse;
+                        value += Math.sin(time * 2.0 + i * 2.0) * 0.4 * highResponse;
+                    }
+                    
+                    // Add a sweeping wave effect
+                    const sweep = Math.sin(time * 0.3 + i * 0.8) * 0.2;
+                    value += sweep;
+                    
+                    // Add some rhythmic variation
+                    const rhythm = Math.sin(time * 2.0 * Math.PI * 1.4 + i * 0.3);
+                    value += rhythm * 0.15;
+                    
+                    // Normalize and clamp
+                    value = Math.max(0, value);
+                    value = Math.min(1, value * 1.2);
+                    
+                    // Apply easing for smoother motion
+                    value = Math.pow(value, 0.7);
+                    
+                    data.push(value);
+                }
+                
+                return data;
+            }
 
+            // ----- Update bars -----
+            function updateBars(time) {
+                const data = generateAudioData(time);
+                
+                for (let i = 0; i < bars.length; i++) {
                     if (bars[i]) {
+                        const normalized = data[i];
+                        let height = BAR_MIN + (BAR_MAX - BAR_MIN) * normalized;
+                        height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
                         bars[i].style.height = height + 'px';
                         bars[i].style.opacity = '1';
                     }
                 }
             }
 
-            // ----- animation loop -----
-            function animate() {
+            // ----- Animation loop -----
+            let animationFrame = null;
+            let isRunning = true;
+            let startTime = null;
+
+            function animate(timestamp) {
                 if (!isRunning) return;
-                updateBars();
+                
+                if (startTime === null) {
+                    startTime = timestamp;
+                }
+                const time = (timestamp - startTime) / 1000;
+                
+                updateBars(time);
                 animationFrame = requestAnimationFrame(animate);
             }
 
-            // ----- start microphone with permission check -----
-            async function startMicrophone() {
-                try {
-                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                    
-                    if (permissionStatus.state === 'granted' && !isMicInitialized) {
-                        console.log('Microphone permission already granted. Attempting to start...');
-                    }
-
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { 
-                            echoCancellation: false,
-                            noiseSuppression: false,
-                            autoGainControl: false
-                        } 
-                    });
-                    
-                    mediaStream = stream;
-                    isMicInitialized = true;
-                    await setupAudioFromStream(stream);
-                    
-                    sessionStorage.setItem('micPermissionGranted', 'true');
-                    
-                } catch (err) {
-                    console.warn('Mic error:', err);
-                    isRunning = false;
-                    if (animationFrame) {
-                        cancelAnimationFrame(animationFrame);
-                        animationFrame = null;
-                    }
-                    bars.forEach(bar => {
-                        if (bar) {
-                            bar.style.height = BAR_MIN + 'px';
-                            bar.style.opacity = '1';
-                        }
-                    });
-                    
-                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        console.log('Permission denied. Will retry on user interaction.');
-                        sessionStorage.removeItem('micPermissionGranted');
-                        
-                        const retryHandler = async function() {
-                            document.removeEventListener('click', retryHandler);
-                            document.removeEventListener('touchstart', retryHandler);
-                            await startMicrophone();
-                        };
-                        document.addEventListener('click', retryHandler);
-                        document.addEventListener('touchstart', retryHandler);
-                    }
+            // ----- Start animation -----
+            function startAnimation() {
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
                 }
-            }
-
-            async function setupAudioFromStream(stream) {
-                if (audioContext && audioContext.state !== 'closed') {
-                    await audioContext.close();
-                }
-
-                audioContext = new(window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
-                analyser.smoothingTimeConstant = SMOOTHING;
-
-                source = audioContext.createMediaStreamSource(stream);
-                source.connect(analyser);
-
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-
-                if (animationFrame) cancelAnimationFrame(animationFrame);
                 isRunning = true;
-                animate();
-                console.log('Microphone is active!');
+                startTime = null;
+                animate(0);
             }
 
-            async function resumeAudioContext() {
-                if (audioContext && audioContext.state === 'suspended') {
-                    await audioContext.resume();
+            // ----- Stop animation -----
+            function stopAnimation() {
+                isRunning = false;
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
                 }
-            }
-
-            async function tryAutoStart() {
-                try {
-                    const hasStoredPermission = sessionStorage.getItem('micPermissionGranted') === 'true';
-                    
-                    if (hasStoredPermission) {
-                        console.log('Stored permission found, attempting to start mic...');
-                        await startMicrophone();
-                    } else {
-                        try {
-                            const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                            if (permissionStatus.state === 'granted') {
-                                console.log('Permission already granted, starting mic...');
-                                await startMicrophone();
-                                return;
-                            }
-                        } catch (e) {
-                            // permissions API might not be supported
-                        }
-                        
-                        console.log('Waiting for user interaction to start mic...');
-                        const startOnInteraction = async function() {
-                            document.removeEventListener('click', startOnInteraction);
-                            document.removeEventListener('touchstart', startOnInteraction);
-                            await startMicrophone();
-                        };
-                        document.addEventListener('click', startOnInteraction);
-                        document.addEventListener('touchstart', startOnInteraction);
+                bars.forEach(bar => {
+                    if (bar) {
+                        bar.style.height = BAR_MIN + 'px';
+                        bar.style.opacity = '1';
                     }
-                } catch (err) {
-                    console.log('Auto-start failed, waiting for user interaction:', err);
-                    const startOnInteraction = async function() {
-                        document.removeEventListener('click', startOnInteraction);
-                        document.removeEventListener('touchstart', startOnInteraction);
-                        await startMicrophone();
-                    };
-                    document.addEventListener('click', startOnInteraction);
-                    document.addEventListener('touchstart', startOnInteraction);
-                }
+                });
             }
 
-            // ----- auto-start on load after intro -----
-            setTimeout(() => {
-                tryAutoStart();
-            }, 1200);
-
-            // ---- pre-set bars to minimum ----
+            // ---- Set initial bars ----
             bars.forEach(bar => {
                 if (bar) {
                     bar.style.height = BAR_MIN + 'px';
@@ -564,12 +592,12 @@
                 }
             });
 
-            // ----- Resume audio on user interaction -----
-            document.addEventListener('click', resumeAudioContext);
-            document.addEventListener('touchstart', resumeAudioContext);
+            // ----- Start animation after intro -----
+            setTimeout(() => {
+                startAnimation();
+            }, 1200);
 
-            // ----- DOUBLE CLICK / DOUBLE TAP to edit -----
-            let clickTimer = null;
+            // ========== EDIT WORD ==========
             let isEditing = false;
 
             function enableEditing() {
@@ -578,7 +606,6 @@
                 wordDisplay.contentEditable = true;
                 wordDisplay.classList.add('editing');
                 wordDisplay.focus();
-
                 const range = document.createRange();
                 const sel = window.getSelection();
                 range.selectNodeContents(wordDisplay);
@@ -593,44 +620,30 @@
                 wordDisplay.contentEditable = false;
                 wordDisplay.classList.remove('editing');
                 wordDisplay.blur();
-                // save on disable
                 saveWordToStorage();
             }
 
-            // --- Desktop: double click ---
-            wordDisplay.addEventListener('dblclick', function(e) {
+            wordDisplay.addEventListener('dblclick', (e) => {
                 e.preventDefault();
                 enableEditing();
             });
 
-            // --- Mobile: double tap detection ---
             let lastTouchEnd = 0;
             let touchTimeout = null;
-
-            wordDisplay.addEventListener('touchend', function(e) {
+            wordDisplay.addEventListener('touchend', (e) => {
                 const now = Date.now();
                 const timeSince = now - lastTouchEnd;
                 lastTouchEnd = now;
-
                 if (timeSince < 350 && timeSince > 20) {
                     e.preventDefault();
-                    if (touchTimeout) {
-                        clearTimeout(touchTimeout);
-                        touchTimeout = null;
-                    }
+                    if (touchTimeout) clearTimeout(touchTimeout);
                     enableEditing();
                 } else {
-                    if (touchTimeout) {
-                        clearTimeout(touchTimeout);
-                        touchTimeout = null;
-                    }
-                    touchTimeout = setTimeout(() => {
-                        touchTimeout = null;
-                    }, 400);
+                    if (touchTimeout) clearTimeout(touchTimeout);
+                    touchTimeout = setTimeout(() => { touchTimeout = null; }, 400);
                 }
             });
 
-            // --- Blur / lose focus → disable editing ---
             wordDisplay.addEventListener('blur', function() {
                 if (this.textContent.trim() === '') {
                     this.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
@@ -638,76 +651,56 @@
                 disableEditing();
             });
 
-            // --- Press Escape or Enter to stop editing ---
-            wordDisplay.addEventListener('keydown', function(e) {
+            wordDisplay.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' || e.key === 'Enter') {
                     this.blur();
                 }
             });
 
-            // =============================================
-            // ----- CLICK VISUALIZER → SHOW OVERLAY -----
-            // =============================================
-            visualizer.addEventListener('click', function(e) {
+            // ========== CLICK VISUALIZER → OVERLAY ==========
+            visualizer.addEventListener('click', (e) => {
                 e.stopPropagation();
                 overlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             });
 
-            // ----- CLOSE OVERLAY by clicking outside the button -----
-            overlay.addEventListener('click', function(e) {
+            overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     overlay.classList.remove('active');
                     document.body.style.overflow = '';
                 }
             });
 
-            // ----- Press Escape to close -----
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && overlay.classList.contains('active')) {
                     overlay.classList.remove('active');
                     document.body.style.overflow = '';
                 }
             });
 
-            // ----- SUBSCRIBE BUTTON action -----
-            subscribeBtn.addEventListener('click', function(e) {
+            subscribeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 alert('Thank you for subscribing!');
                 overlay.classList.remove('active');
                 document.body.style.overflow = '';
             });
 
-            // --- Clean up on page unload ---
+            // ========== CLEANUP ==========
             window.addEventListener('beforeunload', () => {
-                if (audioContext && audioContext.state !== 'closed') {
-                    audioContext.close().catch(() => {});
-                }
-                if (animationFrame) {
-                    cancelAnimationFrame(animationFrame);
-                    animationFrame = null;
-                }
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                }
-                if (touchTimeout) {
-                    clearTimeout(touchTimeout);
-                    touchTimeout = null;
-                }
-                // save one last time
+                stopAnimation();
                 saveWordToStorage();
             });
 
-            // also save on page visibility change (user might switch tab)
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     saveWordToStorage();
                 }
             });
 
-            console.log('🎙️ Microphone will try to auto-start. If prompted, grant permission once and it will be remembered for this session.');
+            console.log('🎵 Rhythmic Visualizer with bluish accent running!');
             console.log('💾 The giant word is saved to localStorage automatically.');
+            console.log('👆 Double-click the word to edit it.');
+            console.log('🎯 Click the visualizer to open the overlay.');
         })();
     </script>
 </body>
