@@ -287,79 +287,6 @@
                 padding: 0.9rem 2rem;
             }
         }
-
-        /* Mic status indicator */
-        .mic-status {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.8rem;
-            margin-top: 1rem;
-            font-family: 'Roboto', sans-serif;
-            letter-spacing: 0.05em;
-            opacity: 0;
-            animation: fadeInWord 0.8s ease forwards 1.6s;
-            cursor: default;
-            user-select: none;
-        }
-
-        .mic-status.active {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .mic-status .dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff4444;
-            margin-right: 6px;
-            vertical-align: middle;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .mic-status.active .dot {
-            background: #44ff44;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        /* Tap to start overlay (for iOS) */
-        .tap-to-start {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .tap-to-start.active {
-            display: flex;
-        }
-
-        .tap-to-start .tap-text {
-            color: white;
-            font-family: 'Roboto', sans-serif;
-            font-size: clamp(1.5rem, 5vw, 3rem);
-            font-weight: 700;
-            text-align: center;
-            animation: introPulse 1.5s ease-in-out infinite;
-        }
-
-        .tap-to-start .tap-sub {
-            color: rgba(255, 255, 255, 0.5);
-            font-family: 'Roboto', sans-serif;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -367,12 +294,6 @@
     <!-- INTRO "Pronounce" - SOLID WHITE -->
     <div class="intro-overlay" id="introOverlay">
         <div class="intro-text">Pronounce</div>
-    </div>
-
-    <!-- TAP TO START (for iOS) -->
-    <div class="tap-to-start" id="tapToStart">
-        <div class="tap-text">🎤 Tap to Start</div>
-        <div class="tap-sub">Microphone access is required for the visualizer</div>
     </div>
 
     <div class="main-wrapper">
@@ -392,12 +313,6 @@
             <div class="bar" id="bar4"></div>
             <div class="bar" id="bar5"></div>
             <div class="bar" id="bar6"></div>
-        </div>
-
-        <!-- Mic status indicator -->
-        <div class="mic-status" id="micStatus">
-            <span class="dot"></span>
-            <span id="statusText">Waiting for mic...</span>
         </div>
     </div>
 
@@ -425,9 +340,6 @@
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
             const introOverlay = document.getElementById('introOverlay');
-            const tapToStart = document.getElementById('tapToStart');
-            const micStatus = document.getElementById('micStatus');
-            const statusText = document.getElementById('statusText');
 
             // ========== LOCAL STORAGE: load saved word ==========
             const STORAGE_KEY = 'giant_word_text';
@@ -437,13 +349,10 @@
                     if (saved && saved.trim().length > 0) {
                         wordDisplay.textContent = saved.trim();
                     }
-                } catch (e) {
-                    // ignore
-                }
+                } catch (e) {}
             }
             loadSavedWord();
 
-            // ========== save word on edit ==========
             function saveWordToStorage() {
                 try {
                     const text = wordDisplay.textContent.trim();
@@ -454,9 +363,7 @@
                         wordDisplay.textContent = fallback;
                         localStorage.setItem(STORAGE_KEY, fallback);
                     }
-                } catch (e) {
-                    // ignore
-                }
+                } catch (e) {}
             }
 
             // ----- audio context & analyser -----
@@ -468,7 +375,6 @@
             let animationFrame = null;
             let isRunning = false;
             let isMicInitialized = false;
-            let isUserGestureDone = false;
 
             // ----- bar height limits -----
             const BAR_MIN = 8;
@@ -514,22 +420,10 @@
                 animationFrame = requestAnimationFrame(animate);
             }
 
-            // ----- update mic status -----
-            function updateMicStatus(text, isActive) {
-                statusText.textContent = text;
-                if (isActive) {
-                    micStatus.classList.add('active');
-                } else {
-                    micStatus.classList.remove('active');
-                }
-            }
-
-            // ----- start microphone - MUST be called from user gesture on iOS -----
+            // ----- start microphone with iOS fix -----
             async function startMicrophone() {
                 try {
-                    updateMicStatus('Requesting mic...', false);
-                    
-                    // iOS Safari requires getUserMedia to be called from a user gesture
+                    // iOS Safari requires getUserMedia to be called from user gesture
                     const stream = await navigator.mediaDevices.getUserMedia({ 
                         audio: { 
                             echoCancellation: false,
@@ -540,8 +434,8 @@
                     
                     mediaStream = stream;
                     isMicInitialized = true;
-                    
-                    // Create AudioContext (must be done after user gesture on iOS)
+
+                    // Create AudioContext (must be after user gesture on iOS)
                     if (!audioContext || audioContext.state === 'closed') {
                         audioContext = new(window.AudioContext || window.webkitAudioContext)();
                     }
@@ -549,7 +443,7 @@
                     if (audioContext.state === 'suspended') {
                         await audioContext.resume();
                     }
-                    
+
                     analyser = audioContext.createAnalyser();
                     analyser.fftSize = 2048;
                     analyser.smoothingTimeConstant = SMOOTHING;
@@ -562,12 +456,7 @@
                     if (animationFrame) cancelAnimationFrame(animationFrame);
                     isRunning = true;
                     animate();
-                    
-                    updateMicStatus('🎤 Live', true);
                     console.log('✅ Microphone is active!');
-                    
-                    // Hide tap-to-start if visible
-                    tapToStart.classList.remove('active');
                     
                     sessionStorage.setItem('micPermissionGranted', 'true');
                     
@@ -586,46 +475,139 @@
                         }
                     });
                     
+                    // On iOS, if permission is denied, we need a user gesture to retry
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        updateMicStatus('⚠️ Permission denied. Tap to retry.', false);
-                        // Show tap-to-start again
-                        tapToStart.classList.add('active');
-                        tapToStart.querySelector('.tap-text').textContent = '🔴 Tap to Allow Microphone';
-                        tapToStart.querySelector('.tap-sub').textContent = 'Please grant microphone permission in your browser settings';
-                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                        updateMicStatus('❌ No microphone found', false);
+                        console.log('Permission denied. Will retry on user interaction.');
+                        sessionStorage.removeItem('micPermissionGranted');
+                        
+                        // Show a simple tap prompt (using the intro overlay style)
+                        const prompt = document.createElement('div');
+                        prompt.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.95);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 2000;
+                            flex-direction: column;
+                            gap: 1rem;
+                        `;
+                        prompt.innerHTML = `
+                            <div style="color:white;font-family:'Roboto',sans-serif;font-size:clamp(1.5rem,5vw,3rem);font-weight:700;text-align:center;animation:introPulse 1.5s ease-in-out infinite;">
+                                🎤 Tap to Start
+                            </div>
+                            <div style="color:rgba(255,255,255,0.5);font-family:'Roboto',sans-serif;font-size:clamp(0.9rem,2vw,1.2rem);text-align:center;">
+                                Microphone access is required
+                            </div>
+                        `;
+                        document.body.appendChild(prompt);
+                        
+                        const retryHandler = async function() {
+                            document.removeEventListener('click', retryHandler);
+                            document.removeEventListener('touchstart', retryHandler);
+                            if (prompt.parentNode) prompt.remove();
+                            await startMicrophone();
+                        };
+                        document.addEventListener('click', retryHandler);
+                        document.addEventListener('touchstart', retryHandler);
+                    }
+                }
+            }
+
+            async function resumeAudioContext() {
+                if (audioContext && audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+            }
+
+            async function tryAutoStart() {
+                try {
+                    // Check if we're on iOS
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                    
+                    if (isIOS) {
+                        console.log('📱 iOS detected - waiting for user gesture');
+                        // Show tap prompt using intro overlay style
+                        const prompt = document.createElement('div');
+                        prompt.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.95);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 2000;
+                            flex-direction: column;
+                            gap: 1rem;
+                        `;
+                        prompt.innerHTML = `
+                            <div style="color:white;font-family:'Roboto',sans-serif;font-size:clamp(1.5rem,5vw,3rem);font-weight:700;text-align:center;animation:introPulse 1.5s ease-in-out infinite;">
+                                🎤 Tap to Start
+                            </div>
+                            <div style="color:rgba(255,255,255,0.5);font-family:'Roboto',sans-serif;font-size:clamp(0.9rem,2vw,1.2rem);text-align:center;">
+                                Microphone access is required for the visualizer
+                            </div>
+                        `;
+                        document.body.appendChild(prompt);
+                        
+                        const startHandler = async function() {
+                            document.removeEventListener('click', startHandler);
+                            document.removeEventListener('touchstart', startHandler);
+                            if (prompt.parentNode) prompt.remove();
+                            await startMicrophone();
+                        };
+                        document.addEventListener('click', startHandler);
+                        document.addEventListener('touchstart', startHandler);
+                        return;
+                    }
+                    
+                    const hasStoredPermission = sessionStorage.getItem('micPermissionGranted') === 'true';
+                    if (hasStoredPermission) {
+                        console.log('Stored permission found, attempting to start mic...');
+                        await startMicrophone();
                     } else {
-                        updateMicStatus('❌ Error: ' + err.message, false);
+                        try {
+                            const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                            if (permissionStatus.state === 'granted') {
+                                console.log('Permission already granted, starting mic...');
+                                await startMicrophone();
+                                return;
+                            }
+                        } catch (e) {}
+                        
+                        console.log('Waiting for user interaction to start mic...');
+                        const startOnInteraction = async function() {
+                            document.removeEventListener('click', startOnInteraction);
+                            document.removeEventListener('touchstart', startOnInteraction);
+                            await startMicrophone();
+                        };
+                        document.addEventListener('click', startOnInteraction);
+                        document.addEventListener('touchstart', startOnInteraction);
                     }
+                } catch (err) {
+                    console.log('Auto-start failed, waiting for user interaction:', err);
+                    const startOnInteraction = async function() {
+                        document.removeEventListener('click', startOnInteraction);
+                        document.removeEventListener('touchstart', startOnInteraction);
+                        await startMicrophone();
+                    };
+                    document.addEventListener('click', startOnInteraction);
+                    document.addEventListener('touchstart', startOnInteraction);
                 }
             }
 
-            // ----- handle tap-to-start -----
-            async function handleTapToStart() {
-                if (isMicInitialized && isRunning) {
-                    tapToStart.classList.remove('active');
-                    return;
-                }
-                isUserGestureDone = true;
-                await startMicrophone();
-            }
-
-            // ----- setup tap-to-start listener -----
-            tapToStart.addEventListener('click', handleTapToStart);
-            tapToStart.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                handleTapToStart();
-            });
-
-            // Also any click on the page can trigger it (as fallback)
-            document.addEventListener('click', function() {
-                if (!isMicInitialized && !tapToStart.classList.contains('active')) {
-                    // Only show tap-to-start if not already showing and mic not running
-                    if (!isRunning) {
-                        tapToStart.classList.add('active');
-                    }
-                }
-            });
+            // ----- auto-start on load after intro -----
+            setTimeout(() => {
+                tryAutoStart();
+            }, 1200);
 
             // ---- pre-set bars to minimum ----
             bars.forEach(bar => {
@@ -635,77 +617,11 @@
                 }
             });
 
-            // ----- Resume audio on user interaction (for iOS) -----
-            async function resumeAudioContext() {
-                if (audioContext && audioContext.state === 'suspended') {
-                    try {
-                        await audioContext.resume();
-                        updateMicStatus('🎤 Resumed', true);
-                    } catch (e) {
-                        console.warn('Could not resume AudioContext:', e);
-                    }
-                }
-            }
+            // ----- Resume audio on user interaction -----
             document.addEventListener('click', resumeAudioContext);
             document.addEventListener('touchstart', resumeAudioContext);
 
-            // ----- try auto-start (with a small delay) -----
-            async function tryAutoStart() {
-                // Check if we have stored permission
-                const hasStoredPermission = sessionStorage.getItem('micPermissionGranted') === 'true';
-                
-                // Check if we're on iOS (Safari)
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                
-                if (isIOS) {
-                    console.log('📱 iOS detected - waiting for user gesture');
-                    // On iOS, we MUST wait for user gesture
-                    tapToStart.classList.add('active');
-                    updateMicStatus('👆 Tap to start', false);
-                    return;
-                }
-                
-                if (hasStoredPermission) {
-                    console.log('Stored permission found, attempting to start mic...');
-                    // Still need user gesture for AudioContext on some browsers
-                    // We'll try, but if it fails, show tap-to-start
-                    try {
-                        await startMicrophone();
-                    } catch (e) {
-                        console.log('Auto-start failed, showing tap-to-start');
-                        tapToStart.classList.add('active');
-                        updateMicStatus('👆 Tap to start', false);
-                    }
-                } else {
-                    // Try to check permission status
-                    try {
-                        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                        if (permissionStatus.state === 'granted') {
-                            console.log('Permission already granted, attempting to start...');
-                            try {
-                                await startMicrophone();
-                                return;
-                            } catch (e) {
-                                console.log('Start failed, showing tap-to-start');
-                            }
-                        }
-                    } catch (e) {
-                        // permissions API might not be supported
-                    }
-                    
-                    // Show tap-to-start
-                    tapToStart.classList.add('active');
-                    updateMicStatus('👆 Tap to start', false);
-                }
-            }
-
-            // ----- auto-start on load after intro -----
-            setTimeout(() => {
-                tryAutoStart();
-            }, 1500);
-
-            // ========== WORD EDITING ==========
+            // ----- DOUBLE CLICK / DOUBLE TAP to edit -----
             let clickTimer = null;
             let isEditing = false;
 
@@ -840,7 +756,7 @@
                 }
             });
 
-            console.log('🎙️ iPad/iOS support: Tap the screen to start the microphone.');
+            console.log('🎙️ iPad support: Tap the screen if prompted for microphone access.');
             console.log('💾 The giant word is saved to localStorage automatically.');
         })();
     </script>
