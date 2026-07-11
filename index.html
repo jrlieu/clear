@@ -184,7 +184,7 @@
             }
         }
 
-        /* ----- INTRO "Pronounce" - SOLID MATCHES DARKEST GRADIENT ----- */
+        /* ----- INTRO "Pronounce" - NO BACKDROPS, FULLY OPAQUE ----- */
         .intro-overlay {
             position: fixed;
             top: 0;
@@ -222,14 +222,14 @@
             position: relative;
             color: white;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            box-shadow: 0 0 40px rgba(74, 158, 255, 0.3);
             overflow: hidden;
             animation: introPulse 0.6s ease-in-out;
             background: #4a9eff;
             z-index: 1;
+            border-radius: 60px;
         }
 
-        /* Solid blue background - NOW MATCHES DARKEST GRADIENT COLOR */
+        /* Solid blue background - NO transparency */
         .intro-text .bg-solid {
             position: absolute;
             top: 0;
@@ -237,11 +237,10 @@
             width: 100%;
             height: 100%;
             background: #4a9eff;
-            border-radius: 60px;
             z-index: -1;
         }
 
-        /* Gradient fill - MATCHES SUBSCRIBE BUTTON */
+        /* Gradient fill - FULLY OPAQUE */
         .intro-text .bg-gradient {
             position: absolute;
             top: 0;
@@ -250,25 +249,8 @@
             width: 0%;
             background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
             background-size: 300% 100%;
-            border-radius: 0;
             z-index: -1;
             animation: fillGradient 0.6s ease-in-out forwards;
-        }
-
-        /* Glow effect - MATCHES SUBSCRIBE BUTTON */
-        .intro-text .glow {
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
-            background-size: 300% 100%;
-            border-radius: 62px;
-            z-index: -2;
-            filter: blur(20px);
-            opacity: 0.4;
-            animation: glowFill 0.6s ease-in-out forwards;
         }
 
         @keyframes fillGradient {
@@ -277,15 +259,6 @@
             }
             100% {
                 width: 100%;
-            }
-        }
-
-        @keyframes glowFill {
-            0% {
-                background-position: -200% 0%;
-            }
-            100% {
-                background-position: 0% 0%;
             }
         }
 
@@ -307,16 +280,14 @@
             }
         }
 
-        /* ----- OVERLAY ----- */
+        /* ----- OVERLAY - FULLY OPAQUE BLACK ----- */
         .overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: black;
             display: none;
             justify-content: center;
             align-items: center;
@@ -382,13 +353,12 @@
 </head>
 <body>
 
-    <!-- INTRO "Pronounce" - SOLID MATCHES DARKEST GRADIENT -->
+    <!-- INTRO "Pronounce" - NO BACKDROPS -->
     <div class="intro-overlay" id="introOverlay">
         <div class="intro-text">
-            PONOUNCE
+            Pronounce
             <div class="bg-solid"></div>
             <div class="bg-gradient"></div>
-            <div class="glow"></div>
         </div>
     </div>
 
@@ -412,7 +382,7 @@
         </div>
     </div>
 
-    <!-- OVERLAY -->
+    <!-- OVERLAY - FULLY OPAQUE BLACK -->
     <div class="overlay" id="overlay">
         <button class="subscribe-btn btn-gradient" id="subscribeBtn">SUBSCRIBE</button>
     </div>
