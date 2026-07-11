@@ -262,51 +262,6 @@
             }
         }
 
-        /* Audio source selector */
-        .audio-source-selector {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 10;
-            display: flex;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .audio-source-btn {
-            background: transparent;
-            color: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 6px 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-family: 'Roboto', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-        }
-
-        .audio-source-btn.active {
-            background: white;
-            color: black;
-            border-color: white;
-        }
-
-        .audio-source-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .audio-source-btn.active:hover {
-            background: white;
-            color: black;
-        }
-
         /* responsive */
         @media (max-width: 500px) {
             .viz-row {
@@ -330,16 +285,6 @@
             .intro-text {
                 font-size: 1.3rem;
                 padding: 0.9rem 2rem;
-            }
-            .audio-source-selector {
-                bottom: 10px;
-                right: 10px;
-                padding: 6px 10px;
-                gap: 6px;
-            }
-            .audio-source-btn {
-                font-size: 10px;
-                padding: 4px 10px;
             }
         }
     </style>
@@ -371,12 +316,6 @@
         </div>
     </div>
 
-    <!-- Audio Source Selector -->
-    <div class="audio-source-selector">
-        <button class="audio-source-btn active" id="micBtn" data-source="mic">🎤 Mic</button>
-        <button class="audio-source-btn" id="internalBtn" data-source="internal">🎵 Internal</button>
-    </div>
-
     <!-- OVERLAY with blur backdrop - no X button -->
     <div class="overlay" id="overlay">
         <button class="subscribe-btn" id="subscribeBtn">SUBSCRIBE</button>
@@ -401,8 +340,6 @@
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
             const introOverlay = document.getElementById('introOverlay');
-            const micBtn = document.getElementById('micBtn');
-            const internalBtn = document.getElementById('internalBtn');
 
             // ========== LOCAL STORAGE: load saved word ==========
             const STORAGE_KEY = 'giant_word_text';
@@ -446,10 +383,6 @@
             let animationFrame = null;
             let isRunning = false;
             let isMicInitialized = false;
-            let currentSource = 'mic'; // 'mic' or 'internal'
-            let internalAudioInitialized = false;
-            let oscillator = null;
-            let gainNode = null;
 
             // ----- bar height limits -----
             const BAR_MIN = 8;
@@ -495,181 +428,13 @@
                 animationFrame = requestAnimationFrame(animate);
             }
 
-            // ----- Stop current audio -----
-            function stopAudio() {
-                isRunning = false;
-                if (animationFrame) {
-                    cancelAnimationFrame(animationFrame);
-                    animationFrame = null;
-                }
-                if (source) {
-                    try {
-                        source.disconnect();
-                    } catch (e) {}
-                    source = null;
-                }
-                if (mediaStream) {
-                    try {
-                        mediaStream.getTracks().forEach(track => track.stop());
-                    } catch (e) {}
-                    mediaStream = null;
-                }
-                if (oscillator) {
-                    try {
-                        oscillator.stop();
-                        oscillator.disconnect();
-                    } catch (e) {}
-                    oscillator = null;
-                }
-                if (gainNode) {
-                    try {
-                        gainNode.disconnect();
-                    } catch (e) {}
-                    gainNode = null;
-                }
-                if (audioContext && audioContext.state !== 'closed') {
-                    try {
-                        audioContext.close();
-                    } catch (e) {}
-                    audioContext = null;
-                }
-                isMicInitialized = false;
-                internalAudioInitialized = false;
-                
-                // Reset bars to minimum
-                bars.forEach(bar => {
-                    if (bar) {
-                        bar.style.height = BAR_MIN + 'px';
-                        bar.style.opacity = '1';
-                    }
-                });
-            }
-
-            // ----- Setup audio from stream (mic or internal) -----
-            async function setupAudioFromStream(stream, sourceType) {
-                try {
-                    if (audioContext && audioContext.state !== 'closed') {
-                        await audioContext.close();
-                    }
-
-                    audioContext = new(window.AudioContext || window.webkitAudioContext)();
-                    analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 2048;
-                    analyser.smoothingTimeConstant = SMOOTHING;
-
-                    source = audioContext.createMediaStreamSource(stream);
-                    source.connect(analyser);
-
-                    dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-                    if (audioContext.state === 'suspended') {
-                        await audioContext.resume();
-                    }
-
-                    if (animationFrame) cancelAnimationFrame(animationFrame);
-                    isRunning = true;
-                    animate();
-                    console.log(`${sourceType} audio is active!`);
-                } catch (err) {
-                    console.error('Error setting up audio:', err);
-                    throw err;
-                }
-            }
-
-            // ----- Setup internal audio (system audio simulation) -----
-            async function setupInternalAudio() {
-                try {
-                    stopAudio();
-                    
-                    audioContext = new(window.AudioContext || window.webkitAudioContext)();
-                    
-                    // Create oscillator for continuous audio signal
-                    oscillator = audioContext.createOscillator();
-                    gainNode = audioContext.createGain();
-                    
-                    // Set frequency and gain
-                    oscillator.type = 'sawtooth';
-                    oscillator.frequency.setValueAtTime(100, audioContext.currentTime);
-                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-                    
-                    // Create analyser
-                    analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 2048;
-                    analyser.smoothingTimeConstant = SMOOTHING;
-                    
-                    // Connect: oscillator -> gain -> analyser -> destination (optional, for audio output)
-                    oscillator.connect(gainNode);
-                    gainNode.connect(analyser);
-                    // Uncomment to hear the sound (optional)
-                    // gainNode.connect(audioContext.destination);
-                    
-                    dataArray = new Uint8Array(analyser.frequencyBinCount);
-                    
-                    // Start oscillator
-                    oscillator.start(audioContext.currentTime);
-                    
-                    if (audioContext.state === 'suspended') {
-                        await audioContext.resume();
-                    }
-                    
-                    if (animationFrame) cancelAnimationFrame(animationFrame);
-                    isRunning = true;
-                    internalAudioInitialized = true;
-                    animate();
-                    console.log('Internal audio is active!');
-                    
-                    // Generate some variation
-                    generateAudioVariation();
-                    
-                } catch (err) {
-                    console.error('Error setting up internal audio:', err);
-                    throw err;
-                }
-            }
-
-            // ----- Generate variation in internal audio -----
-            function generateAudioVariation() {
-                if (!oscillator || !gainNode) return;
-                
-                let count = 0;
-                const interval = setInterval(() => {
-                    if (!isRunning || !oscillator) {
-                        clearInterval(interval);
-                        return;
-                    }
-                    
-                    try {
-                        // Randomly change frequency and gain to simulate audio variation
-                        const freq = 80 + Math.random() * 300;
-                        const gain = 0.3 + Math.random() * 0.7;
-                        
-                        oscillator.frequency.setTargetAtTime(freq, audioContext.currentTime, 0.1);
-                        gainNode.gain.setTargetAtTime(gain, audioContext.currentTime, 0.1);
-                        
-                        count++;
-                        if (count > 100) {
-                            clearInterval(interval);
-                            // Restart the variation after a pause
-                            setTimeout(() => {
-                                if (isRunning && internalAudioInitialized) {
-                                    generateAudioVariation();
-                                }
-                            }, 2000);
-                        }
-                    } catch (e) {
-                        clearInterval(interval);
-                    }
-                }, 200);
-            }
-
-            // ----- Start microphone with permission check -----
+            // ----- start microphone with permission check -----
             async function startMicrophone() {
                 try {
-                    // Check if we already have a stream
-                    if (mediaStream) {
-                        // Stop existing tracks
-                        mediaStream.getTracks().forEach(track => track.stop());
-                        mediaStream = null;
+                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                    
+                    if (permissionStatus.state === 'granted' && !isMicInitialized) {
+                        console.log('Microphone permission already granted. Attempting to start...');
                     }
 
                     const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -682,12 +447,7 @@
                     
                     mediaStream = stream;
                     isMicInitialized = true;
-                    await setupAudioFromStream(stream, 'Microphone');
-                    
-                    // Update button states
-                    micBtn.classList.add('active');
-                    internalBtn.classList.remove('active');
-                    currentSource = 'mic';
+                    await setupAudioFromStream(stream);
                     
                     sessionStorage.setItem('micPermissionGranted', 'true');
                     
@@ -709,121 +469,72 @@
                         console.log('Permission denied. Will retry on user interaction.');
                         sessionStorage.removeItem('micPermissionGranted');
                         
-                        // Fallback to internal audio if mic fails
-                        if (currentSource === 'mic') {
-                            console.log('Falling back to internal audio...');
-                            await setupInternalAudio();
-                            micBtn.classList.remove('active');
-                            internalBtn.classList.add('active');
-                            currentSource = 'internal';
-                        }
+                        const retryHandler = async function() {
+                            document.removeEventListener('click', retryHandler);
+                            document.removeEventListener('touchstart', retryHandler);
+                            await startMicrophone();
+                        };
+                        document.addEventListener('click', retryHandler);
+                        document.addEventListener('touchstart', retryHandler);
                     }
                 }
             }
 
-            // ----- Resume audio context on user interaction -----
+            async function setupAudioFromStream(stream) {
+                if (audioContext && audioContext.state !== 'closed') {
+                    await audioContext.close();
+                }
+
+                audioContext = new(window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = SMOOTHING;
+
+                source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                if (animationFrame) cancelAnimationFrame(animationFrame);
+                isRunning = true;
+                animate();
+                console.log('Microphone is active!');
+            }
+
             async function resumeAudioContext() {
                 if (audioContext && audioContext.state === 'suspended') {
-                    try {
-                        await audioContext.resume();
-                        console.log('Audio context resumed');
-                    } catch (e) {
-                        console.log('Failed to resume audio context');
-                    }
+                    await audioContext.resume();
                 }
             }
 
-            // ----- Initialize audio with retry for iPad -----
-            async function initializeAudio(sourceType = 'mic') {
-                try {
-                    if (sourceType === 'mic') {
-                        await startMicrophone();
-                    } else {
-                        await setupInternalAudio();
-                        micBtn.classList.remove('active');
-                        internalBtn.classList.add('active');
-                        currentSource = 'internal';
-                    }
-                } catch (err) {
-                    console.log('Audio initialization failed, retrying with internal...');
-                    try {
-                        await setupInternalAudio();
-                        micBtn.classList.remove('active');
-                        internalBtn.classList.add('active');
-                        currentSource = 'internal';
-                    } catch (e) {
-                        console.error('All audio sources failed:', e);
-                    }
-                }
-            }
-
-            // ----- Try auto-start with improved iPad compatibility -----
             async function tryAutoStart() {
                 try {
-                    // For iPad, use a more direct approach
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                    
-                    if (isIOS) {
-                        console.log('iOS device detected, using special handling...');
-                        // On iOS, we need user interaction first
-                        const startOnInteraction = async function() {
-                            document.removeEventListener('click', startOnInteraction);
-                            document.removeEventListener('touchstart', startOnInteraction);
-                            document.removeEventListener('touchend', startOnInteraction);
-                            
-                            // Try mic first, fallback to internal
-                            await initializeAudio('mic');
-                        };
-                        
-                        document.addEventListener('click', startOnInteraction);
-                        document.addEventListener('touchstart', startOnInteraction);
-                        document.addEventListener('touchend', startOnInteraction);
-                        
-                        // Also try after a short delay (some iOS versions need this)
-                        setTimeout(async () => {
-                            try {
-                                const hasStoredPermission = sessionStorage.getItem('micPermissionGranted') === 'true';
-                                if (hasStoredPermission) {
-                                    await initializeAudio('mic');
-                                } else {
-                                    // Try to check if permission is already granted
-                                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                                    if (permissionStatus.state === 'granted') {
-                                        await initializeAudio('mic');
-                                    }
-                                }
-                            } catch (e) {
-                                console.log('Auto-init failed, waiting for user interaction');
-                            }
-                        }, 1500);
-                        
-                        return;
-                    }
-                    
-                    // For non-iOS devices
                     const hasStoredPermission = sessionStorage.getItem('micPermissionGranted') === 'true';
                     
                     if (hasStoredPermission) {
                         console.log('Stored permission found, attempting to start mic...');
-                        await initializeAudio('mic');
+                        await startMicrophone();
                     } else {
                         try {
                             const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
                             if (permissionStatus.state === 'granted') {
                                 console.log('Permission already granted, starting mic...');
-                                await initializeAudio('mic');
+                                await startMicrophone();
                                 return;
                             }
                         } catch (e) {
                             // permissions API might not be supported
                         }
                         
-                        console.log('Waiting for user interaction to start audio...');
+                        console.log('Waiting for user interaction to start mic...');
                         const startOnInteraction = async function() {
                             document.removeEventListener('click', startOnInteraction);
                             document.removeEventListener('touchstart', startOnInteraction);
-                            await initializeAudio('mic');
+                            await startMicrophone();
                         };
                         document.addEventListener('click', startOnInteraction);
                         document.addEventListener('touchstart', startOnInteraction);
@@ -833,35 +544,12 @@
                     const startOnInteraction = async function() {
                         document.removeEventListener('click', startOnInteraction);
                         document.removeEventListener('touchstart', startOnInteraction);
-                        await initializeAudio('mic');
+                        await startMicrophone();
                     };
                     document.addEventListener('click', startOnInteraction);
                     document.addEventListener('touchstart', startOnInteraction);
                 }
             }
-
-            // ----- Switch audio source -----
-            async function switchAudioSource(sourceType) {
-                if (sourceType === currentSource && 
-                    ((sourceType === 'mic' && isMicInitialized) || 
-                     (sourceType === 'internal' && internalAudioInitialized))) {
-                    return;
-                }
-                
-                stopAudio();
-                await initializeAudio(sourceType);
-            }
-
-            // ----- Audio source button listeners -----
-            micBtn.addEventListener('click', async function(e) {
-                e.stopPropagation();
-                await switchAudioSource('mic');
-            });
-
-            internalBtn.addEventListener('click', async function(e) {
-                e.stopPropagation();
-                await switchAudioSource('internal');
-            });
 
             // ----- auto-start on load after intro -----
             setTimeout(() => {
@@ -905,6 +593,7 @@
                 wordDisplay.contentEditable = false;
                 wordDisplay.classList.remove('editing');
                 wordDisplay.blur();
+                // save on disable
                 saveWordToStorage();
             }
 
@@ -991,7 +680,13 @@
 
             // --- Clean up on page unload ---
             window.addEventListener('beforeunload', () => {
-                stopAudio();
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close().catch(() => {});
+                }
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
+                }
                 if (clickTimer) {
                     clearTimeout(clickTimer);
                     clickTimer = null;
@@ -1000,19 +695,19 @@
                     clearTimeout(touchTimeout);
                     touchTimeout = null;
                 }
+                // save one last time
                 saveWordToStorage();
             });
 
-            // also save on page visibility change
+            // also save on page visibility change (user might switch tab)
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     saveWordToStorage();
                 }
             });
 
-            console.log('🎙️ iPad compatible audio visualizer loaded!');
+            console.log('🎙️ Microphone will try to auto-start. If prompted, grant permission once and it will be remembered for this session.');
             console.log('💾 The giant word is saved to localStorage automatically.');
-            console.log('🎵 Click "Internal" to use simulated audio, or "Mic" for microphone input.');
         })();
     </script>
 </body>
