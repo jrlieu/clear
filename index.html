@@ -655,10 +655,78 @@
                 document.body.style.overflow = '';
             });
 
+            // ========== DOUBLE TAP ON BODY (excluding elements) TO REFRESH ==========
+            let lastTapTime = 0;
+            let tapTimeout = null;
+
+            document.addEventListener('touchend', function(e) {
+                // Check if the tap was on the body (not on any interactive element)
+                const target = e.target;
+                const isInteractive = target.closest('.giant-word') || 
+                                     target.closest('.viz-row') || 
+                                     target.closest('.overlay') || 
+                                     target.closest('.subscribe-btn') ||
+                                     target.closest('.intro-text') ||
+                                     target.closest('.intro-overlay');
+                
+                if (isInteractive) {
+                    // Reset tap detection if tapping on interactive elements
+                    lastTapTime = 0;
+                    if (tapTimeout) {
+                        clearTimeout(tapTimeout);
+                        tapTimeout = null;
+                    }
+                    return;
+                }
+
+                const now = Date.now();
+                const timeSince = now - lastTapTime;
+                
+                if (timeSince < 350 && timeSince > 20) {
+                    // Double tap detected on body - refresh the page
+                    e.preventDefault();
+                    if (tapTimeout) {
+                        clearTimeout(tapTimeout);
+                        tapTimeout = null;
+                    }
+                    location.reload();
+                } else {
+                    // Single tap - set up detection for double tap
+                    if (tapTimeout) {
+                        clearTimeout(tapTimeout);
+                        tapTimeout = null;
+                    }
+                    tapTimeout = setTimeout(() => {
+                        tapTimeout = null;
+                    }, 400);
+                }
+                lastTapTime = now;
+            });
+
+            // Also support double click on desktop (excluding elements)
+            document.addEventListener('dblclick', function(e) {
+                // Check if the click was on the body (not on any interactive element)
+                const target = e.target;
+                const isInteractive = target.closest('.giant-word') || 
+                                     target.closest('.viz-row') || 
+                                     target.closest('.overlay') || 
+                                     target.closest('.subscribe-btn') ||
+                                     target.closest('.intro-text') ||
+                                     target.closest('.intro-overlay');
+                
+                if (!isInteractive) {
+                    location.reload();
+                }
+            });
+
             // ========== CLEANUP ==========
             window.addEventListener('beforeunload', () => {
                 stopAnimation();
                 saveWordToStorage();
+                if (tapTimeout) {
+                    clearTimeout(tapTimeout);
+                    tapTimeout = null;
+                }
             });
 
             document.addEventListener('visibilitychange', () => {
@@ -671,6 +739,7 @@
             console.log('💾 The giant word is saved to localStorage automatically.');
             console.log('👆 Double-click the word to edit it.');
             console.log('🎯 Click the visualizer to open the overlay.');
+            console.log('🔄 Double-tap on empty area to refresh the page.');
         })();
     </script>
 </body>
