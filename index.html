@@ -78,46 +78,6 @@
             cursor: text;
         }
 
-        /* ORIGINAL VISUALIZER */
-        .viz-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            height: 80px;
-            padding: 0;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            flex-shrink: 0;
-            cursor: pointer;
-            position: relative;
-            z-index: 2;
-        }
-
-        .bar {
-            width: 10px;
-            height: 18px;
-            background: #4a9eff;
-            border-radius: 9999px;
-            transition: height 0.08s ease-out;
-            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
-            transform: scaleY(1);
-            transform-origin: center;
-            will-change: height;
-            flex-shrink: 0;
-            pointer-events: none;
-            opacity: 1 !important;
-        }
-
-        .bar:nth-child(1) { background: #4a9eff; box-shadow: 0 0 15px rgba(74, 158, 255, 0.3); }
-        .bar:nth-child(2) { background: #5aafff; box-shadow: 0 0 15px rgba(90, 175, 255, 0.35); }
-        .bar:nth-child(3) { background: #6abfff; box-shadow: 0 0 15px rgba(106, 191, 255, 0.4); }
-        .bar:nth-child(4) { background: #7acfff; box-shadow: 0 0 15px rgba(122, 207, 255, 0.45); }
-        .bar:nth-child(5) { background: #8adfff; box-shadow: 0 0 15px rgba(138, 223, 255, 0.4); }
-        .bar:nth-child(6) { background: #9aefff; box-shadow: 0 0 15px rgba(154, 239, 255, 0.35); }
-        .bar:nth-child(7) { background: #aaffff; box-shadow: 0 0 15px rgba(170, 255, 255, 0.3); }
-
         /* CAROUSEL */
         .carousel-wrapper {
             width: 100%;
@@ -262,7 +222,6 @@
             font-weight: 700;
             padding: 1.2rem 3.5rem;
             border: none;
-            border-radius: 60px;
             letter-spacing: 0.05em;
             cursor: default;
             position: relative;
@@ -375,13 +334,6 @@
             .carousel-slide {
                 gap: 0.8rem;
             }
-            .viz-row {
-                gap: 6px;
-                height: 60px;
-            }
-            .bar {
-                width: 8px;
-            }
         }
     </style>
 </head>
@@ -390,7 +342,7 @@
     <!-- INTRO "Pronounce" with progress -->
     <div class="intro-overlay" id="introOverlay">
         <div class="intro-text">
-            PONOUNCE
+            PRONOUNCE
             <div class="bg-solid"></div>
             <div class="bg-gradient"></div>
         </div>
@@ -431,7 +383,13 @@
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
 
-            let emojisVisible = false; // Start hidden
+            let emojisVisible = false;
+            let currentIndex = 0;
+            let startX = 0;
+            let isDragging = false;
+            let currentTranslate = 0;
+            let clickTimer = null;
+            let isEditing = false;
 
             // Build carousel slides
             pairs.forEach(p => {
@@ -452,12 +410,6 @@
                 `;
                 track.appendChild(slide);
             });
-
-            // ===== CAROUSEL LOGIC =====
-            let currentIndex = 0;
-            let startX = 0;
-            let isDragging = false;
-            let currentTranslate = 0;
 
             function getSlideWidth() {
                 return track.parentElement.clientWidth;
@@ -484,63 +436,66 @@
                 }
             }
 
-            // Touch events
-            track.addEventListener('touchstart', function(e) {
-                if (e.touches.length > 1) return;
-                isDragging = true;
-                startX = e.touches[0].clientX;
-                track.style.transition = 'none';
-                track.style.cursor = 'grabbing';
-            }, { passive: true });
+            // Bind drag and touch interactions
+            function setupCarouselInteractions(targetTrack) {
+                targetTrack.addEventListener('touchstart', function(e) {
+                    if (e.touches.length > 1) return;
+                    isDragging = true;
+                    startX = e.touches[0].clientX;
+                    targetTrack.style.transition = 'none';
+                    targetTrack.style.cursor = 'grabbing';
+                }, { passive: true });
 
-            track.addEventListener('touchmove', function(e) {
-                if (!isDragging || e.touches.length > 1) return;
-                e.preventDefault();
+                targetTrack.addEventListener('touchmove', function(e) {
+                    if (!isDragging || e.touches.length > 1) return;
+                    e.preventDefault();
 
-                const diff = e.touches[0].clientX - startX;
-                const slideWidth = getSlideWidth();
-                const baseTranslate = -currentIndex * slideWidth;
-                let newTranslate = baseTranslate + diff;
+                    const diff = e.touches[0].clientX - startX;
+                    const slideWidth = getSlideWidth();
+                    const baseTranslate = -currentIndex * slideWidth;
+                    let newTranslate = baseTranslate + diff;
 
-                const maxTranslate = 0;
-                const minTranslate = -(pairs.length - 1) * slideWidth;
-                if (newTranslate > maxTranslate) {
-                    newTranslate = maxTranslate + (newTranslate - maxTranslate) * 0.2;
-                } else if (newTranslate < minTranslate) {
-                    newTranslate = minTranslate + (newTranslate - minTranslate) * 0.2;
-                }
+                    const maxTranslate = 0;
+                    const minTranslate = -(pairs.length - 1) * slideWidth;
+                    if (newTranslate > maxTranslate) {
+                        newTranslate = maxTranslate + (newTranslate - maxTranslate) * 0.2;
+                    } else if (newTranslate < minTranslate) {
+                        newTranslate = minTranslate + (newTranslate - minTranslate) * 0.2;
+                    }
 
-                currentTranslate = newTranslate;
-                track.style.transform = `translateX(${newTranslate}px)`;
-            }, { passive: false });
+                    currentTranslate = newTranslate;
+                    targetTrack.style.transform = `translateX(${newTranslate}px)`;
+                }, { passive: false });
 
-            track.addEventListener('touchend', function() {
-                if (!isDragging) return;
-                isDragging = false;
-                track.style.cursor = 'grab';
+                targetTrack.addEventListener('touchend', function() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    targetTrack.style.cursor = 'grab';
 
-                const slideWidth = getSlideWidth();
-                const diff = currentTranslate - (-currentIndex * slideWidth);
-                const threshold = slideWidth * 0.15;
+                    const slideWidth = getSlideWidth();
+                    const diff = currentTranslate - (-currentIndex * slideWidth);
+                    const threshold = slideWidth * 0.15;
 
-                let targetIndex = currentIndex;
-                if (diff < -threshold && currentIndex < pairs.length - 1) {
-                    targetIndex = currentIndex + 1;
-                } else if (diff > threshold && currentIndex > 0) {
-                    targetIndex = currentIndex - 1;
-                }
+                    let targetIndex = currentIndex;
+                    if (diff < -threshold && currentIndex < pairs.length - 1) {
+                        targetIndex = currentIndex + 1;
+                    } else if (diff > threshold && currentIndex > 0) {
+                        targetIndex = currentIndex - 1;
+                    }
 
-                goTo(targetIndex, true);
-            }, { passive: true });
+                    goTo(targetIndex, true);
+                }, { passive: true });
 
-            // Mouse events
-            track.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                startX = e.clientX;
-                track.style.transition = 'none';
-                track.style.cursor = 'grabbing';
-                e.preventDefault();
-            });
+                targetTrack.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    startX = e.clientX;
+                    targetTrack.style.transition = 'none';
+                    targetTrack.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+            }
+
+            setupCarouselInteractions(track);
 
             window.addEventListener('mousemove', function(e) {
                 if (!isDragging) return;
@@ -560,13 +515,15 @@
                 }
 
                 currentTranslate = newTranslate;
-                track.style.transform = `translateX(${newTranslate}px)`;
+                const activeTrack = document.getElementById('carouselTrack');
+                if (activeTrack) activeTrack.style.transform = `translateX(${newTranslate}px)`;
             });
 
             window.addEventListener('mouseup', function() {
                 if (!isDragging) return;
                 isDragging = false;
-                track.style.cursor = 'grab';
+                const activeTrack = document.getElementById('carouselTrack');
+                if (activeTrack) activeTrack.style.cursor = 'grab';
 
                 const slideWidth = getSlideWidth();
                 const diff = currentTranslate - (-currentIndex * slideWidth);
@@ -582,7 +539,7 @@
                 goTo(targetIndex, true);
             });
 
-            // Resize
+            // Resize responsive safety hooks
             let resizeTimer;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimer);
@@ -591,14 +548,16 @@
                 }, 100);
             });
 
-            // ===== ORIGINAL VISUALIZER ANIMATION =====
+            // ===== AUDIO MATH GENERATION & VISUALIZER ENGINE =====
             const BAR_MIN = 8;
             const BAR_MAX = 58;
+            let animFrame = null;
+            let startTime = null;
+            let running = true;
 
             function generateAudioData(time) {
                 const data = [];
                 const numBars = 7;
-                
                 const beat1 = Math.sin(time * 2.0 * Math.PI * 0.8);
                 const beat2 = Math.sin(time * 2.0 * Math.PI * 1.2 + 0.5);
                 const beat3 = Math.sin(time * 2.0 * Math.PI * 1.6 + 1.0);
@@ -607,38 +566,27 @@
                     const freq = (i + 1) / numBars;
                     let lowResponse = Math.max(0, 1 - freq * 2);
                     let highResponse = Math.max(0, (freq - 0.3) * 2);
-                    
                     let value = 0;
                     
                     if (i < 3) {
                         value += beat1 * beat1 * 0.7 * lowResponse;
                         value += Math.sin(time * 0.5 + i) * 0.2 * lowResponse;
                     }
-                    
                     if (i >= 2 && i <= 4) {
                         const midResponse = 1 - Math.abs(i - 3) / 2;
                         value += beat2 * beat2 * 0.6 * midResponse;
                         value += Math.sin(time * 1.0 + i * 1.5) * 0.3 * midResponse;
                     }
-                    
                     if (i >= 4) {
                         value += beat3 * beat3 * 0.5 * highResponse;
                         value += Math.sin(time * 2.0 + i * 2.0) * 0.4 * highResponse;
                     }
                     
-                    const sweep = Math.sin(time * 0.3 + i * 0.8) * 0.2;
-                    value += sweep;
-                    
-                    const rhythm = Math.sin(time * 2.0 * Math.PI * 1.4 + i * 0.3);
-                    value += rhythm * 0.15;
-                    
-                    value = Math.max(0, value);
-                    value = Math.min(1, value * 1.2);
-                    value = Math.pow(value, 0.7);
-                    
-                    data.push(value);
+                    value += Math.sin(time * 0.3 + i * 0.8) * 0.2;
+                    value += Math.sin(time * 2.0 * Math.PI * 1.4 + i * 0.3) * 0.15;
+                    value = Math.max(0, Math.min(1, value * 1.2));
+                    data.push(Math.pow(value, 0.7));
                 }
-                
                 return data;
             }
 
@@ -646,17 +594,12 @@
                 const values = generateAudioData(time);
                 document.querySelectorAll('.slide-bar').forEach((bar, index) => {
                     const barIndex = index % 7;
-                    const normalized = values[barIndex];
-                    let height = BAR_MIN + (BAR_MAX - BAR_MIN) * normalized;
+                    let height = BAR_MIN + (BAR_MAX - BAR_MIN) * values[barIndex];
                     height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
                     bar.style.height = height + 'px';
                     bar.style.opacity = '1';
                 });
             }
-
-            let animFrame = null;
-            let startTime = null;
-            let running = true;
 
             function animate(timestamp) {
                 if (!running) return;
@@ -680,27 +623,13 @@
                     animFrame = null;
                 }
                 document.querySelectorAll('.slide-bar').forEach(bar => {
-                    if (bar) {
-                        bar.style.height = BAR_MIN + 'px';
-                        bar.style.opacity = '1';
-                    }
+                    bar.style.height = BAR_MIN + 'px';
                 });
             }
 
-            // Set initial bars
-            document.querySelectorAll('.slide-bar').forEach(bar => {
-                if (bar) {
-                    bar.style.height = BAR_MIN + 'px';
-                    bar.style.opacity = '1';
-                }
-            });
+            setTimeout(startVisualizer, 1200);
 
-            // Start animation after intro
-            setTimeout(function() {
-                startVisualizer();
-            }, 1200);
-
-            // ===== CLICK SLIDE → OVERLAY (entire slide) =====
+            // ===== INTERACTION SYSTEM MECHANICS =====
             document.addEventListener('click', function(e) {
                 if (e.target.closest('.carousel-slide')) {
                     overlay.classList.add('active');
@@ -722,151 +651,152 @@
                 document.body.style.overflow = '';
             });
 
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && overlay.classList.contains('active')) {
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-
-            // ===== TOGGLE EMOJIS ON WORD CLICK =====
-            let clickTimer = null;
-            let isEditing = false;
-
-            wordDisplay.addEventListener('click', function(e) {
-                if (isEditing) return;
-                
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                    return;
-                }
-                
-                clickTimer = setTimeout(function() {
-                    clickTimer = null;
-                    emojisVisible = !emojisVisible;
-                    
-                    // Toggle emoji and label visibility
-                    document.querySelectorAll('.slide-emoji').forEach(el => {
-                        el.classList.toggle('visible', emojisVisible);
-                    });
-                    document.querySelectorAll('.slide-label').forEach(el => {
-                        el.classList.toggle('visible', emojisVisible);
-                    });
-                    
-                    // Expand/shrink the visualizer
-                    document.querySelectorAll('.slide-visualizer').forEach(el => {
-                        if (emojisVisible) {
-                            el.classList.add('expanded');
-                        } else {
-                            el.classList.remove('expanded');
-                        }
-                    });
-                }, 250);
-            });
-
-            // ===== EDIT WORD ON DOUBLE CLICK =====
-            wordDisplay.addEventListener('dblclick', function(e) {
-                e.preventDefault();
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                }
-                isEditing = true;
-                wordDisplay.contentEditable = true;
-                wordDisplay.classList.add('editing');
-                wordDisplay.focus();
-                const range = document.createRange();
-                const sel = window.getSelection();
-                range.selectNodeContents(wordDisplay);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            });
-
-            wordDisplay.addEventListener('blur', function() {
-                isEditing = false;
-                wordDisplay.contentEditable = false;
-                wordDisplay.classList.remove('editing');
-                if (this.textContent.trim() === '') {
-                    this.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
-                }
-                saveWordToStorage();
-            });
-
-            wordDisplay.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' || e.key === 'Enter') {
-                    this.blur();
-                }
-            });
-
-            function saveWordToStorage() {
-                try {
-                    const text = wordDisplay.textContent.trim();
-                    if (text.length > 0) {
-                        localStorage.setItem('giant_word', text);
-                    } else {
-                        const fallback = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
-                        wordDisplay.textContent = fallback;
-                        localStorage.setItem('giant_word', fallback);
+            // Toggle element configurations on word target click
+            function setupWordClickBehavior(element) {
+                element.addEventListener('click', function(e) {
+                    if (isEditing) return;
+                    if (clickTimer) {
+                        clearTimeout(clickTimer);
+                        clickTimer = null;
+                        return;
                     }
-                } catch (e) {}
+                    
+                    clickTimer = setTimeout(function() {
+                        clickTimer = null;
+                        emojisVisible = !emojisVisible;
+                        
+                        document.querySelectorAll('.slide-emoji').forEach(el => el.classList.toggle('visible', emojisVisible));
+                        document.querySelectorAll('.slide-label').forEach(el => el.classList.toggle('visible', emojisVisible));
+                        document.querySelectorAll('.slide-visualizer').forEach(el => {
+                            el.classList.toggle('expanded', emojisVisible);
+                        });
+                    }, 250);
+                });
+
+                // Editable element configuration rules
+                element.addEventListener('dblclick', function(e) {
+                    e.preventDefault();
+                    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+                    isEditing = true;
+                    element.contentEditable = true;
+                    element.classList.add('editing');
+                    element.focus();
+                    
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.selectNodeContents(element);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                });
+
+                element.addEventListener('blur', function() {
+                    handleWordBlur(this);
+                });
+
+                element.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' || e.key === 'Enter') this.blur();
+                });
+            }
+
+            function handleWordBlur(element) {
+                isEditing = false;
+                element.contentEditable = false;
+                element.classList.remove('editing');
+                if (element.textContent.trim() === '') {
+                    element.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
+                }
+                saveWordToStorage(element.textContent.trim());
+            }
+
+            setupWordClickBehavior(wordDisplay);
+
+            // LocalStorage handlers
+            function saveWordToStorage(text) {
+                try { localStorage.setItem('giant_word', text); } catch (e) {}
             }
 
             function loadSavedWord() {
                 try {
                     const saved = localStorage.getItem('giant_word');
-                    if (saved && saved.trim().length > 0) {
-                        wordDisplay.textContent = saved.trim();
-                    }
+                    if (saved && saved.trim().length > 0) wordDisplay.textContent = saved.trim();
                 } catch (e) {}
             }
             loadSavedWord();
-
-            // Initial position
             goTo(0, false);
 
-            // Cleanup
-            window.addEventListener('beforeunload', function() {
+            // ===== COMPLETE ENTRY TIMELINE RESET ENGINE (Soft Reset) =====
+            function replayIntro() {
+                const intro = document.getElementById('introOverlay');
+                const currentWord = document.getElementById('wordDisplay');
+                const wrapper = document.querySelector('.carousel-wrapper');
+                if (!intro) return;
+
+                // FORCE STATE CLEAR ON REFRESH (Hide Emojis and Labels natively)
+                emojisVisible = false;
+
+                // 1. Reset and replay intro overlay
+                const freshIntroNode = intro.cloneNode(true);
+                intro.parentNode.replaceChild(freshIntroNode, intro);
+
+                // 2. Clone and swap the giant word to re-trigger its slide-up layout entry animation
+                if (currentWord) {
+                    const freshWordNode = currentWord.cloneNode(true);
+                    setupWordClickBehavior(freshWordNode);
+                    currentWord.parentNode.replaceChild(freshWordNode, currentWord);
+                }
+
+                // 3. Clone and swap the carousel wrapper to re-trigger its slide-up entry animation
+                if (wrapper) {
+                    const freshWrapperNode = wrapper.cloneNode(true);
+                    wrapper.parentNode.replaceChild(freshWrapperNode, wrapper);
+                    
+                    const freshTrack = document.getElementById('carouselTrack');
+                    setupCarouselInteractions(freshTrack);
+                    
+                    // Force element visibility states to 'hidden / defaults' upon new nodes injection
+                    document.querySelectorAll('.slide-emoji').forEach(el => el.classList.remove('visible'));
+                    document.querySelectorAll('.slide-label').forEach(el => el.classList.remove('visible'));
+                    document.querySelectorAll('.slide-visualizer').forEach(el => el.classList.remove('expanded'));
+                    
+                    // Reposition track layout instantly back to current slide location
+                    const slideWidth = freshTrack.parentElement.clientWidth;
+                    freshTrack.style.transform = `translateX(${-currentIndex * slideWidth}px)`;
+                }
+
+                // 4. Restart audio visualizer sync animations
                 stopVisualizer();
-                saveWordToStorage();
+                setTimeout(startVisualizer, 1200);
+            }
+
+            // Universal background trigger configurations
+            let lastTap = 0;
+            document.addEventListener('touchend', function(e) {
+                if (e.target.closest('#wordDisplay') || e.target.closest('.carousel-slide') || e.target.closest('.overlay')) {
+                    lastTap = 0;
+                    return;
+                }
+                const now = Date.now();
+                if (now - lastTap < 350 && now - lastTap > 20) replayIntro();
+                lastTap = now;
             });
 
+            document.addEventListener('dblclick', function(e) {
+                if (!e.target.closest('#wordDisplay') && !e.target.closest('.carousel-slide') && !e.target.closest('.overlay')) {
+                    replayIntro();
+                }
+            });
+
+            // Tab visibility optimization adjustments
             document.addEventListener('visibilitychange', function() {
                 if (document.hidden) {
                     stopVisualizer();
-                    saveWordToStorage();
                 } else {
                     startVisualizer();
                 }
             });
 
-            // Double tap/click to refresh
-            let lastTap = 0;
-            document.addEventListener('touchend', function(e) {
-                if (e.target.closest('.giant-word') || e.target.closest('.carousel-slide') || e.target.closest('.overlay')) {
-                    lastTap = 0;
-                    return;
-                }
-                const now = Date.now();
-                if (now - lastTap < 350 && now - lastTap > 20) {
-                    location.reload();
-                }
-                lastTap = now;
-            });
-
-            document.addEventListener('dblclick', function(e) {
-                if (!e.target.closest('.giant-word') && !e.target.closest('.carousel-slide') && !e.target.closest('.overlay')) {
-                    location.reload();
-                }
-            });
-
-            console.log('🎵 Original Visualizer with emotion carousel running!');
-            console.log('👆 Click the word to show/hide emojis');
-            console.log('🎯 Click anywhere on the slide to open subscribe');
-
         })();
     </script>
-
 </body>
 </html>
