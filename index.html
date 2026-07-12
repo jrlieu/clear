@@ -157,12 +157,16 @@
             color: white;
             flex-shrink: 0;
             transition: opacity 0.3s ease, flex 0.3s ease, min-width 0.3s ease;
-        }
-
-        .slide-emoji.hidden {
             opacity: 0;
             flex: 0;
             min-width: 0;
+            pointer-events: none;
+        }
+
+        .slide-emoji.visible {
+            opacity: 1;
+            flex: 0 0 auto;
+            min-width: 80px;
             pointer-events: none;
         }
 
@@ -172,13 +176,17 @@
             align-items: center;
             gap: 8px;
             height: 80px;
-            flex: 1;
+            flex: 0 1 auto;
             min-width: 120px;
             pointer-events: none;
             background: transparent;
             border: none;
             box-shadow: none;
             transition: flex 0.3s ease;
+        }
+
+        .slide-visualizer.expanded {
+            flex: 1;
         }
 
         .slide-bar {
@@ -213,18 +221,17 @@
             text-align: center;
             flex-shrink: 0;
             transition: opacity 0.3s ease, flex 0.3s ease, min-width 0.3s ease;
-        }
-
-        .slide-label.hidden {
             opacity: 0;
             flex: 0;
             min-width: 0;
             pointer-events: none;
         }
 
-        .slide-visualizer.centered {
-            flex: 0 1 auto;
-            min-width: 120px;
+        .slide-label.visible {
+            opacity: 1;
+            flex: 0 0 auto;
+            min-width: 80px;
+            pointer-events: none;
         }
 
         /* INTRO OVERLAY WITH PROGRESS */
@@ -354,11 +361,11 @@
             .slide-bar {
                 width: 8px;
             }
-            .slide-emoji {
+            .slide-emoji.visible {
                 min-width: 60px;
-                font-size: 3rem;
+                font-size: 2.5rem;
             }
-            .slide-label {
+            .slide-label.visible {
                 min-width: 60px;
                 font-size: 1.4rem;
             }
@@ -424,7 +431,7 @@
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
 
-            let emojisVisible = true;
+            let emojisVisible = false; // Start hidden
 
             // Build carousel slides
             pairs.forEach(p => {
@@ -740,16 +747,19 @@
                     emojisVisible = !emojisVisible;
                     
                     // Toggle emoji and label visibility
-                    document.querySelectorAll('.slide-emoji, .slide-label').forEach(el => {
-                        el.classList.toggle('hidden', !emojisVisible);
+                    document.querySelectorAll('.slide-emoji').forEach(el => {
+                        el.classList.toggle('visible', emojisVisible);
+                    });
+                    document.querySelectorAll('.slide-label').forEach(el => {
+                        el.classList.toggle('visible', emojisVisible);
                     });
                     
-                    // Center the visualizer when emojis are hidden
+                    // Expand/shrink the visualizer
                     document.querySelectorAll('.slide-visualizer').forEach(el => {
-                        if (!emojisVisible) {
-                            el.classList.add('centered');
+                        if (emojisVisible) {
+                            el.classList.add('expanded');
                         } else {
-                            el.classList.remove('centered');
+                            el.classList.remove('expanded');
                         }
                     });
                 }, 250);
@@ -852,7 +862,7 @@
             });
 
             console.log('🎵 Original Visualizer with emotion carousel running!');
-            console.log('👆 Click the word to toggle emojis');
+            console.log('👆 Click the word to show/hide emojis');
             console.log('🎯 Click anywhere on the slide to open subscribe');
 
         })();
