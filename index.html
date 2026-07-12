@@ -6,7 +6,6 @@
     <title>Audio visualizer · editable word</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
     <style>
-        /* ----- reset & base ----- */
         * {
             margin: 0;
             padding: 0;
@@ -26,43 +25,33 @@
             overflow: hidden;
         }
 
-        /* ----- main container ----- */
         .main-wrapper {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             width: 100%;
-            min-height: 100vh;
-            padding: 1rem 0;
-            position: relative;
-            z-index: 1;
+            max-width: 700px;
+            gap: 2rem;
         }
 
-        /* ----- word container ----- */
         .word-container {
             min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             width: 100%;
-            margin-bottom: 2rem;
+            cursor: pointer;
         }
 
-        /* ----- main word – big, editable ----- */
         .giant-word {
             color: white;
             font-family: 'Roboto', sans-serif;
             font-size: clamp(2.8rem, 18vw, 7rem);
             font-weight: 700;
-            letter-spacing: 0.02em;
             text-align: center;
             line-height: 1.2;
-            max-width: 95vw;
             word-break: break-word;
-            text-shadow: none;
-            transition: border-color 0.2s ease;
-            cursor: text;
             outline: none;
             border: 2px solid transparent;
             border-radius: 8px;
@@ -74,33 +63,22 @@
             align-items: center;
             justify-content: center;
             opacity: 0;
-            animation: fadeInWord 0.8s ease forwards 1.2s;
+            animation: fadeIn 0.8s ease forwards 1.2s;
         }
 
-        @keyframes fadeInWord {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .giant-word.editing {
             user-select: text;
             border-color: rgba(255, 255, 255, 0.3);
             background: rgba(255, 255, 255, 0.03);
+            cursor: text;
         }
 
-        .giant-word:focus {
-            user-select: text;
-            border-color: rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        /* ----- visualizer - BLUISH ACCENT THEME ----- */
+        /* ORIGINAL VISUALIZER */
         .viz-row {
             display: flex;
             justify-content: center;
@@ -115,8 +93,6 @@
             cursor: pointer;
             position: relative;
             z-index: 2;
-            opacity: 0;
-            animation: fadeInWord 0.8s ease forwards 1.4s;
         }
 
         .bar {
@@ -134,7 +110,6 @@
             opacity: 1 !important;
         }
 
-        /* Different shades for each bar - spectrum effect */
         .bar:nth-child(1) { background: #4a9eff; box-shadow: 0 0 15px rgba(74, 158, 255, 0.3); }
         .bar:nth-child(2) { background: #5aafff; box-shadow: 0 0 15px rgba(90, 175, 255, 0.35); }
         .bar:nth-child(3) { background: #6abfff; box-shadow: 0 0 15px rgba(106, 191, 255, 0.4); }
@@ -143,48 +118,115 @@
         .bar:nth-child(6) { background: #9aefff; box-shadow: 0 0 15px rgba(154, 239, 255, 0.35); }
         .bar:nth-child(7) { background: #aaffff; box-shadow: 0 0 15px rgba(170, 255, 255, 0.3); }
 
-        /* ----- SHARED BUTTON STYLES for subscribe ----- */
-        .btn-gradient {
-            font-family: 'Roboto', sans-serif;
-            font-size: clamp(2rem, 6vw, 3.5rem);
-            font-weight: 700;
-            padding: 1.2rem 3.5rem;
-            border: none;
-            border-radius: 60px;
-            cursor: pointer;
-            letter-spacing: 0.05em;
+        /* CAROUSEL */
+        .carousel-wrapper {
+            width: 100%;
+            overflow: hidden;
             position: relative;
-            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
-            background-size: 300% 300%;
+            opacity: 0;
+            animation: fadeIn 0.8s ease forwards 1.4s;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: grab;
+            touch-action: pan-y;
+        }
+
+        .carousel-track:active {
+            cursor: grabbing;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 0.5rem 0;
+            flex-shrink: 0;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .slide-emoji {
+            font-size: clamp(1.8rem, 6vw, 3.2rem);
+            min-width: 80px;
+            text-align: center;
             color: white;
-            animation: gradientMove 6s ease-in-out infinite;
-            transition: transform 0.2s ease;
-            box-shadow: 0 0 30px rgba(74, 158, 255, 0.2);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            transition: opacity 0.3s ease, flex 0.3s ease, min-width 0.3s ease;
         }
 
-        .btn-gradient:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 50px rgba(74, 158, 255, 0.4);
+        .slide-emoji.hidden {
+            opacity: 0;
+            flex: 0;
+            min-width: 0;
+            pointer-events: none;
         }
 
-        .btn-gradient:active {
-            transform: scale(0.95);
+        .slide-visualizer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            height: 80px;
+            flex: 1;
+            min-width: 120px;
+            pointer-events: none;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            transition: flex 0.3s ease;
         }
 
-        @keyframes gradientMove {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
+        .slide-bar {
+            width: 10px;
+            height: 18px;
+            background: #4a9eff;
+            border-radius: 9999px;
+            transition: height 0.08s ease-out;
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
+            transform: scaleY(1);
+            transform-origin: center;
+            will-change: height;
+            flex-shrink: 0;
+            pointer-events: none;
+            opacity: 1 !important;
         }
 
-        /* ----- INTRO "Pronounce" - NO BACKDROPS, FULLY OPAQUE ----- */
+        .slide-bar:nth-child(1) { background: #4a9eff; box-shadow: 0 0 15px rgba(74, 158, 255, 0.3); }
+        .slide-bar:nth-child(2) { background: #5aafff; box-shadow: 0 0 15px rgba(90, 175, 255, 0.35); }
+        .slide-bar:nth-child(3) { background: #6abfff; box-shadow: 0 0 15px rgba(106, 191, 255, 0.4); }
+        .slide-bar:nth-child(4) { background: #7acfff; box-shadow: 0 0 15px rgba(122, 207, 255, 0.45); }
+        .slide-bar:nth-child(5) { background: #8adfff; box-shadow: 0 0 15px rgba(138, 223, 255, 0.4); }
+        .slide-bar:nth-child(6) { background: #9aefff; box-shadow: 0 0 15px rgba(154, 239, 255, 0.35); }
+        .slide-bar:nth-child(7) { background: #aaffff; box-shadow: 0 0 15px rgba(170, 255, 255, 0.3); }
+
+        .slide-label {
+            font-size: clamp(1.8rem, 6vw, 3.2rem);
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.05em;
+            min-width: 80px;
+            text-align: center;
+            flex-shrink: 0;
+            transition: opacity 0.3s ease, flex 0.3s ease, min-width 0.3s ease;
+        }
+
+        .slide-label.hidden {
+            opacity: 0;
+            flex: 0;
+            min-width: 0;
+            pointer-events: none;
+        }
+
+        .slide-visualizer.centered {
+            flex: 0 1 auto;
+            min-width: 120px;
+        }
+
         .intro-overlay {
             position: fixed;
             top: 0;
@@ -201,13 +243,8 @@
         }
 
         @keyframes introFadeOut {
-            0% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                pointer-events: none;
-            }
+            0% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
         }
 
         .intro-text {
@@ -215,72 +252,20 @@
             font-size: clamp(2rem, 6vw, 3.5rem);
             font-weight: 700;
             padding: 1.2rem 3.5rem;
-            border: none;
             border-radius: 60px;
-            letter-spacing: 0.05em;
-            cursor: default;
-            position: relative;
             color: white;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
+            background: #4a9eff;
             animation: introPulse 0.6s ease-in-out;
-            background: #4a9eff;
-            z-index: 1;
-            border-radius: 60px;
-        }
-
-        /* Solid blue background - NO transparency */
-        .intro-text .bg-solid {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            background: #4a9eff;
-            z-index: -1;
-        }
-
-        /* Gradient fill - FULLY OPAQUE */
-        .intro-text .bg-gradient {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
-            background-size: 300% 100%;
-            z-index: -1;
-            animation: fillGradient 0.6s ease-in-out forwards;
-        }
-
-        @keyframes fillGradient {
-            0% {
-                width: 0%;
-            }
-            100% {
-                width: 100%;
-            }
+            box-shadow: 0 0 50px rgba(74, 158, 255, 0.3);
         }
 
         @keyframes introPulse {
-            0% {
-                transform: scale(0.6);
-                opacity: 0;
-            }
-            30% {
-                transform: scale(1.05);
-                opacity: 1;
-            }
-            60% {
-                transform: scale(0.95);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0% { transform: scale(0.6); opacity: 0; }
+            30% { transform: scale(1.05); opacity: 1; }
+            60% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
         }
 
-        /* ----- OVERLAY - FULLY OPAQUE BLACK ----- */
         .overlay {
             position: fixed;
             top: 0;
@@ -292,40 +277,61 @@
             justify-content: center;
             align-items: center;
             z-index: 999;
-            animation: fadeIn 0.3s ease;
         }
 
         .overlay.active {
             display: flex;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+        .subscribe-btn {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 700;
+            padding: 1.2rem 3.5rem;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #4a9eff, #7acfff, #aaffff, #7acfff, #4a9eff);
+            background-size: 300% 300%;
+            color: white;
+            animation: gradientMove 6s ease-in-out infinite, popIn 0.4s ease;
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.2);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
-        /* ----- SUBSCRIBE BUTTON ----- */
-        .subscribe-btn {
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), gradientMove 6s ease-in-out infinite;
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         @keyframes popIn {
-            from {
-                transform: scale(0.5);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
-        /* responsive */
         @media (max-width: 500px) {
+            .slide-visualizer {
+                height: 60px;
+                gap: 6px;
+            }
+            .slide-bar {
+                width: 8px;
+            }
+            .slide-emoji {
+                min-width: 60px;
+                font-size: 3rem;
+            }
+            .slide-label {
+                min-width: 60px;
+                font-size: 1.4rem;
+            }
+            .giant-word {
+                font-size: clamp(2rem, 12vw, 4rem);
+            }
+            .carousel-slide {
+                gap: 0.8rem;
+            }
             .viz-row {
                 gap: 6px;
                 height: 60px;
@@ -333,161 +339,253 @@
             .bar {
                 width: 8px;
             }
-            .word-container {
-                min-height: 80px;
-            }
-            .giant-word {
-                min-height: 60px;
-                font-size: clamp(2rem, 12vw, 4rem);
-            }
-            .btn-gradient {
-                font-size: 1.3rem;
-                padding: 0.9rem 2rem;
-            }
-            .intro-text {
-                font-size: 1.3rem;
-                padding: 0.9rem 2rem;
-            }
         }
     </style>
 </head>
 <body>
 
-    <!-- INTRO "Pronounce" - NO BACKDROPS -->
     <div class="intro-overlay" id="introOverlay">
-        <div class="intro-text">
-            PONOUNCE
-            <div class="bg-solid"></div>
-            <div class="bg-gradient"></div>
-        </div>
+        <div class="intro-text">PONOUNCE</div>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <button class="subscribe-btn" id="subscribeBtn">SUBSCRIBE</button>
     </div>
 
     <div class="main-wrapper">
-        <!-- word with fixed container -->
         <div class="word-container">
             <div class="giant-word" id="wordDisplay" contenteditable="false" spellcheck="false">
                 Pneumonoultramicroscopicsilicovolcanoconiosis
             </div>
         </div>
 
-        <!-- 7‑bar visualizer - BLUISH ACCENT -->
-        <div class="viz-row" id="visualizer">
-            <div class="bar" id="bar0"></div>
-            <div class="bar" id="bar1"></div>
-            <div class="bar" id="bar2"></div>
-            <div class="bar" id="bar3"></div>
-            <div class="bar" id="bar4"></div>
-            <div class="bar" id="bar5"></div>
-            <div class="bar" id="bar6"></div>
+        <div class="carousel-wrapper">
+            <div class="carousel-track" id="carouselTrack">
+                <!-- slides injected by JS -->
+            </div>
         </div>
-    </div>
-
-    <!-- OVERLAY - FULLY OPAQUE BLACK -->
-    <div class="overlay" id="overlay">
-        <button class="subscribe-btn btn-gradient" id="subscribeBtn">SUBSCRIBE</button>
     </div>
 
     <script>
         (function() {
             "use strict";
 
-            // ----- DOM refs -----
-            const bars = [
-                document.getElementById('bar0'),
-                document.getElementById('bar1'),
-                document.getElementById('bar2'),
-                document.getElementById('bar3'),
-                document.getElementById('bar4'),
-                document.getElementById('bar5'),
-                document.getElementById('bar6')
+            const pairs = [
+                { emoji: '😢', label: 'sad' },
+                { emoji: '😁', label: 'happy' },
+                { emoji: '🤬', label: 'angry' },
+                { emoji: '😱', label: 'scared' },
+                { emoji: '😇', label: 'heaven' }
             ];
+
+            const track = document.getElementById('carouselTrack');
             const wordDisplay = document.getElementById('wordDisplay');
-            const visualizer = document.getElementById('visualizer');
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
 
-            // ========== LOCAL STORAGE: load saved word ==========
-            const STORAGE_KEY = 'giant_word_text';
-            function loadSavedWord() {
-                try {
-                    const saved = localStorage.getItem(STORAGE_KEY);
-                    if (saved && saved.trim().length > 0) {
-                        wordDisplay.textContent = saved.trim();
-                    }
-                } catch (e) {}
-            }
-            loadSavedWord();
+            let emojisVisible = true;
 
-            function saveWordToStorage() {
-                try {
-                    const text = wordDisplay.textContent.trim();
-                    if (text.length > 0) {
-                        localStorage.setItem(STORAGE_KEY, text);
-                    } else {
-                        const fallback = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
-                        wordDisplay.textContent = fallback;
-                        localStorage.setItem(STORAGE_KEY, fallback);
-                    }
-                } catch (e) {}
+            // Build carousel slides
+            pairs.forEach(p => {
+                const slide = document.createElement('div');
+                slide.className = 'carousel-slide';
+                slide.innerHTML = `
+                    <div class="slide-emoji">${p.emoji}</div>
+                    <div class="slide-visualizer">
+                        <div class="slide-bar"></div>
+                        <div class="slide-bar"></div>
+                        <div class="slide-bar"></div>
+                        <div class="slide-bar"></div>
+                        <div class="slide-bar"></div>
+                        <div class="slide-bar"></div>
+                        <div class="slide-bar"></div>
+                    </div>
+                    <div class="slide-label">${p.label}</div>
+                `;
+                track.appendChild(slide);
+            });
+
+            // ===== CAROUSEL LOGIC =====
+            let currentIndex = 0;
+            let startX = 0;
+            let isDragging = false;
+            let currentTranslate = 0;
+
+            function getSlideWidth() {
+                return track.parentElement.clientWidth;
             }
 
-            // ----- Bar height limits -----
+            function goTo(index, animate = true) {
+                const maxIndex = pairs.length - 1;
+                if (index < 0) index = 0;
+                if (index > maxIndex) index = maxIndex;
+                currentIndex = index;
+                const translate = -index * getSlideWidth();
+                currentTranslate = translate;
+
+                if (!animate) {
+                    track.style.transition = 'none';
+                } else {
+                    track.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                }
+                track.style.transform = `translateX(${translate}px)`;
+                
+                if (!animate) {
+                    void track.offsetHeight;
+                    track.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                }
+            }
+
+            // Touch events
+            track.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) return;
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                track.style.transition = 'none';
+                track.style.cursor = 'grabbing';
+            }, { passive: true });
+
+            track.addEventListener('touchmove', function(e) {
+                if (!isDragging || e.touches.length > 1) return;
+                e.preventDefault();
+
+                const diff = e.touches[0].clientX - startX;
+                const slideWidth = getSlideWidth();
+                const baseTranslate = -currentIndex * slideWidth;
+                let newTranslate = baseTranslate + diff;
+
+                const maxTranslate = 0;
+                const minTranslate = -(pairs.length - 1) * slideWidth;
+                if (newTranslate > maxTranslate) {
+                    newTranslate = maxTranslate + (newTranslate - maxTranslate) * 0.2;
+                } else if (newTranslate < minTranslate) {
+                    newTranslate = minTranslate + (newTranslate - minTranslate) * 0.2;
+                }
+
+                currentTranslate = newTranslate;
+                track.style.transform = `translateX(${newTranslate}px)`;
+            }, { passive: false });
+
+            track.addEventListener('touchend', function() {
+                if (!isDragging) return;
+                isDragging = false;
+                track.style.cursor = 'grab';
+
+                const slideWidth = getSlideWidth();
+                const diff = currentTranslate - (-currentIndex * slideWidth);
+                const threshold = slideWidth * 0.15;
+
+                let targetIndex = currentIndex;
+                if (diff < -threshold && currentIndex < pairs.length - 1) {
+                    targetIndex = currentIndex + 1;
+                } else if (diff > threshold && currentIndex > 0) {
+                    targetIndex = currentIndex - 1;
+                }
+
+                goTo(targetIndex, true);
+            }, { passive: true });
+
+            // Mouse events
+            track.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX;
+                track.style.transition = 'none';
+                track.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const diff = e.clientX - startX;
+                const slideWidth = getSlideWidth();
+                const baseTranslate = -currentIndex * slideWidth;
+                let newTranslate = baseTranslate + diff;
+
+                const maxTranslate = 0;
+                const minTranslate = -(pairs.length - 1) * slideWidth;
+                if (newTranslate > maxTranslate) {
+                    newTranslate = maxTranslate + (newTranslate - maxTranslate) * 0.2;
+                } else if (newTranslate < minTranslate) {
+                    newTranslate = minTranslate + (newTranslate - minTranslate) * 0.2;
+                }
+
+                currentTranslate = newTranslate;
+                track.style.transform = `translateX(${newTranslate}px)`;
+            });
+
+            window.addEventListener('mouseup', function() {
+                if (!isDragging) return;
+                isDragging = false;
+                track.style.cursor = 'grab';
+
+                const slideWidth = getSlideWidth();
+                const diff = currentTranslate - (-currentIndex * slideWidth);
+                const threshold = slideWidth * 0.15;
+
+                let targetIndex = currentIndex;
+                if (diff < -threshold && currentIndex < pairs.length - 1) {
+                    targetIndex = currentIndex + 1;
+                } else if (diff > threshold && currentIndex > 0) {
+                    targetIndex = currentIndex - 1;
+                }
+
+                goTo(targetIndex, true);
+            });
+
+            // Resize
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    goTo(currentIndex, false);
+                }, 100);
+            });
+
+            // ===== ORIGINAL VISUALIZER ANIMATION =====
             const BAR_MIN = 8;
             const BAR_MAX = 58;
 
-            // ----- Generate rhythmic audio patterns -----
             function generateAudioData(time) {
                 const data = [];
-                const numBars = bars.length;
+                const numBars = 7;
                 
-                // Main beat (like a kick drum)
                 const beat1 = Math.sin(time * 2.0 * Math.PI * 0.8);
                 const beat2 = Math.sin(time * 2.0 * Math.PI * 1.2 + 0.5);
                 const beat3 = Math.sin(time * 2.0 * Math.PI * 1.6 + 1.0);
                 
                 for (let i = 0; i < numBars; i++) {
-                    // Each bar has a different frequency response (like a spectrum analyzer)
                     const freq = (i + 1) / numBars;
-                    
-                    // Low frequencies (left bars) respond to kick, high frequencies (right bars) respond to hi-hats
                     let lowResponse = Math.max(0, 1 - freq * 2);
                     let highResponse = Math.max(0, (freq - 0.3) * 2);
                     
-                    // Build the waveform for this bar
                     let value = 0;
                     
-                    // Bass frequencies (bars 0-2)
                     if (i < 3) {
                         value += beat1 * beat1 * 0.7 * lowResponse;
                         value += Math.sin(time * 0.5 + i) * 0.2 * lowResponse;
                     }
                     
-                    // Mid frequencies (bars 2-4)
                     if (i >= 2 && i <= 4) {
                         const midResponse = 1 - Math.abs(i - 3) / 2;
                         value += beat2 * beat2 * 0.6 * midResponse;
                         value += Math.sin(time * 1.0 + i * 1.5) * 0.3 * midResponse;
                     }
                     
-                    // High frequencies (bars 4-6)
                     if (i >= 4) {
                         value += beat3 * beat3 * 0.5 * highResponse;
                         value += Math.sin(time * 2.0 + i * 2.0) * 0.4 * highResponse;
                     }
                     
-                    // Add a sweeping wave effect
                     const sweep = Math.sin(time * 0.3 + i * 0.8) * 0.2;
                     value += sweep;
                     
-                    // Add some rhythmic variation
                     const rhythm = Math.sin(time * 2.0 * Math.PI * 1.4 + i * 0.3);
                     value += rhythm * 0.15;
                     
-                    // Normalize and clamp
                     value = Math.max(0, value);
                     value = Math.min(1, value * 1.2);
-                    
-                    // Apply easing for smoother motion
                     value = Math.pow(value, 0.7);
                     
                     data.push(value);
@@ -496,57 +594,44 @@
                 return data;
             }
 
-            // ----- Update bars -----
             function updateBars(time) {
-                const data = generateAudioData(time);
-                
-                for (let i = 0; i < bars.length; i++) {
-                    if (bars[i]) {
-                        const normalized = data[i];
-                        let height = BAR_MIN + (BAR_MAX - BAR_MIN) * normalized;
-                        height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
-                        bars[i].style.height = height + 'px';
-                        bars[i].style.opacity = '1';
-                    }
-                }
+                const values = generateAudioData(time);
+                document.querySelectorAll('.slide-bar').forEach((bar, index) => {
+                    const barIndex = index % 7;
+                    const normalized = values[barIndex];
+                    let height = BAR_MIN + (BAR_MAX - BAR_MIN) * normalized;
+                    height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
+                    bar.style.height = height + 'px';
+                    bar.style.opacity = '1';
+                });
             }
 
-            // ----- Animation loop -----
-            let animationFrame = null;
-            let isRunning = true;
+            let animFrame = null;
             let startTime = null;
+            let running = true;
 
             function animate(timestamp) {
-                if (!isRunning) return;
-                
-                if (startTime === null) {
-                    startTime = timestamp;
-                }
+                if (!running) return;
+                if (startTime === null) startTime = timestamp;
                 const time = (timestamp - startTime) / 1000;
-                
                 updateBars(time);
-                animationFrame = requestAnimationFrame(animate);
+                animFrame = requestAnimationFrame(animate);
             }
 
-            // ----- Start animation -----
-            function startAnimation() {
-                if (animationFrame) {
-                    cancelAnimationFrame(animationFrame);
-                    animationFrame = null;
-                }
-                isRunning = true;
+            function startVisualizer() {
+                if (animFrame) cancelAnimationFrame(animFrame);
+                running = true;
                 startTime = null;
                 animate(0);
             }
 
-            // ----- Stop animation -----
-            function stopAnimation() {
-                isRunning = false;
-                if (animationFrame) {
-                    cancelAnimationFrame(animationFrame);
-                    animationFrame = null;
+            function stopVisualizer() {
+                running = false;
+                if (animFrame) {
+                    cancelAnimationFrame(animFrame);
+                    animFrame = null;
                 }
-                bars.forEach(bar => {
+                document.querySelectorAll('.slide-bar').forEach(bar => {
                     if (bar) {
                         bar.style.height = BAR_MIN + 'px';
                         bar.style.opacity = '1';
@@ -554,24 +639,88 @@
                 });
             }
 
-            // ---- Set initial bars ----
-            bars.forEach(bar => {
+            // Set initial bars
+            document.querySelectorAll('.slide-bar').forEach(bar => {
                 if (bar) {
                     bar.style.height = BAR_MIN + 'px';
                     bar.style.opacity = '1';
                 }
             });
 
-            // ----- Start animation after intro -----
-            setTimeout(() => {
-                startAnimation();
+            // Start animation after intro
+            setTimeout(function() {
+                startVisualizer();
             }, 1200);
 
-            // ========== EDIT WORD ==========
+            // ===== CLICK SLIDE → OVERLAY (entire slide) =====
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.carousel-slide')) {
+                    overlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            subscribeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                alert('Thank you for subscribing!');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // ===== TOGGLE EMOJIS ON WORD CLICK =====
+            let clickTimer = null;
             let isEditing = false;
 
-            function enableEditing() {
+            wordDisplay.addEventListener('click', function(e) {
                 if (isEditing) return;
+                
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                    return;
+                }
+                
+                clickTimer = setTimeout(function() {
+                    clickTimer = null;
+                    emojisVisible = !emojisVisible;
+                    
+                    // Toggle emoji and label visibility
+                    document.querySelectorAll('.slide-emoji, .slide-label').forEach(el => {
+                        el.classList.toggle('hidden', !emojisVisible);
+                    });
+                    
+                    // Center the visualizer when emojis are hidden
+                    document.querySelectorAll('.slide-visualizer').forEach(el => {
+                        if (!emojisVisible) {
+                            el.classList.add('centered');
+                        } else {
+                            el.classList.remove('centered');
+                        }
+                    });
+                }, 250);
+            });
+
+            // ===== EDIT WORD ON DOUBLE CLICK =====
+            wordDisplay.addEventListener('dblclick', function(e) {
+                e.preventDefault();
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                }
                 isEditing = true;
                 wordDisplay.contentEditable = true;
                 wordDisplay.classList.add('editing');
@@ -582,165 +731,91 @@
                 range.collapse(false);
                 sel.removeAllRanges();
                 sel.addRange(range);
-            }
-
-            function disableEditing() {
-                if (!isEditing) return;
-                isEditing = false;
-                wordDisplay.contentEditable = false;
-                wordDisplay.classList.remove('editing');
-                wordDisplay.blur();
-                saveWordToStorage();
-            }
-
-            wordDisplay.addEventListener('dblclick', (e) => {
-                e.preventDefault();
-                enableEditing();
-            });
-
-            let lastTouchEnd = 0;
-            let touchTimeout = null;
-            wordDisplay.addEventListener('touchend', (e) => {
-                const now = Date.now();
-                const timeSince = now - lastTouchEnd;
-                lastTouchEnd = now;
-                if (timeSince < 350 && timeSince > 20) {
-                    e.preventDefault();
-                    if (touchTimeout) clearTimeout(touchTimeout);
-                    enableEditing();
-                } else {
-                    if (touchTimeout) clearTimeout(touchTimeout);
-                    touchTimeout = setTimeout(() => { touchTimeout = null; }, 400);
-                }
             });
 
             wordDisplay.addEventListener('blur', function() {
+                isEditing = false;
+                wordDisplay.contentEditable = false;
+                wordDisplay.classList.remove('editing');
                 if (this.textContent.trim() === '') {
                     this.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
                 }
-                disableEditing();
+                saveWordToStorage();
             });
 
-            wordDisplay.addEventListener('keydown', (e) => {
+            wordDisplay.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' || e.key === 'Enter') {
                     this.blur();
                 }
             });
 
-            // ========== CLICK VISUALIZER → OVERLAY ==========
-            visualizer.addEventListener('click', (e) => {
-                e.stopPropagation();
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && overlay.classList.contains('active')) {
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-
-            subscribeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                alert('Thank you for subscribing!');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-
-            // ========== DOUBLE TAP ON BODY (excluding elements) TO REFRESH ==========
-            let lastTapTime = 0;
-            let tapTimeout = null;
-
-            document.addEventListener('touchend', function(e) {
-                // Check if the tap was on the body (not on any interactive element)
-                const target = e.target;
-                const isInteractive = target.closest('.giant-word') || 
-                                     target.closest('.viz-row') || 
-                                     target.closest('.overlay') || 
-                                     target.closest('.subscribe-btn') ||
-                                     target.closest('.intro-text') ||
-                                     target.closest('.intro-overlay');
-                
-                if (isInteractive) {
-                    // Reset tap detection if tapping on interactive elements
-                    lastTapTime = 0;
-                    if (tapTimeout) {
-                        clearTimeout(tapTimeout);
-                        tapTimeout = null;
+            function saveWordToStorage() {
+                try {
+                    const text = wordDisplay.textContent.trim();
+                    if (text.length > 0) {
+                        localStorage.setItem('giant_word', text);
+                    } else {
+                        const fallback = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
+                        wordDisplay.textContent = fallback;
+                        localStorage.setItem('giant_word', fallback);
                     }
+                } catch (e) {}
+            }
+
+            function loadSavedWord() {
+                try {
+                    const saved = localStorage.getItem('giant_word');
+                    if (saved && saved.trim().length > 0) {
+                        wordDisplay.textContent = saved.trim();
+                    }
+                } catch (e) {}
+            }
+            loadSavedWord();
+
+            // Initial position
+            goTo(0, false);
+
+            // Cleanup
+            window.addEventListener('beforeunload', function() {
+                stopVisualizer();
+                saveWordToStorage();
+            });
+
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    stopVisualizer();
+                    saveWordToStorage();
+                } else {
+                    startVisualizer();
+                }
+            });
+
+            // Double tap/click to refresh
+            let lastTap = 0;
+            document.addEventListener('touchend', function(e) {
+                if (e.target.closest('.giant-word') || e.target.closest('.carousel-slide') || e.target.closest('.overlay')) {
+                    lastTap = 0;
                     return;
                 }
-
                 const now = Date.now();
-                const timeSince = now - lastTapTime;
-                
-                if (timeSince < 350 && timeSince > 20) {
-                    // Double tap detected on body - refresh the page
-                    e.preventDefault();
-                    if (tapTimeout) {
-                        clearTimeout(tapTimeout);
-                        tapTimeout = null;
-                    }
+                if (now - lastTap < 350 && now - lastTap > 20) {
                     location.reload();
-                } else {
-                    // Single tap - set up detection for double tap
-                    if (tapTimeout) {
-                        clearTimeout(tapTimeout);
-                        tapTimeout = null;
-                    }
-                    tapTimeout = setTimeout(() => {
-                        tapTimeout = null;
-                    }, 400);
                 }
-                lastTapTime = now;
+                lastTap = now;
             });
 
-            // Also support double click on desktop (excluding elements)
             document.addEventListener('dblclick', function(e) {
-                // Check if the click was on the body (not on any interactive element)
-                const target = e.target;
-                const isInteractive = target.closest('.giant-word') || 
-                                     target.closest('.viz-row') || 
-                                     target.closest('.overlay') || 
-                                     target.closest('.subscribe-btn') ||
-                                     target.closest('.intro-text') ||
-                                     target.closest('.intro-overlay');
-                
-                if (!isInteractive) {
+                if (!e.target.closest('.giant-word') && !e.target.closest('.carousel-slide') && !e.target.closest('.overlay')) {
                     location.reload();
                 }
             });
 
-            // ========== CLEANUP ==========
-            window.addEventListener('beforeunload', () => {
-                stopAnimation();
-                saveWordToStorage();
-                if (tapTimeout) {
-                    clearTimeout(tapTimeout);
-                    tapTimeout = null;
-                }
-            });
+            console.log('🎵 Original Visualizer with emotion carousel running!');
+            console.log('👆 Click the word to toggle emojis');
+            console.log('🎯 Click anywhere on the slide to open subscribe');
 
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    saveWordToStorage();
-                }
-            });
-
-            console.log('🎵 Rhythmic Visualizer with bluish accent running!');
-            console.log('💾 The giant word is saved to localStorage automatically.');
-            console.log('👆 Double-click the word to edit it.');
-            console.log('🎯 Click the visualizer to open the overlay.');
-            console.log('🔄 Double-tap on empty area to refresh the page.');
         })();
     </script>
+
 </body>
 </html>
