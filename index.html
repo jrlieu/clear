@@ -350,7 +350,7 @@
 </head>
 <body>
 
-    <!-- INTRO CONTAINER (We keep a holder to clean-clone into) -->
+    <!-- INTRO CONTAINER -->
     <div id="introContainer">
         <div class="intro-overlay" id="introOverlay">
             <div class="intro-text">
@@ -385,7 +385,7 @@
 
             const pairs = [
                 { emoji: '😢', label: 'sad' },
-                { emoji: '😁', label: 'happy' },
+                { emoji: '😁', label: 'happy' }, // Index 1
                 { emoji: '🤬', label: 'angry' },
                 { emoji: '😱', label: 'scared' },
                 { emoji: '😇', label: 'heaven' }
@@ -398,11 +398,10 @@
             const subscribeBtn = document.getElementById('subscribeBtn');
             const introContainer = document.getElementById('introContainer');
             
-            // Save a pristine template structure of the intro layout
             const introTemplate = document.getElementById('introOverlay').cloneNode(true);
 
             let emojisVisible = false;
-            let currentIndex = 0;
+            let currentIndex = 1; // Start on Happy (Index 1)
             let startX = 0;
             let isDragging = false;
             let currentTranslate = 0;
@@ -454,7 +453,7 @@
                 }
             }
 
-            // Bind drag events perfectly directly to the DOM element architecture
+            // Bind drag events
             track.addEventListener('touchstart', function(e) {
                 if (e.touches.length > 1) return;
                 isDragging = true;
@@ -557,7 +556,7 @@
                 }, 100);
             });
 
-            // ===== AUDIO MATH GENERATION & VISUALIZER ENGINE =====
+            // ===== AUDIO VISUALIZER ENGINE =====
             const BAR_MIN = 8;
             const BAR_MAX = 58;
             let animFrame = null;
@@ -722,32 +721,34 @@
                 } catch (e) {}
             }
             loadSavedWord();
-            goTo(0, false);
+            
+            // Set initial position to Happy (index 1) without tracking animations
+            goTo(1, false);
 
-            // ===== BALANCED REPLAY ENTRY SYSTEM ENGINE =====
+            // ===== REPLAY ENTRY SYSTEM ENGINE =====
             function replayIntro() {
-                // 1. Instantly hide elements to act as a clean refresh
+                // 1. Instantly hide sub-elements
                 emojisVisible = false;
                 document.querySelectorAll('.slide-emoji').forEach(el => el.classList.remove('visible'));
                 document.querySelectorAll('.slide-label').forEach(el => el.classList.remove('visible'));
                 document.querySelectorAll('.slide-visualizer').forEach(el => el.classList.remove('expanded'));
 
-                // 2. Clear out the old intro node safely and inject a clean one from the template
+                // 2. Clear out the old intro node safely and inject a clean layout duplicate
                 introContainer.innerHTML = '';
                 const freshIntro = introTemplate.cloneNode(true);
                 introContainer.appendChild(freshIntro);
 
-                // 3. Re-trigger layout animations smoothly via keyframe triggers
+                // 3. Re-trigger layout text entry animations cleanly
                 wordDisplay.classList.add('trigger-entry');
                 wrapper.classList.add('trigger-entry');
                 void wordDisplay.offsetHeight; // Force reflow
                 wordDisplay.classList.remove('trigger-entry');
                 wrapper.classList.remove('trigger-entry');
 
-                // 4. Reposition track directly without breaking any layout rules or swiping event states
-                goTo(currentIndex, false);
+                // 4. Force slide repositioning to jump straight back to index 1 (happy emoji)
+                goTo(1, false);
 
-                // 5. Reset visualization loop
+                // 5. Reset visualization loops
                 stopVisualizer();
                 setTimeout(startVisualizer, 1200);
             }
