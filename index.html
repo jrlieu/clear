@@ -66,6 +66,12 @@
             animation: fadeIn 0.8s ease forwards 1.2s;
         }
 
+        /* Trigger clean entry on refresh */
+        .giant-word.trigger-entry {
+            animation: none;
+            opacity: 0;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -85,6 +91,11 @@
             position: relative;
             opacity: 0;
             animation: fadeIn 0.8s ease forwards 1.4s;
+        }
+
+        .carousel-wrapper.trigger-entry {
+            animation: none;
+            opacity: 0;
         }
 
         .carousel-track {
@@ -339,12 +350,14 @@
 </head>
 <body>
 
-    <!-- INTRO "Pronounce" with progress -->
-    <div class="intro-overlay" id="introOverlay">
-        <div class="intro-text">
-            PRONOUNCE
-            <div class="bg-solid"></div>
-            <div class="bg-gradient"></div>
+    <!-- INTRO CONTAINER (We keep a holder to clean-clone into) -->
+    <div id="introContainer">
+        <div class="intro-overlay" id="introOverlay">
+            <div class="intro-text">
+                PRONOUNCE
+                <div class="bg-solid"></div>
+                <div class="bg-gradient"></div>
+            </div>
         </div>
     </div>
 
@@ -359,7 +372,7 @@
             </div>
         </div>
 
-        <div class="carousel-wrapper">
+        <div class="carousel-wrapper" id="carouselWrapper">
             <div class="carousel-track" id="carouselTrack">
                 <!-- slides injected by JS -->
             </div>
@@ -379,9 +392,14 @@
             ];
 
             const track = document.getElementById('carouselTrack');
+            const wrapper = document.getElementById('carouselWrapper');
             const wordDisplay = document.getElementById('wordDisplay');
             const overlay = document.getElementById('overlay');
             const subscribeBtn = document.getElementById('subscribeBtn');
+            const introContainer = document.getElementById('introContainer');
+            
+            // Save a pristine template structure of the intro layout
+            const introTemplate = document.getElementById('introOverlay').cloneNode(true);
 
             let emojisVisible = false;
             let currentIndex = 0;
@@ -391,7 +409,7 @@
             let clickTimer = null;
             let isEditing = false;
 
-            // Build carousel slides
+            // Build carousel slides once
             pairs.forEach(p => {
                 const slide = document.createElement('div');
                 slide.className = 'carousel-slide';
@@ -412,7 +430,7 @@
             });
 
             function getSlideWidth() {
-                return track.parentElement.clientWidth;
+                return wrapper.clientWidth;
             }
 
             function goTo(index, animate = true) {
@@ -436,66 +454,60 @@
                 }
             }
 
-            // Bind drag and touch interactions
-            function setupCarouselInteractions(targetTrack) {
-                targetTrack.addEventListener('touchstart', function(e) {
-                    if (e.touches.length > 1) return;
-                    isDragging = true;
-                    startX = e.touches[0].clientX;
-                    targetTrack.style.transition = 'none';
-                    targetTrack.style.cursor = 'grabbing';
-                }, { passive: true });
+            // Bind drag events perfectly directly to the DOM element architecture
+            track.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) return;
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                track.style.transition = 'none';
+                track.style.cursor = 'grabbing';
+            }, { passive: true });
 
-                targetTrack.addEventListener('touchmove', function(e) {
-                    if (!isDragging || e.touches.length > 1) return;
-                    e.preventDefault();
+            track.addEventListener('touchmove', function(e) {
+                if (!isDragging || e.touches.length > 1) return;
+                const diff = e.touches[0].clientX - startX;
+                const slideWidth = getSlideWidth();
+                const baseTranslate = -currentIndex * slideWidth;
+                let newTranslate = baseTranslate + diff;
 
-                    const diff = e.touches[0].clientX - startX;
-                    const slideWidth = getSlideWidth();
-                    const baseTranslate = -currentIndex * slideWidth;
-                    let newTranslate = baseTranslate + diff;
+                const maxTranslate = 0;
+                const minTranslate = -(pairs.length - 1) * slideWidth;
+                if (newTranslate > maxTranslate) {
+                    newTranslate = maxTranslate + (newTranslate - maxTranslate) * 0.2;
+                } else if (newTranslate < minTranslate) {
+                    newTranslate = minTranslate + (newTranslate - minTranslate) * 0.2;
+                }
 
-                    const maxTranslate = 0;
-                    const minTranslate = -(pairs.length - 1) * slideWidth;
-                    if (newTranslate > maxTranslate) {
-                        newTranslate = maxTranslate + (newTranslate - maxTranslate) * 0.2;
-                    } else if (newTranslate < minTranslate) {
-                        newTranslate = minTranslate + (newTranslate - minTranslate) * 0.2;
-                    }
+                currentTranslate = newTranslate;
+                track.style.transform = `translateX(${newTranslate}px)`;
+            }, { passive: true });
 
-                    currentTranslate = newTranslate;
-                    targetTrack.style.transform = `translateX(${newTranslate}px)`;
-                }, { passive: false });
+            track.addEventListener('touchend', function() {
+                if (!isDragging) return;
+                isDragging = false;
+                track.style.cursor = 'grab';
 
-                targetTrack.addEventListener('touchend', function() {
-                    if (!isDragging) return;
-                    isDragging = false;
-                    targetTrack.style.cursor = 'grab';
+                const slideWidth = getSlideWidth();
+                const diff = currentTranslate - (-currentIndex * slideWidth);
+                const threshold = slideWidth * 0.15;
 
-                    const slideWidth = getSlideWidth();
-                    const diff = currentTranslate - (-currentIndex * slideWidth);
-                    const threshold = slideWidth * 0.15;
+                let targetIndex = currentIndex;
+                if (diff < -threshold && currentIndex < pairs.length - 1) {
+                    targetIndex = currentIndex + 1;
+                } else if (diff > threshold && currentIndex > 0) {
+                    targetIndex = currentIndex - 1;
+                }
 
-                    let targetIndex = currentIndex;
-                    if (diff < -threshold && currentIndex < pairs.length - 1) {
-                        targetIndex = currentIndex + 1;
-                    } else if (diff > threshold && currentIndex > 0) {
-                        targetIndex = currentIndex - 1;
-                    }
+                goTo(targetIndex, true);
+            }, { passive: true });
 
-                    goTo(targetIndex, true);
-                }, { passive: true });
-
-                targetTrack.addEventListener('mousedown', function(e) {
-                    isDragging = true;
-                    startX = e.clientX;
-                    targetTrack.style.transition = 'none';
-                    targetTrack.style.cursor = 'grabbing';
-                    e.preventDefault();
-                });
-            }
-
-            setupCarouselInteractions(track);
+            track.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX;
+                track.style.transition = 'none';
+                track.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
 
             window.addEventListener('mousemove', function(e) {
                 if (!isDragging) return;
@@ -515,15 +527,13 @@
                 }
 
                 currentTranslate = newTranslate;
-                const activeTrack = document.getElementById('carouselTrack');
-                if (activeTrack) activeTrack.style.transform = `translateX(${newTranslate}px)`;
+                track.style.transform = `translateX(${newTranslate}px)`;
             });
 
             window.addEventListener('mouseup', function() {
                 if (!isDragging) return;
                 isDragging = false;
-                const activeTrack = document.getElementById('carouselTrack');
-                if (activeTrack) activeTrack.style.cursor = 'grab';
+                track.style.cursor = 'grab';
 
                 const slideWidth = getSlideWidth();
                 const diff = currentTranslate - (-currentIndex * slideWidth);
@@ -539,7 +549,6 @@
                 goTo(targetIndex, true);
             });
 
-            // Resize responsive safety hooks
             let resizeTimer;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimer);
@@ -597,7 +606,6 @@
                     let height = BAR_MIN + (BAR_MAX - BAR_MIN) * values[barIndex];
                     height = Math.min(BAR_MAX, Math.max(BAR_MIN, height));
                     bar.style.height = height + 'px';
-                    bar.style.opacity = '1';
                 });
             }
 
@@ -651,67 +659,58 @@
                 document.body.style.overflow = '';
             });
 
-            // Toggle element configurations on word target click
-            function setupWordClickBehavior(element) {
-                element.addEventListener('click', function(e) {
-                    if (isEditing) return;
-                    if (clickTimer) {
-                        clearTimeout(clickTimer);
-                        clickTimer = null;
-                        return;
-                    }
-                    
-                    clickTimer = setTimeout(function() {
-                        clickTimer = null;
-                        emojisVisible = !emojisVisible;
-                        
-                        document.querySelectorAll('.slide-emoji').forEach(el => el.classList.toggle('visible', emojisVisible));
-                        document.querySelectorAll('.slide-label').forEach(el => el.classList.toggle('visible', emojisVisible));
-                        document.querySelectorAll('.slide-visualizer').forEach(el => {
-                            el.classList.toggle('expanded', emojisVisible);
-                        });
-                    }, 250);
-                });
-
-                // Editable element configuration rules
-                element.addEventListener('dblclick', function(e) {
-                    e.preventDefault();
-                    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-                    isEditing = true;
-                    element.contentEditable = true;
-                    element.classList.add('editing');
-                    element.focus();
-                    
-                    const range = document.createRange();
-                    const sel = window.getSelection();
-                    range.selectNodeContents(element);
-                    range.collapse(false);
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                });
-
-                element.addEventListener('blur', function() {
-                    handleWordBlur(this);
-                });
-
-                element.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' || e.key === 'Enter') this.blur();
-                });
-            }
-
-            function handleWordBlur(element) {
-                isEditing = false;
-                element.contentEditable = false;
-                element.classList.remove('editing');
-                if (element.textContent.trim() === '') {
-                    element.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
+            // Single click text handler
+            wordDisplay.addEventListener('click', function(e) {
+                if (isEditing) return;
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                    return;
                 }
-                saveWordToStorage(element.textContent.trim());
-            }
+                
+                clickTimer = setTimeout(function() {
+                    clickTimer = null;
+                    emojisVisible = !emojisVisible;
+                    
+                    document.querySelectorAll('.slide-emoji').forEach(el => el.classList.toggle('visible', emojisVisible));
+                    document.querySelectorAll('.slide-label').forEach(el => el.classList.toggle('visible', emojisVisible));
+                    document.querySelectorAll('.slide-visualizer').forEach(el => {
+                        el.classList.toggle('expanded', emojisVisible);
+                    });
+                }, 250);
+            });
 
-            setupWordClickBehavior(wordDisplay);
+            // Double click edit handler
+            wordDisplay.addEventListener('dblclick', function(e) {
+                e.preventDefault();
+                if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+                isEditing = true;
+                wordDisplay.contentEditable = true;
+                wordDisplay.classList.add('editing');
+                wordDisplay.focus();
+                
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(wordDisplay);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            });
 
-            // LocalStorage handlers
+            wordDisplay.addEventListener('blur', function() {
+                isEditing = false;
+                wordDisplay.contentEditable = false;
+                wordDisplay.classList.remove('editing');
+                if (wordDisplay.textContent.trim() === '') {
+                    wordDisplay.textContent = 'Pneumonoultramicroscopicsilicovolcanoconiosis';
+                }
+                saveWordToStorage(wordDisplay.textContent.trim());
+            });
+
+            wordDisplay.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' || e.key === 'Enter') this.blur();
+            });
+
             function saveWordToStorage(text) {
                 try { localStorage.setItem('giant_word', text); } catch (e) {}
             }
@@ -725,51 +724,35 @@
             loadSavedWord();
             goTo(0, false);
 
-            // ===== COMPLETE ENTRY TIMELINE RESET ENGINE (Soft Reset) =====
+            // ===== BALANCED REPLAY ENTRY SYSTEM ENGINE =====
             function replayIntro() {
-                const intro = document.getElementById('introOverlay');
-                const currentWord = document.getElementById('wordDisplay');
-                const wrapper = document.querySelector('.carousel-wrapper');
-                if (!intro) return;
-
-                // FORCE STATE CLEAR ON REFRESH (Hide Emojis and Labels natively)
+                // 1. Instantly hide elements to act as a clean refresh
                 emojisVisible = false;
+                document.querySelectorAll('.slide-emoji').forEach(el => el.classList.remove('visible'));
+                document.querySelectorAll('.slide-label').forEach(el => el.classList.remove('visible'));
+                document.querySelectorAll('.slide-visualizer').forEach(el => el.classList.remove('expanded'));
 
-                // 1. Reset and replay intro overlay
-                const freshIntroNode = intro.cloneNode(true);
-                intro.parentNode.replaceChild(freshIntroNode, intro);
+                // 2. Clear out the old intro node safely and inject a clean one from the template
+                introContainer.innerHTML = '';
+                const freshIntro = introTemplate.cloneNode(true);
+                introContainer.appendChild(freshIntro);
 
-                // 2. Clone and swap the giant word to re-trigger its slide-up layout entry animation
-                if (currentWord) {
-                    const freshWordNode = currentWord.cloneNode(true);
-                    setupWordClickBehavior(freshWordNode);
-                    currentWord.parentNode.replaceChild(freshWordNode, currentWord);
-                }
+                // 3. Re-trigger layout animations smoothly via keyframe triggers
+                wordDisplay.classList.add('trigger-entry');
+                wrapper.classList.add('trigger-entry');
+                void wordDisplay.offsetHeight; // Force reflow
+                wordDisplay.classList.remove('trigger-entry');
+                wrapper.classList.remove('trigger-entry');
 
-                // 3. Clone and swap the carousel wrapper to re-trigger its slide-up entry animation
-                if (wrapper) {
-                    const freshWrapperNode = wrapper.cloneNode(true);
-                    wrapper.parentNode.replaceChild(freshWrapperNode, wrapper);
-                    
-                    const freshTrack = document.getElementById('carouselTrack');
-                    setupCarouselInteractions(freshTrack);
-                    
-                    // Force element visibility states to 'hidden / defaults' upon new nodes injection
-                    document.querySelectorAll('.slide-emoji').forEach(el => el.classList.remove('visible'));
-                    document.querySelectorAll('.slide-label').forEach(el => el.classList.remove('visible'));
-                    document.querySelectorAll('.slide-visualizer').forEach(el => el.classList.remove('expanded'));
-                    
-                    // Reposition track layout instantly back to current slide location
-                    const slideWidth = freshTrack.parentElement.clientWidth;
-                    freshTrack.style.transform = `translateX(${-currentIndex * slideWidth}px)`;
-                }
+                // 4. Reposition track directly without breaking any layout rules or swiping event states
+                goTo(currentIndex, false);
 
-                // 4. Restart audio visualizer sync animations
+                // 5. Reset visualization loop
                 stopVisualizer();
                 setTimeout(startVisualizer, 1200);
             }
 
-            // Universal background trigger configurations
+            // Background tap configurations
             let lastTap = 0;
             document.addEventListener('touchend', function(e) {
                 if (e.target.closest('#wordDisplay') || e.target.closest('.carousel-slide') || e.target.closest('.overlay')) {
@@ -787,7 +770,6 @@
                 }
             });
 
-            // Tab visibility optimization adjustments
             document.addEventListener('visibilitychange', function() {
                 if (document.hidden) {
                     stopVisualizer();
