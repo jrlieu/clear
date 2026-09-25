@@ -1255,6 +1255,11 @@
         </div>
       </div>
       <div class="pos-info" id="charPosInfo">X: 50% · Y: 25%</div>
+      <!-- PRESET BUTTONS ADDED -->
+      <div style="display:flex; gap:6px; margin-top:4px;">
+        <button class="icon-btn" id="saveCharPresetBtn" title="Save current character as preset" style="flex:1; border-color:#a8e6a8; color:#a8e6a8; font-size:0.7rem; padding:4px;">💾 Save</button>
+        <button class="icon-btn" id="loadCharPresetBtn" title="Load saved character preset" style="flex:1; border-color:#ffcf9e; color:#ffcf9e; font-size:0.7rem; padding:4px;">📂 Use</button>
+      </div>
     </div>
 
     <div class="side-title">
@@ -1309,6 +1314,11 @@
       <div class="row">
         <label>Edge</label>
         <input type="color" id="trayBorderColor" value="#7a5733">
+      </div>
+      <!-- PRESET BUTTONS ADDED -->
+      <div style="display:flex; gap:6px; margin-top:4px;">
+        <button class="icon-btn" id="saveTrayPresetBtn" title="Save current tray as preset" style="flex:1; border-color:#a8e6a8; color:#a8e6a8; font-size:0.7rem; padding:4px;">💾 Save</button>
+        <button class="icon-btn" id="loadTrayPresetBtn" title="Load saved tray preset" style="flex:1; border-color:#ffcf9e; color:#ffcf9e; font-size:0.7rem; padding:4px;">📂 Use</button>
       </div>
     </div>
   </aside>
@@ -1409,6 +1419,12 @@
     const snapGuideHEl = document.getElementById('snapGuideH');
     const trayLockBtn = document.getElementById('trayLockBtn');
 
+    // PRESET BUTTONS
+    const saveCharPresetBtn = document.getElementById('saveCharPresetBtn');
+    const loadCharPresetBtn = document.getElementById('loadCharPresetBtn');
+    const saveTrayPresetBtn = document.getElementById('saveTrayPresetBtn');
+    const loadTrayPresetBtn = document.getElementById('loadTrayPresetBtn');
+
     const layout = {
       charX: 0.5, charY: 0.25,
       trayX: 0.5, trayY: 0.75,
@@ -1417,6 +1433,99 @@
     };
 
     const SNAP_DISTANCE = 18;
+
+    // ============================================================
+    // PRESET SAVE / LOAD (localStorage)
+    // ============================================================
+    function saveCharacterPreset() {
+      const preset = {
+        skin: document.getElementById('charSkinColor').value,
+        mouth: document.getElementById('charMouthColor').value,
+        size: document.getElementById('charSize').value,
+        x: layout.charX,
+        y: layout.charY
+      };
+      localStorage.setItem('mukbang_char_preset', JSON.stringify(preset));
+      flashMessage('Character preset saved!');
+    }
+
+    function loadCharacterPreset() {
+      const raw = localStorage.getItem('mukbang_char_preset');
+      if (!raw) { flashMessage('No character preset saved yet.', true); return; }
+      try {
+        const p = JSON.parse(raw);
+        if (p.skin) document.getElementById('charSkinColor').value = p.skin;
+        if (p.mouth) document.getElementById('charMouthColor').value = p.mouth;
+        if (p.size) document.getElementById('charSize').value = p.size;
+        if (p.x !== undefined) layout.charX = p.x;
+        if (p.y !== undefined) layout.charY = p.y;
+
+        // apply
+        characterEl.style.background = document.getElementById('charSkinColor').value;
+        mouthEl.style.background = document.getElementById('charMouthColor').value;
+        characterEl.style.setProperty('--user-scale', document.getElementById('charSize').value);
+        if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(document.getElementById('charSize').value).toFixed(2) + '×';
+        applyLayout();
+        clampWrapperInside(characterWrapEl, 'charX', 'charY');
+        refreshPositionUI();
+        flashMessage('Character preset loaded!');
+      } catch(e) { flashMessage('Failed to load character preset.', true); }
+    }
+
+    function saveTrayPreset() {
+      const preset = {
+        w: layout.trayW,
+        h: layout.trayH,
+        tilt: layout.trayTilt,
+        x: layout.trayX,
+        y: layout.trayY,
+        color1: document.getElementById('trayColor1').value,
+        color2: document.getElementById('trayColor2').value,
+        border: document.getElementById('trayBorderColor').value
+      };
+      localStorage.setItem('mukbang_tray_preset', JSON.stringify(preset));
+      flashMessage('Tray preset saved!');
+    }
+
+    function loadTrayPreset() {
+      const raw = localStorage.getItem('mukbang_tray_preset');
+      if (!raw) { flashMessage('No tray preset saved yet.', true); return; }
+      try {
+        const p = JSON.parse(raw);
+        if (p.w) layout.trayW = p.w;
+        if (p.h) layout.trayH = p.h;
+        if (p.tilt !== undefined) layout.trayTilt = p.tilt;
+        if (p.x !== undefined) layout.trayX = p.x;
+        if (p.y !== undefined) layout.trayY = p.y;
+        if (p.color1) document.getElementById('trayColor1').value = p.color1;
+        if (p.color2) document.getElementById('trayColor2').value = p.color2;
+        if (p.border) document.getElementById('trayBorderColor').value = p.border;
+
+        // apply
+        applyLayout();
+        clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
+        refreshPositionUI();
+        trayEl.style.background = `linear-gradient(145deg, ${document.getElementById('trayColor1').value}, ${document.getElementById('trayColor2').value})`;
+        trayEl.style.borderColor = document.getElementById('trayBorderColor').value;
+        const tiltSlider = document.getElementById('trayTilt');
+        if (tiltSlider) tiltSlider.value = layout.trayTilt;
+        flashMessage('Tray preset loaded!');
+      } catch(e) { flashMessage('Failed to load tray preset.', true); }
+    }
+
+    function flashMessage(msg, isError) {
+      const el = document.createElement('div');
+      el.textContent = msg;
+      el.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:' + (isError ? '#8f2a2a' : '#2e5a3a') + '; color:#fff5e6; padding:8px 20px; border-radius:10px; font-weight:700; font-size:0.85rem; z-index:999999; box-shadow:0 6px 20px rgba(0,0,0,0.5); border:2px solid ' + (isError ? '#ff9e9e' : '#a8e6a8') + '; pointer-events:none; transition: opacity 0.3s;';
+      document.body.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 350); }, 1400);
+    }
+
+    // hook up preset buttons
+    saveCharPresetBtn.addEventListener('click', saveCharacterPreset);
+    loadCharPresetBtn.addEventListener('click', loadCharacterPreset);
+    saveTrayPresetBtn.addEventListener('click', saveTrayPreset);
+    loadTrayPresetBtn.addEventListener('click', loadTrayPreset);
 
     // ============================================================
     // SIDEBAR TOGGLE
