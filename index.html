@@ -409,6 +409,15 @@
       flex: 1; accent-color: #ffcf9e;
     }
 
+    .tray-editor .range-value {
+      flex-shrink: 0;
+      width: 42px;
+      text-align: right;
+      font-family: monospace;
+      color: #fff5e6;
+      font-size: 0.72rem;
+    }
+
     /* ================= SOUNDS EDITOR ================= */
     .sound-editor {
       background: #2a3d4a;
@@ -555,9 +564,10 @@
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
+      perspective: 1200px;
     }
 
-    /* ===== SIDEBAR TOGGLE BUTTON (always visible, top-left) ===== */
+    /* ===== SIDEBAR TOGGLE ===== */
     .sidebar-toggle {
       position: absolute;
       top: 12px;
@@ -595,6 +605,35 @@
     .sidebar-toggle .toggle-icon {
       font-size: 1rem;
       line-height: 1;
+    }
+
+    /* ===== SNAP GUIDES ===== */
+    .snap-guide {
+      position: absolute;
+      pointer-events: none;
+      z-index: 400;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      background: rgba(255, 105, 180, 0.9);
+      box-shadow: 0 0 12px rgba(255, 105, 180, 0.8);
+    }
+
+    .snap-guide.vertical {
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      transform: translateX(-50%);
+    }
+
+    .snap-guide.horizontal {
+      left: 0;
+      right: 0;
+      height: 3px;
+      transform: translateY(-50%);
+    }
+
+    .snap-guide.active {
+      opacity: 1;
     }
 
     .character-wrap {
@@ -931,6 +970,8 @@
       cursor: grab;
       touch-action: none;
       z-index: 1;
+      perspective: 800px;
+      transform-style: preserve-3d;
     }
 
     .tray-wrap.dragging {
@@ -946,7 +987,9 @@
       box-shadow: 0 14px 0 #6b4b2c, inset 0 8px 12px rgba(255, 255, 200, 0.4);
       border: 4px solid #7a5733;
       position: relative;
-      transition: background 0.2s, border-color 0.2s;
+      transition: background 0.2s, border-color 0.2s, transform 0.12s ease;
+      transform-origin: center center;
+      transform-style: preserve-3d;
     }
 
     .drink-item {
@@ -1338,6 +1381,11 @@
         <input type="range" id="trayH" min="180" max="700" step="10" value="320">
       </div>
       <div class="row">
+        <label>Tilt</label>
+        <input type="range" id="trayTilt" min="-45" max="45" step="1" value="0">
+        <span class="range-value" id="trayTiltValue">0°</span>
+      </div>
+      <div class="row">
         <label>Top</label>
         <input type="color" id="trayColor1" value="#b48b5c">
       </div>
@@ -1358,6 +1406,10 @@
       <span class="toggle-icon" id="toggleIcon">◀</span>
       <span class="toggle-text" id="toggleText">Hide Panel</span>
     </button>
+
+    <!-- Snap guide lines -->
+    <div class="snap-guide vertical" id="snapGuideV"></div>
+    <div class="snap-guide horizontal" id="snapGuideH"></div>
 
     <div class="character-wrap" id="characterWrap">
       <div class="character" id="character">
@@ -1397,8 +1449,6 @@
 
     // ============================================================
     // SOUND SYSTEM — IndexedDB storage, in-app upload, shuffle bag
-    // LAYERED PLAYBACK: each playSound() creates a fresh Audio element,
-    // so multiple sounds can overlap and never wait for each other.
     // ============================================================
     const AUDIO_ACCEPT = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.opus,.flac,.mp4,.m4b,.caf,.aiff,.aif,.weba';
 
@@ -1414,8 +1464,8 @@
     ];
 
     let soundDB = null;
-    const soundCache = {};          // { emotion: [ {id, name, url}, ... ] }
-    const soundBags  = {};          // { emotion: [soundId, ...] shuffled }
+    const soundCache = {};
+    const soundBags  = {};
 
     function openSoundDB() {
       return new Promise((resolve, reject) => {
@@ -1478,8 +1528,7 @@
       return a;
     }
 
-    // LAYERED PLAYBACK — creates a brand-new Audio each time.
-    // No global audio element, no queue, no waiting for previous sound to end.
+    // LAYERED PLAYBACK — fresh Audio each call, so no waiting
     function playSound(emotionKey) {
       const list = soundCache[emotionKey];
       if (!list || list.length === 0) return;
@@ -1493,7 +1542,7 @@
 
       const audio = new Audio(entry.url);
       audio.volume = 0.85;
-      audio.play().catch(() => { /* autoplay blocked until first user interaction */ });
+      audio.play().catch(() => {});
     }
 
     // ============================================================
@@ -1502,13 +1551,10 @@
     const soundEditorsEl = document.getElementById('soundEditors');
 
     function buildSoundEditors() {
-      // Save scroll position so re-building doesn't jump
       const prevScrollTop = document.getElementById('sidebar').scrollTop;
-
       soundEditorsEl.innerHTML = '';
       SOUND_EMOTIONS.forEach(emotion => {
         const list = soundCache[emotion.key] || [];
-
         const card = document.createElement('div');
         card.className = 'sound-editor';
         card.dataset.emotion = emotion.key;
@@ -1603,8 +1649,6 @@
           fileInput.value = '';
           await loadAllSounds();
           buildSoundEditors();
-
-          // Restore scroll so adding a sound doesn't jump the sidebar
           document.getElementById('sidebar').scrollTop = prevScrollTop;
         });
         card.appendChild(addBtn);
@@ -1612,6 +1656,7 @@
 
         soundEditorsEl.appendChild(card);
       });
+      document.getElementById('sidebar').scrollTop = prevScrollTop;
     }
 
     let backgrounds = [];
@@ -1660,12 +1705,18 @@
     const sidebarToggleBtn = document.getElementById('sidebarToggle');
     const toggleIcon = document.getElementById('toggleIcon');
     const toggleText = document.getElementById('toggleText');
+    const snapGuideVEl = document.getElementById('snapGuideV');
+    const snapGuideHEl = document.getElementById('snapGuideH');
 
     const layout = {
       charX: 0.5, charY: 0.25,
       trayX: 0.5, trayY: 0.75,
-      trayW: 640, trayH: 320
+      trayW: 640, trayH: 320,
+      trayTilt: 0
     };
+
+    // Snap distance in pixels
+    const SNAP_DISTANCE = 18;
 
     // ============================================================
     // SIDEBAR TOGGLE
@@ -1704,7 +1755,7 @@
     }
 
     // ============================================================
-    // RANDOM EMOTION ENGINE — blink heavily weighted
+    // RANDOM EMOTION ENGINE
     // ============================================================
     const EMOTION_BUSY_CLASSES = ['eating', 'smiling', 'burping', 'sipping', 'laughing', 'blushing'];
 
@@ -1858,6 +1909,38 @@
     }
 
     // ============================================================
+    // TRAY TILT
+    // ============================================================
+    function applyTrayTilt(deg) {
+      layout.trayTilt = deg;
+      trayEl.style.transform = `rotateX(${deg}deg)`;
+      const valueEl = document.getElementById('trayTiltValue');
+      if (valueEl) valueEl.textContent = deg + '°';
+      const slider = document.getElementById('trayTilt');
+      if (slider && parseInt(slider.value, 10) !== deg) slider.value = deg;
+    }
+
+    // ============================================================
+    // SNAP GUIDES
+    // ============================================================
+    function showSnapGuide(axis) {
+      const pw = playAreaEl.clientWidth;
+      const ph = playAreaEl.clientHeight;
+      if (axis === 'v') {
+        snapGuideVEl.style.left = (pw / 2) + 'px';
+        snapGuideVEl.classList.add('active');
+      } else if (axis === 'h') {
+        snapGuideHEl.style.top = (ph / 2) + 'px';
+        snapGuideHEl.classList.add('active');
+      }
+    }
+
+    function hideSnapGuides() {
+      snapGuideVEl.classList.remove('active');
+      snapGuideHEl.classList.remove('active');
+    }
+
+    // ============================================================
     // LAYOUT
     // ============================================================
     function applyLayout() {
@@ -1873,6 +1956,8 @@
       const hSlider = document.getElementById('trayH');
       if (wSlider) wSlider.value = layout.trayW;
       if (hSlider) hSlider.value = layout.trayH;
+      // re-apply tilt so it survives layout changes
+      trayEl.style.transform = `rotateX(${layout.trayTilt}deg)`;
     }
 
     // ============================================================
@@ -1932,7 +2017,7 @@
     }
 
     // ============================================================
-    // DRAG CHARACTER / TRAY
+    // DRAG CHARACTER / TRAY — with center snapping
     // ============================================================
     function makeDraggable(wrapEl, keyPrefix) {
       let dragging = false;
@@ -1977,10 +2062,31 @@
         const wrapRect = wrapEl.getBoundingClientRect();
         const halfW = wrapRect.width / 2;
         const halfH = wrapRect.height / 2;
+
         let cx = startLeft + dx;
         let cy = startTop + dy;
         cx = Math.max(halfW, Math.min(playRect.width - halfW, cx));
         cy = Math.max(halfH, Math.min(playRect.height - halfH, cy));
+
+        // ===== Center snapping (independent per axis) =====
+        const centerX = playRect.width / 2;
+        const centerY = playRect.height / 2;
+
+        const snappedX = Math.abs(cx - centerX) <= SNAP_DISTANCE;
+        const snappedY = Math.abs(cy - centerY) <= SNAP_DISTANCE;
+
+        if (snappedX) cx = centerX;
+        if (snappedY) cy = centerY;
+
+        showSnapGuide(snappedX ? 'v' : null);
+        showSnapGuide(snappedY ? 'h' : null);
+        if (snappedX) showSnapGuide('v');
+        if (snappedY) showSnapGuide('h');
+
+        // Clear guides that are no longer snapped
+        if (!snappedX) snapGuideVEl.classList.remove('active');
+        if (!snappedY) snapGuideHEl.classList.remove('active');
+
         wrapEl.style.left = cx + 'px';
         wrapEl.style.top = cy + 'px';
         layout[keyPrefix + 'X'] = cx / playRect.width;
@@ -1992,6 +2098,7 @@
         dragging = false;
         dragPointerId = null;
         wrapEl.classList.remove('dragging');
+        hideSnapGuides();
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointercancel', onUp);
@@ -3322,7 +3429,7 @@
     }
 
     // ============================================================
-    // ADD NEW ITEMS — no auto-scroll anymore
+    // ADD NEW ITEMS — no auto-scroll
     // ============================================================
     addBackgroundBtn.addEventListener('click', () => {
       backgrounds.push({
@@ -3366,6 +3473,9 @@
       layout.trayH = parseInt(e.target.value, 10);
       applyLayout();
       clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
+    });
+    document.getElementById('trayTilt').addEventListener('input', (e) => {
+      applyTrayTilt(parseInt(e.target.value, 10));
     });
     document.getElementById('trayColor1').addEventListener('input', (e) => {
       trayEl.style.background = `linear-gradient(145deg, ${e.target.value}, ${document.getElementById('trayColor2').value})`;
