@@ -928,7 +928,7 @@
       z-index: 3;
     }
 
-    .food-item:hover:not(.dragging):not(.eaten),
+
     .drink-item:hover:not(.dragging):not(.eaten) { z-index: 10; }
 
     .food-item:active:not(.dragging),
@@ -971,6 +971,14 @@
       box-shadow: none;
       background: transparent;
     }
+.food-img {
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+  border: none;
+  background: transparent;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
+}
 
     .photo-item {
       position: absolute;
