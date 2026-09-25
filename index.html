@@ -629,119 +629,6 @@
       100% { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(0deg); }
     }
 
-    .character.jumping { animation: jumpShake 0.42s ease-in-out infinite; }
-    @keyframes jumpShake {
-      0%   { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(0deg) scale(1, 1); }
-      20%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(-18px) rotate(-3deg) scale(0.97, 1.05); }
-      40%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(3deg) scale(1.03, 0.97); }
-      60%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(-14px) rotate(-3deg) scale(0.98, 1.03); }
-      80%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(3deg) scale(1.02, 0.98); }
-      100% { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(0deg) scale(1, 1); }
-    }
-
-    .character.jumping .eye {
-      transform: scaleY(0.15);
-      transition: transform 0.15s ease-in-out;
-    }
-
-    /* ====== DODGE ANIMATION — HEAD SHAKE ONLY ====== */
-    .character.head-shaking {
-      animation: headShake 0.5s ease-in-out infinite;
-    }
-    @keyframes headShake {
-      0%   { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateX(0) rotate(0deg); }
-      20%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateX(-14px) rotate(-7deg); }
-      40%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateX(14px) rotate(7deg); }
-      60%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateX(-10px) rotate(-5deg); }
-      80%  { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateX(10px) rotate(5deg); }
-      100% { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateX(0) rotate(0deg); }
-    }
-
-    /* ====== SAD FACE (during dodge) ====== */
-    .character.head-shaking .eye {
-      transform: scaleY(0.55) rotate(8deg);
-      box-shadow: inset -6px -6px 0 #1f140e, 0 3px 0 #6b4f32;
-    }
-    .character.head-shaking #eyeRight {
-      transform: scaleY(0.55) rotate(-8deg);
-    }
-    .character.head-shaking .eye .pupil {
-      top: 12px;
-      left: 8px;
-      transform: translate(var(--pupil-x, 0px), calc(var(--pupil-y, 0px) + 3px));
-    }
-
-    .character.head-shaking .mouth {
-      height: 34px;
-      width: 90px;
-      margin-top: 14px;
-      background: #b13e3e;
-      border-radius: 60px 60px 0 0;
-      border-top: 5px solid #6e2a2a;
-      border-bottom: none;
-      border-left: 5px solid #6e2a2a;
-      border-right: 5px solid #6e2a2a;
-      box-shadow: inset 0 9px 0 #7e2a2a;
-      transform: scaleY(1);
-    }
-    .character.head-shaking .mouth::before {
-      display: none;
-    }
-
-    .character.head-shaking .face::before,
-    .character.head-shaking .face::after {
-      content: '';
-      position: absolute;
-      top: -6px;
-      width: 34px;
-      height: 6px;
-      background: #6b4f32;
-      border-radius: 3px;
-      pointer-events: none;
-      z-index: 10;
-    }
-    .character.head-shaking .face::before {
-      left: 24px;
-      transform: rotate(18deg);
-    }
-    .character.head-shaking .face::after {
-      right: 24px;
-      transform: rotate(-18deg);
-    }
-
-    /* Dodge sweat drops */
-    .dodge-sweat {
-      position: fixed;
-      pointer-events: none;
-      font-size: 1.4rem;
-      z-index: 2147483645;
-      animation: sweatFly 0.9s ease-out forwards;
-    }
-    @keyframes sweatFly {
-      0%   { opacity: 0; transform: translate(-50%, 0) scale(0.4); }
-      20%  { opacity: 1; transform: translate(-50%, -20px) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -70px) scale(0.8); }
-    }
-
-    .dodge-text {
-      position: fixed;
-      pointer-events: none;
-      font-weight: 900;
-      font-size: 1.4rem;
-      color: #fff5e6;
-      text-shadow: 2px 2px 0 #4a2e1a, -1px -1px 0 #2b1b0e, 0 0 10px #ffcf9e;
-      animation: dodgeText 1.2s ease-out forwards;
-      z-index: 2147483645;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      letter-spacing: 1px;
-    }
-    @keyframes dodgeText {
-      0%   { opacity: 0; transform: translate(-50%, 0) scale(0.5) rotate(-8deg); }
-      25%  { opacity: 1; transform: translate(-50%, -25px) scale(1.15) rotate(4deg); }
-      60%  { opacity: 1; transform: translate(-50%, -50px) scale(1.05) rotate(-3deg); }
-      100% { opacity: 0; transform: translate(-50%, -90px) scale(1.1) rotate(5deg); }
-    }
-
     .mouth.mouth-happy {
       height: 60px;
       width: 118px;
@@ -1465,23 +1352,24 @@
     // ============================================================
     // SOUND SYSTEM — IndexedDB storage, in-app upload, shuffle bag
     // ============================================================
-    // One object store "sounds": { id, emotion, name, blob }
+    // Audio file extensions accepted in the file picker.
+    // This works better on iPadOS/iOS where `audio/*` alone is unreliable.
+    const AUDIO_ACCEPT = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.opus,.flac,.mp4,.m4b,.caf,.aiff,.aif,.weba';
+
     const SOUND_EMOTIONS = [
       { key: 'blink',      label: 'Blink',       icon: '👁️' },
       { key: 'smile',      label: 'Smile',       icon: '😊' },
       { key: 'laugh',      label: 'Laugh',       icon: '😂' },
-      { key: 'jump',       label: 'Jump',        icon: '🤸' },
       { key: 'blush',      label: 'Blush',       icon: '😳' },
       { key: 'eating',     label: 'Eating',      icon: '🍽️' },
       { key: 'swallowing', label: 'Swallowing',  icon: '😮‍💨' },
       { key: 'burping',    label: 'Burping',     icon: '💨' },
-      { key: 'sipping',    label: 'Sipping',     icon: '🥤' },
-      { key: 'dodge',      label: 'Dodge (NO!)', icon: '🙅' }
+      { key: 'sipping',    label: 'Sipping',     icon: '🥤' }
     ];
 
     let soundDB = null;
     const soundCache = {};          // { emotion: [ {id, name, url}, ... ] }
-    const soundBags  = {};          // { emotion: [soundId, soundId, ...] shuffled }
+    const soundBags  = {};          // { emotion: [soundId, ...] shuffled }
 
     function openSoundDB() {
       return new Promise((resolve, reject) => {
@@ -1527,14 +1415,12 @@
 
     async function loadAllSounds() {
       const rows = await dbGetAll();
-      // Reset cache
       SOUND_EMOTIONS.forEach(e => { soundCache[e.key] = []; });
       rows.forEach(r => {
         if (!soundCache[r.emotion]) soundCache[r.emotion] = [];
         const url = URL.createObjectURL(r.blob);
         soundCache[r.emotion].push({ id: r.id, name: r.name, url });
       });
-      // Reset bags (they'll rebuild lazily)
       SOUND_EMOTIONS.forEach(e => { soundBags[e.key] = []; });
     }
 
@@ -1546,13 +1432,11 @@
       return a;
     }
 
-    // Play a random sound for the given emotion using shuffle-bag (no repeat until all played)
     function playSound(emotionKey) {
       const list = soundCache[emotionKey];
       if (!list || list.length === 0) return;
 
       if (!soundBags[emotionKey] || soundBags[emotionKey].length === 0) {
-        // Refill bag with ids, shuffled
         soundBags[emotionKey] = shuffleArr(list.map(s => s.id));
       }
       const id = soundBags[emotionKey].shift();
@@ -1643,7 +1527,7 @@
         addBtn.textContent = '＋ Add sound(s)';
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
-        fileInput.accept = 'audio/*';
+        fileInput.accept = AUDIO_ACCEPT;
         fileInput.multiple = true;
         fileInput.style.display = 'none';
 
@@ -1651,7 +1535,13 @@
         fileInput.addEventListener('change', async (e) => {
           const files = Array.from(e.target.files || []);
           for (const f of files) {
-            if (!f.type.startsWith('audio/')) continue;
+            // Accept anything that looks like audio OR has a known audio extension.
+            // iPad sometimes reports empty type for valid m4a/mp3 — so we don't hard-reject.
+            const looksAudio =
+              (f.type && f.type.startsWith('audio/')) ||
+              /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|mp4|m4b|caf|aiff|aif|weba)$/i.test(f.name);
+            if (!looksAudio) continue;
+
             const rec = {
               id: uid(),
               emotion: emotion.key,
@@ -1691,12 +1581,6 @@
     let pointerId = null;
 
     let fizzInterval = null;
-
-    // ===== Dodge state (CONDITIONAL — not part of random emotions) =====
-    let isDodging = false;
-    let dodgeTimeoutId = null;
-    let dodgeEndTimeoutId = null;
-    let dodgeSweatIntervalId = null;
 
     const appEl = document.getElementById('app');
     const playAreaEl = document.getElementById('playArea');
@@ -1743,88 +1627,12 @@
     }
 
     // ============================================================
-    // DODGE SYSTEM — CONDITIONAL (only when food on tray), head shake only
-    // ============================================================
-    function scheduleDodge() {
-      if (dodgeTimeoutId) clearTimeout(dodgeTimeoutId);
-      const delay = 8000 + Math.random() * 52000;
-      dodgeTimeoutId = setTimeout(() => {
-        triggerDodge();
-        scheduleDodge();
-      }, delay);
-    }
-
-    function triggerDodge() {
-      if (isDodging) return;
-      if (!isCharacterFree()) return;
-      if (trayItems.length === 0) return;
-
-      isDodging = true;
-      characterEl.classList.remove('smiling', 'laughing', 'jumping', 'blushing', 'burping');
-      mouthEl.classList.remove('mouth-wow', 'mouth-laugh', 'mouth-happy', 'mouth-open');
-
-      characterEl.classList.add('head-shaking');
-      playSound('dodge');
-
-      const charRect = characterWrapEl.getBoundingClientRect();
-      const cx = charRect.left + charRect.width / 2;
-      const cy = charRect.top + charRect.height * 0.4;
-
-      spawnDodgeText(cx, cy - 40, 'NO NO NO!');
-
-      dodgeSweatIntervalId = setInterval(() => {
-        const r = characterWrapEl.getBoundingClientRect();
-        spawnDodgeSweat(r.left + r.width / 2, r.top + 10);
-      }, 260);
-
-      dodgeEndTimeoutId = setTimeout(() => {
-        endDodge();
-      }, 5000);
-    }
-
-    function endDodge() {
-      isDodging = false;
-
-      if (dodgeEndTimeoutId) { clearTimeout(dodgeEndTimeoutId); dodgeEndTimeoutId = null; }
-      if (dodgeSweatIntervalId) { clearInterval(dodgeSweatIntervalId); dodgeSweatIntervalId = null; }
-
-      characterEl.classList.remove('head-shaking');
-
-      const charRect = characterWrapEl.getBoundingClientRect();
-      const cx = charRect.left + charRect.width / 2;
-      const cy = charRect.top + charRect.height * 0.4;
-      spawnDodgeText(cx, cy - 40, 'phew...');
-    }
-
-    function spawnDodgeSweat(x, y) {
-      const s = document.createElement('div');
-      s.className = 'dodge-sweat';
-      s.textContent = ['💦', '💧', '😰', '❗'][Math.floor(Math.random() * 4)];
-      s.style.left = (x + (Math.random() - 0.5) * 40) + 'px';
-      s.style.top = y + 'px';
-      s.style.fontSize = (1 + Math.random() * 0.8) + 'rem';
-      document.body.appendChild(s);
-      setTimeout(() => s.remove(), 950);
-    }
-
-    function spawnDodgeText(x, y, text) {
-      const t = document.createElement('div');
-      t.className = 'dodge-text';
-      t.textContent = text;
-      t.style.left = x + 'px';
-      t.style.top = y + 'px';
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 1300);
-    }
-
-    // ============================================================
     // RANDOM EMOTION ENGINE — blink heavily weighted
     // ============================================================
-    const EMOTION_BUSY_CLASSES = ['eating', 'smiling', 'burping', 'sipping', 'laughing', 'jumping', 'blushing', 'head-shaking'];
+    const EMOTION_BUSY_CLASSES = ['eating', 'smiling', 'burping', 'sipping', 'laughing', 'blushing'];
 
     function isCharacterFree() {
       if (isBusy) return false;
-      if (isDodging) return false;
       for (const c of EMOTION_BUSY_CLASSES) {
         if (characterEl.classList.contains(c)) return false;
       }
@@ -1838,7 +1646,6 @@
       { name: 'blink',  play: doBlinkOnce },
       { name: 'smile',  play: doSmileOnce },
       { name: 'laugh',  play: doLaughOnce },
-      { name: 'jump',   play: doJumpShakeOnce },
       { name: 'blush',  play: doBlushOnce }
     ];
 
@@ -1931,38 +1738,6 @@
       }, holdMs);
     }
 
-    function doJumpShakeOnce() {
-      characterEl.classList.add('jumping');
-      mouthEl.classList.add('mouth-happy');
-      playSound('jump');
-
-      const mouthRect = mouthEl.getBoundingClientRect();
-      const cx = mouthRect.left + mouthRect.width / 2;
-      const cy = mouthRect.top;
-
-      const burstEmojis = ['✨', '⭐', '💖', '🎉', '💫', '😄'];
-      for (let i = 0; i < 5; i++) {
-        setTimeout(() => {
-          spawnSparkles(cx + (Math.random() - 0.5) * 100, cy - Math.random() * 40);
-          if (Math.random() < 0.6) {
-            const t = document.createElement('div');
-            t.className = 'laugh-text';
-            t.textContent = burstEmojis[Math.floor(Math.random() * burstEmojis.length)];
-            t.style.left = (cx + (Math.random() - 0.5) * 80) + 'px';
-            t.style.top = (cy - 20 + Math.random() * 20) + 'px';
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 1200);
-          }
-        }, i * 180);
-      }
-
-      const holdMs = 900 + Math.random() * 700;
-      setTimeout(() => {
-        characterEl.classList.remove('jumping');
-        mouthEl.classList.remove('mouth-happy');
-      }, holdMs);
-    }
-
     function doBlushOnce() {
       characterEl.classList.add('blushing');
       playSound('blush');
@@ -1973,7 +1748,6 @@
     }
 
     scheduleNextEmotion();
-    scheduleDodge();
 
     // ============================================================
     // EYE TRACKING
@@ -2096,7 +1870,6 @@
         if (e.target.closest('.head-drop-indicator')) return;
         if (e.target.closest('.blush')) return;
         if (isBusy) return;
-        if (isDodging) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         e.preventDefault();
@@ -3138,12 +2911,7 @@
 
       // FOOD
       if (isOverMouth) {
-        if (isDodging) {
-          if (chopstickBackEl.classList.contains('active')) hideChopsticks();
-          returnFoodToTray(item);
-        } else {
-          eatFood(item, mouthRect);
-        }
+        eatFood(item, mouthRect);
       } else {
         if (chopstickBackEl.classList.contains('active')) {
           hideChopsticks();
@@ -3399,9 +3167,7 @@
           characterEl.classList.contains('burping') ||
           characterEl.classList.contains('sipping') ||
           characterEl.classList.contains('laughing') ||
-          characterEl.classList.contains('jumping') ||
-          characterEl.classList.contains('blushing') ||
-          isDodging) return;
+          characterEl.classList.contains('blushing')) return;
       characterEl.classList.remove('smiling');
       mouthEl.classList.remove('mouth-wow');
       characterEl.classList.add('burping');
@@ -3548,7 +3314,6 @@
       buildPhotoEditors();
       applyLayout();
 
-      // Open DB, load sounds, build the sound UI
       try {
         soundDB = await openSoundDB();
         await loadAllSounds();
