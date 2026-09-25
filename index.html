@@ -440,25 +440,33 @@
       100% { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(0deg); }
     }
 
-.blush {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: radial-gradient(circle,
-    rgba(255, 140, 160, 0.85) 0%,
-    rgba(255, 140, 160, 0.55) 35%,
-    rgba(255, 140, 160, 0.18) 65%,
-    rgba(255, 140, 160, 0) 100%);
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.4);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-}
-    
-    
+    /* ---------- BLUSH — FIXED FOR IPAD (no square corners) ---------- */
+    .blush {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      /* pure radial gradient, no background-size tricks */
+      background: radial-gradient(circle,
+        rgba(255, 140, 160, 0.85) 0%,
+        rgba(255, 140, 160, 0.55) 35%,
+        rgba(255, 140, 160, 0.18) 65%,
+        rgba(255, 140, 160, 0) 100%);
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.4);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      /* force a clean circle on all browsers */
+      -webkit-mask-image: radial-gradient(circle, white 70%, transparent 100%);
+      mask-image: radial-gradient(circle, white 70%, transparent 100%);
+      /* remove any leftover overflow or border artifacts */
+      overflow: visible;
+      border: none;
+      box-shadow: none;
+      /* ensure no background bleeding */
+      background-color: transparent;
+    }
+
     .blush.left  { left: 6px;  top: 40%; }
     .blush.right { right: 6px; top: 40%; }
     .character.blushing .blush { opacity: 1; transform: scale(1.1); }
