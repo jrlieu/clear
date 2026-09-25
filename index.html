@@ -557,6 +557,46 @@
       background-repeat: no-repeat;
     }
 
+    /* ===== SIDEBAR TOGGLE BUTTON (always visible, top-left) ===== */
+    .sidebar-toggle {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(74, 46, 26, 0.92);
+      border: 2px solid #b48c5c;
+      border-radius: 10px;
+      color: #ffcf9e;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: 0.15s;
+      user-select: none;
+    }
+
+    .sidebar-toggle:hover {
+      background: #4a2e1a;
+      color: #fff5e6;
+      border-color: #ffcf9e;
+      transform: translateY(-1px);
+    }
+
+    .sidebar-toggle:active {
+      transform: translateY(0);
+    }
+
+    .sidebar-toggle .toggle-icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
     .character-wrap {
       position: absolute;
       top: 25%;
@@ -1313,6 +1353,12 @@
   </aside>
 
   <main class="play-area" id="playArea">
+    <!-- Sidebar toggle button (always visible) -->
+    <button class="sidebar-toggle" id="sidebarToggle" title="Show / hide the sidebar">
+      <span class="toggle-icon" id="toggleIcon">◀</span>
+      <span class="toggle-text" id="toggleText">Hide Panel</span>
+    </button>
+
     <div class="character-wrap" id="characterWrap">
       <div class="character" id="character">
         <div class="face">
@@ -1351,9 +1397,9 @@
 
     // ============================================================
     // SOUND SYSTEM — IndexedDB storage, in-app upload, shuffle bag
+    // LAYERED PLAYBACK: each playSound() creates a fresh Audio element,
+    // so multiple sounds can overlap and never wait for each other.
     // ============================================================
-    // Audio file extensions accepted in the file picker.
-    // This works better on iPadOS/iOS where `audio/*` alone is unreliable.
     const AUDIO_ACCEPT = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.opus,.flac,.mp4,.m4b,.caf,.aiff,.aif,.weba';
 
     const SOUND_EMOTIONS = [
@@ -1432,6 +1478,8 @@
       return a;
     }
 
+    // LAYERED PLAYBACK — creates a brand-new Audio each time.
+    // No global audio element, no queue, no waiting for previous sound to end.
     function playSound(emotionKey) {
       const list = soundCache[emotionKey];
       if (!list || list.length === 0) return;
@@ -1442,6 +1490,7 @@
       const id = soundBags[emotionKey].shift();
       const entry = list.find(s => s.id === id);
       if (!entry) return;
+
       const audio = new Audio(entry.url);
       audio.volume = 0.85;
       audio.play().catch(() => { /* autoplay blocked until first user interaction */ });
@@ -1453,6 +1502,9 @@
     const soundEditorsEl = document.getElementById('soundEditors');
 
     function buildSoundEditors() {
+      // Save scroll position so re-building doesn't jump
+      const prevScrollTop = document.getElementById('sidebar').scrollTop;
+
       soundEditorsEl.innerHTML = '';
       SOUND_EMOTIONS.forEach(emotion => {
         const list = soundCache[emotion.key] || [];
@@ -1535,8 +1587,6 @@
         fileInput.addEventListener('change', async (e) => {
           const files = Array.from(e.target.files || []);
           for (const f of files) {
-            // Accept anything that looks like audio OR has a known audio extension.
-            // iPad sometimes reports empty type for valid m4a/mp3 — so we don't hard-reject.
             const looksAudio =
               (f.type && f.type.startsWith('audio/')) ||
               /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|mp4|m4b|caf|aiff|aif|weba)$/i.test(f.name);
@@ -1553,6 +1603,9 @@
           fileInput.value = '';
           await loadAllSounds();
           buildSoundEditors();
+
+          // Restore scroll so adding a sound doesn't jump the sidebar
+          document.getElementById('sidebar').scrollTop = prevScrollTop;
         });
         card.appendChild(addBtn);
         card.appendChild(fileInput);
@@ -1604,12 +1657,36 @@
     const eyeRight = document.getElementById('eyeRight');
     const pupilLeft = eyeLeft.querySelector('.pupil');
     const pupilRight = eyeRight.querySelector('.pupil');
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+    const toggleText = document.getElementById('toggleText');
 
     const layout = {
       charX: 0.5, charY: 0.25,
       trayX: 0.5, trayY: 0.75,
       trayW: 640, trayH: 320
     };
+
+    // ============================================================
+    // SIDEBAR TOGGLE
+    // ============================================================
+    function updateToggleLabel() {
+      const hidden = appEl.classList.contains('sidebar-hidden');
+      toggleIcon.textContent = hidden ? '▶' : '◀';
+      toggleText.textContent = hidden ? 'Show Panel' : 'Hide Panel';
+    }
+
+    function toggleSidebar() {
+      appEl.classList.toggle('sidebar-hidden');
+      updateToggleLabel();
+      setTimeout(() => {
+        applyLayout();
+        clampWrapperInside(characterWrapEl, 'charX', 'charY');
+        clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
+      }, 320);
+    }
+
+    sidebarToggleBtn.addEventListener('click', toggleSidebar);
 
     // ============================================================
     // HAT POSITION HELPERS
@@ -2095,6 +2172,7 @@
     // SIDEBAR: BACKGROUND EDITORS
     // ============================================================
     function buildBackgroundEditors() {
+      const prevScrollTop = document.getElementById('sidebar').scrollTop;
       backgroundEditorsEl.innerHTML = '';
       backgrounds.forEach((bg) => {
         const card = document.createElement('div');
@@ -2170,12 +2248,14 @@
         }
         backgroundEditorsEl.appendChild(card);
       });
+      document.getElementById('sidebar').scrollTop = prevScrollTop;
     }
 
     // ============================================================
     // FOOD EDITORS
     // ============================================================
     function buildFoodEditors() {
+      const prevScrollTop = document.getElementById('sidebar').scrollTop;
       foodEditorsEl.innerHTML = '';
       foods.forEach((food) => {
         const card = document.createElement('div');
@@ -2254,12 +2334,14 @@
         });
         foodEditorsEl.appendChild(card);
       });
+      document.getElementById('sidebar').scrollTop = prevScrollTop;
     }
 
     // ============================================================
     // DRINK EDITORS
     // ============================================================
     function buildDrinkEditors() {
+      const prevScrollTop = document.getElementById('sidebar').scrollTop;
       drinkEditorsEl.innerHTML = '';
       drinks.forEach((drink) => {
         const card = document.createElement('div');
@@ -2323,12 +2405,14 @@
         });
         drinkEditorsEl.appendChild(card);
       });
+      document.getElementById('sidebar').scrollTop = prevScrollTop;
     }
 
     // ============================================================
     // PHOTO EDITORS
     // ============================================================
     function buildPhotoEditors() {
+      const prevScrollTop = document.getElementById('sidebar').scrollTop;
       photoEditorsEl.innerHTML = '';
       photos.forEach((photo) => {
         const card = document.createElement('div');
@@ -2412,6 +2496,7 @@
         });
         photoEditorsEl.appendChild(card);
       });
+      document.getElementById('sidebar').scrollTop = prevScrollTop;
     }
 
     function flashCard(card) {
@@ -3237,7 +3322,7 @@
     }
 
     // ============================================================
-    // ADD NEW ITEMS
+    // ADD NEW ITEMS — no auto-scroll anymore
     // ============================================================
     addBackgroundBtn.addEventListener('click', () => {
       backgrounds.push({
@@ -3248,17 +3333,14 @@
         applied: false
       });
       buildBackgroundEditors();
-      document.querySelector('.sidebar').scrollTop = 0;
     });
     addFoodBtn.addEventListener('click', () => {
       foods.push({ id: uid(), name: 'New Food', url: 'https://via.placeholder.com/200?text=Food', size: 90, chopstick: false });
       buildFoodEditors();
-      document.querySelector('.sidebar').scrollTop = 9999;
     });
     addDrinkBtn.addEventListener('click', () => {
       drinks.push({ id: uid(), name: 'New Drink', url: 'https://via.placeholder.com/200?text=Drink', size: 90 });
       buildDrinkEditors();
-      document.querySelector('.sidebar').scrollTop = 9999;
     });
     addPhotoBtn.addEventListener('click', () => {
       photos.push({
@@ -3270,7 +3352,6 @@
         position: 'center'
       });
       buildPhotoEditors();
-      document.querySelector('.sidebar').scrollTop = 9999;
     });
 
     document.getElementById('charSkinColor').addEventListener('input', (e) => { characterEl.style.background = e.target.value; });
@@ -3298,12 +3379,7 @@
       if (e.key === 'x' || e.key === 'X') {
         const tag = document.activeElement?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-        appEl.classList.toggle('sidebar-hidden');
-        setTimeout(() => {
-          applyLayout();
-          clampWrapperInside(characterWrapEl, 'charX', 'charY');
-          clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
-        }, 320);
+        toggleSidebar();
       }
     });
 
@@ -3321,6 +3397,8 @@
         console.warn('Sound DB unavailable:', err);
       }
       buildSoundEditors();
+
+      updateToggleLabel();
 
       requestAnimationFrame(() => {
         layout.charX = 0.5;
