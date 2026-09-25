@@ -440,21 +440,25 @@
       100% { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(0deg); }
     }
 
-    .blush {
-      position: absolute;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: radial-gradient(circle,
-        rgba(255, 140, 160, 0.85) 0%,
-        rgba(255, 140, 160, 0.55) 35%,
-        rgba(255, 140, 160, 0.18) 65%,
-        rgba(255, 140, 160, 0) 100%);
-      opacity: 0;
-      pointer-events: none;
-      transform: scale(0.4);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
+.blush {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle,
+    rgba(255, 140, 160, 0.85) 0%,
+    rgba(255, 140, 160, 0.55) 35%,
+    rgba(255, 140, 160, 0.18) 65%,
+    rgba(255, 140, 160, 0) 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.4);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+    
+    
     .blush.left  { left: 6px;  top: 40%; }
     .blush.right { right: 6px; top: 40%; }
     .character.blushing .blush { opacity: 1; transform: scale(1.1); }
