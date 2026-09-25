@@ -199,6 +199,11 @@
     .icon-btn.add:hover { background: #4a8f4a; color: #fff; }
     .icon-btn.delete { border-color: #8f2a2a; color: #ff9e9e; }
     .icon-btn.delete:hover { background: #8f2a2a; color: #fff; }
+    .icon-btn.locked {
+      border-color: #b06a2a !important;
+      color: #ffcf9e !important;
+      background: rgba(176, 106, 42, 0.35) !important;
+    }
 
     .url-input {
       width: 100%;
@@ -213,6 +218,49 @@
 
     .url-input:focus { outline: none; border-color: #ffcf9e; color: #fbe9d2; }
 
+    /* ============ SLIDER ROWS ============ */
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #ffcf9e;
+    }
+
+    .range-row > label {
+      flex-shrink: 0;
+      width: 46px;
+    }
+
+    .range-stack {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .range-stack .range-value {
+      display: block;
+      align-self: flex-end;
+      text-align: right;
+      font-family: monospace;
+      color: #fff5e6;
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: rgba(0,0,0,0.35);
+      border-radius: 5px;
+      padding: 1px 6px;
+      border: 1px solid #6e4a24;
+      min-width: 52px;
+    }
+
+    .range-stack input[type="range"] {
+      width: 100%;
+      accent-color: #ffcf9e;
+    }
+
     .size-row, .angle-row {
       display: flex;
       align-items: center;
@@ -222,7 +270,7 @@
       color: #ffcf9e;
     }
 
-    .size-row label, .angle-row label {
+    .size-row > label, .angle-row > label {
       flex-shrink: 0;
       width: 30px;
     }
@@ -277,7 +325,6 @@
       border-color: #ffcf9e;
     }
 
-    /* hat position row for photos */
     .position-row {
       display: flex;
       gap: 6px;
@@ -309,7 +356,6 @@
       border-color: #ffcf9e;
     }
 
-    /* Simple label + color picker row (used inside editors) */
     .color-row {
       display: flex;
       align-items: center;
@@ -409,148 +455,16 @@
       flex: 1; accent-color: #ffcf9e;
     }
 
-    .tray-editor .range-value {
-      flex-shrink: 0;
-      width: 42px;
-      text-align: right;
-      font-family: monospace;
-      color: #fff5e6;
-      font-size: 0.72rem;
-    }
-
-    /* ================= SOUNDS EDITOR ================= */
-    .sound-editor {
-      background: #2a3d4a;
-      border: 2px solid #4a7ba5;
-      border-radius: 14px;
-      padding: 8px 8px 6px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .sound-editor .sound-head {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sound-editor .sound-icon {
-      font-size: 1.2rem;
-      flex-shrink: 0;
-    }
-
-    .sound-editor .sound-label {
-      flex: 1;
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: #b8dcf5;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    .sound-editor .sound-count {
+    .pos-info {
       font-size: 0.62rem;
       font-family: monospace;
-      background: rgba(138, 192, 230, 0.2);
-      color: #8ac0e6;
+      color: #b8dcf5;
+      background: rgba(74, 123, 165, 0.15);
       border: 1px solid #4a7ba5;
       border-radius: 6px;
-      padding: 2px 6px;
-      flex-shrink: 0;
-    }
-
-    .sound-editor .sound-list {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      max-height: 130px;
-      overflow-y: auto;
-    }
-
-    .sound-editor .sound-list::-webkit-scrollbar { width: 6px; }
-    .sound-editor .sound-list::-webkit-scrollbar-track { background: #1e2a33; }
-    .sound-editor .sound-list::-webkit-scrollbar-thumb { background: #4a7ba5; border-radius: 3px; }
-
-    .sound-editor .sound-empty {
-      font-size: 0.65rem;
-      color: #5a7a8f;
-      font-style: italic;
-      text-align: center;
-      padding: 4px 0;
-    }
-
-    .sound-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #1e2a33;
-      border: 1px solid #35506a;
-      border-radius: 6px;
       padding: 4px 6px;
-      font-size: 0.65rem;
-      color: #d4e8f5;
-    }
-
-    .sound-row .sound-name {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-family: monospace;
-      cursor: pointer;
-    }
-
-    .sound-row .sound-name:hover {
-      color: #ffcf9e;
-      text-decoration: underline;
-    }
-
-    .sound-row .sound-play {
-      background: none;
-      border: none;
-      color: #8ac0e6;
-      cursor: pointer;
-      font-size: 0.85rem;
-      padding: 0 2px;
-      line-height: 1;
-    }
-
-    .sound-row .sound-play:hover { color: #ffcf9e; }
-
-    .sound-row .sound-del {
-      background: none;
-      border: none;
-      color: #ff9e9e;
-      cursor: pointer;
-      font-size: 0.85rem;
-      padding: 0 2px;
-      line-height: 1;
-      font-weight: 800;
-    }
-
-    .sound-row .sound-del:hover { color: #fff; }
-
-    .sound-editor .sound-add-btn {
-      width: 100%;
-      padding: 5px;
-      border-radius: 8px;
-      border: 2px dashed #4a7ba5;
-      background: rgba(74, 123, 165, 0.15);
-      color: #8ac0e6;
-      font-weight: 800;
-      font-family: inherit;
-      font-size: 0.68rem;
-      cursor: pointer;
-      letter-spacing: 0.5px;
-      transition: 0.12s;
-    }
-
-    .sound-editor .sound-add-btn:hover {
-      background: rgba(74, 123, 165, 0.35);
-      color: #d4e8f5;
-      border-style: solid;
+      text-align: center;
+      letter-spacing: 0.3px;
     }
 
     /* ================= PLAY AREA ================= */
@@ -598,9 +512,7 @@
       transform: translateY(-1px);
     }
 
-    .sidebar-toggle:active {
-      transform: translateY(0);
-    }
+    .sidebar-toggle:active { transform: translateY(0); }
 
     .sidebar-toggle .toggle-icon {
       font-size: 1rem;
@@ -632,9 +544,7 @@
       transform: translateY(-50%);
     }
 
-    .snap-guide.active {
-      opacity: 1;
-    }
+    .snap-guide.active { opacity: 1; }
 
     .character-wrap {
       position: absolute;
@@ -716,21 +626,28 @@
       box-shadow: inset 0 -12px 0 #7e2a2a;
     }
 
+    /* ====== BLUSH ====== */
     .blush {
       position: absolute;
-      width: 40px;
-      height: 24px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 140, 160, 0.75), rgba(255, 140, 160, 0));
+      background: radial-gradient(circle,
+        rgba(255, 140, 160, 0.85) 0%,
+        rgba(255, 140, 160, 0.55) 35%,
+        rgba(255, 140, 160, 0.18) 65%,
+        rgba(255, 140, 160, 0) 100%);
       opacity: 0;
       pointer-events: none;
       transform: scale(0.4);
       transition: opacity 0.4s ease, transform 0.4s ease;
-      filter: blur(2px);
+      -webkit-mask-image: radial-gradient(circle, black 60%, transparent 100%);
+      mask-image: radial-gradient(circle, black 60%, transparent 100%);
+      will-change: opacity, transform;
     }
 
-    .blush.left  { left: 2px;  top: 42%; }
-    .blush.right { right: 2px; top: 42%; }
+    .blush.left  { left: 6px;  top: 40%; }
+    .blush.right { right: 6px; top: 40%; }
 
     .character.blushing .blush {
       opacity: 1;
@@ -979,6 +896,10 @@
       z-index: 100;
     }
 
+    .tray-wrap.tray-locked {
+      cursor: default;
+    }
+
     .tray {
       width: 640px;
       height: 320px;
@@ -987,11 +908,15 @@
       box-shadow: 0 14px 0 #6b4b2c, inset 0 8px 12px rgba(255, 255, 200, 0.4);
       border: 4px solid #7a5733;
       position: relative;
+      overflow: visible;
       transition: background 0.2s, border-color 0.2s, transform 0.12s ease;
       transform-origin: center center;
       transform-style: preserve-3d;
     }
 
+    /* Food + drink items now live on the play area, NOT inside the tray.
+       They are absolutely positioned siblings of the tray. */
+    .food-item,
     .drink-item {
       position: absolute;
       display: flex;
@@ -1003,17 +928,26 @@
       z-index: 3;
     }
 
-    .drink-item:hover:not(.dragging):not(.eaten) {
-      z-index: 10;
-    }
+    .food-item:hover:not(.dragging):not(.eaten),
+    .drink-item:hover:not(.dragging):not(.eaten) { z-index: 10; }
 
+    .food-item:active:not(.dragging),
     .drink-item:active:not(.dragging) { cursor: grabbing; }
 
+    .food-item.dragging,
     .drink-item.dragging {
       cursor: grabbing;
       z-index: 2147483646 !important;
       transition: none;
       pointer-events: none;
+      position: fixed !important;
+    }
+
+    .food-item.eating-now {
+      transition: transform 0.5s cubic-bezier(0.55, 0, 1, 0.45),
+                  opacity 0.5s ease-in;
+      pointer-events: none;
+      z-index: 2147483646 !important;
       position: fixed !important;
     }
 
@@ -1023,7 +957,13 @@
       position: fixed !important;
     }
 
-    .drink-img {
+    .food-item.eaten {
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .food-img, .drink-img {
       object-fit: contain;
       pointer-events: none;
       display: block;
@@ -1043,10 +983,7 @@
       z-index: 4;
     }
 
-    .photo-item:hover:not(.dragging) {
-      z-index: 10;
-    }
-
+    .photo-item:hover:not(.dragging) { z-index: 10; }
     .photo-item:active:not(.dragging) { cursor: grabbing; }
 
     .photo-item.dragging {
@@ -1075,54 +1012,6 @@
       transform-origin: center center;
     }
 
-    .food-item {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: grab;
-      touch-action: none;
-      transition: filter 0.15s;
-      z-index: 4;
-    }
-
-    .food-item:hover:not(.dragging):not(.eaten) {
-      z-index: 10;
-    }
-
-    .food-item:active:not(.dragging) { cursor: grabbing; }
-
-    .food-item.dragging {
-      cursor: grabbing;
-      z-index: 2147483646 !important;
-      transition: none;
-      pointer-events: none;
-      position: fixed !important;
-    }
-
-    .food-item.eating-now {
-      transition: transform 0.5s cubic-bezier(0.55, 0, 1, 0.45),
-                  opacity 0.5s ease-in;
-      pointer-events: none;
-      z-index: 2147483646 !important;
-      position: fixed !important;
-    }
-
-    .food-item.eaten {
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-    }
-
-    .food-img {
-      object-fit: contain;
-      pointer-events: none;
-      display: block;
-      border: none;
-      box-shadow: none;
-      background: transparent;
-    }
-
     .chopstick-single {
       position: fixed;
       top: 0;
@@ -1143,22 +1032,12 @@
       transform: translate(-50%, -100%) translateY(0) scale(1);
     }
 
-    .chopstick-single.instant-hide {
-      transition: none !important;
-    }
+    .chopstick-single.instant-hide { transition: none !important; }
 
-    .chopstick-back-float {
-      z-index: 3;
-    }
-    .chopstick-front-float {
-      z-index: 2147483647;
-    }
-    .chopstick-back-float.dragging-back {
-      z-index: 2147483645;
-    }
-    .chopstick-front-float.dragging-front {
-      z-index: 2147483647;
-    }
+    .chopstick-back-float { z-index: 3; }
+    .chopstick-front-float { z-index: 2147483647; }
+    .chopstick-back-float.dragging-back { z-index: 2147483645; }
+    .chopstick-front-float.dragging-front { z-index: 2147483647; }
 
     .chopstick-single .chopstick {
       position: absolute;
@@ -1167,10 +1046,7 @@
       width: 9px;
       height: 160px;
       background: linear-gradient(to bottom,
-        #e8bd7f 0%,
-        #d6a15f 25%,
-        #b8834a 60%,
-        #8a5f30 100%);
+        #e8bd7f 0%, #d6a15f 25%, #b8834a 60%, #8a5f30 100%);
       border-radius: 5px 5px 3px 3px;
       box-shadow:
         inset -2px 0 0 #6e4a24,
@@ -1190,26 +1066,14 @@
       border-radius: 2px;
     }
 
-    .chopstick-back-float .chopstick {
-      transform: translateX(-50%) rotate(-10deg);
-    }
-    .chopstick-front-float .chopstick {
-      transform: translateX(-50%) rotate(10deg);
-    }
+    .chopstick-back-float .chopstick { transform: translateX(-50%) rotate(-10deg); }
+    .chopstick-front-float .chopstick { transform: translateX(-50%) rotate(10deg); }
 
-    .chopstick-back-float.holding .chopstick {
-      transform: translateX(-50%) rotate(-4deg);
-    }
-    .chopstick-front-float.holding .chopstick {
-      transform: translateX(-50%) rotate(4deg);
-    }
+    .chopstick-back-float.holding .chopstick { transform: translateX(-50%) rotate(-4deg); }
+    .chopstick-front-float.holding .chopstick { transform: translateX(-50%) rotate(4deg); }
 
-    .chopstick-back-float.pinching .chopstick {
-      animation: chopPinchBack 0.22s ease-out;
-    }
-    .chopstick-front-float.pinching .chopstick {
-      animation: chopPinchFront 0.22s ease-out;
-    }
+    .chopstick-back-float.pinching .chopstick { animation: chopPinchBack 0.22s ease-out; }
+    .chopstick-front-float.pinching .chopstick { animation: chopPinchFront 0.22s ease-out; }
 
     @keyframes chopPinchBack {
       0%   { transform: translateX(-50%) rotate(-10deg); }
@@ -1351,9 +1215,6 @@
     </div>
     <div id="photoEditors"></div>
 
-    <div class="side-title"><span>🔊 SOUNDS</span></div>
-    <div id="soundEditors"></div>
-
     <div class="side-title"><span>😋 CHARACTER</span></div>
     <div class="char-editor">
       <div class="row">
@@ -1364,27 +1225,71 @@
         <label>Mouth</label>
         <input type="color" id="charMouthColor" value="#b13e3e">
       </div>
-      <div class="row">
+      <div class="range-row">
         <label>Size</label>
-        <input type="range" id="charSize" min="0.6" max="1.6" step="0.05" value="1">
+        <div class="range-stack">
+          <span class="range-value" id="charSizeValue">1.00×</span>
+          <input type="range" id="charSize" min="0.6" max="1.6" step="0.05" value="1">
+        </div>
       </div>
+      <div class="range-row">
+        <label>X</label>
+        <div class="range-stack">
+          <span class="range-value" id="charXValue">50%</span>
+          <input type="range" id="charXSlider" min="0" max="100" step="1" value="50">
+        </div>
+      </div>
+      <div class="range-row">
+        <label>Y</label>
+        <div class="range-stack">
+          <span class="range-value" id="charYValue">25%</span>
+          <input type="range" id="charYSlider" min="0" max="100" step="1" value="25">
+        </div>
+      </div>
+      <div class="pos-info" id="charPosInfo">X: 50% · Y: 25%</div>
     </div>
 
-    <div class="side-title"><span>🥘 TRAY</span></div>
+    <div class="side-title">
+      <span>🥘 TRAY</span>
+      <button class="icon-btn" id="trayLockBtn" title="Lock / unlock tray position" style="border-color: #4a8f4a; color: #a8e6a8;">🔓</button>
+    </div>
     <div class="tray-editor">
-      <div class="row">
+      <div class="range-row">
         <label>Width</label>
-        <input type="range" id="trayW" min="300" max="1400" step="10" value="640">
+        <div class="range-stack">
+          <span class="range-value" id="trayWValue">640px</span>
+          <input type="range" id="trayW" min="300" max="1400" step="10" value="640">
+        </div>
       </div>
-      <div class="row">
+      <div class="range-row">
         <label>Height</label>
-        <input type="range" id="trayH" min="180" max="700" step="10" value="320">
+        <div class="range-stack">
+          <span class="range-value" id="trayHValue">320px</span>
+          <input type="range" id="trayH" min="180" max="700" step="10" value="320">
+        </div>
       </div>
-      <div class="row">
+      <div class="range-row">
         <label>Tilt</label>
-        <input type="range" id="trayTilt" min="-45" max="45" step="1" value="0">
-        <span class="range-value" id="trayTiltValue">0°</span>
+        <div class="range-stack">
+          <span class="range-value" id="trayTiltValue">0°</span>
+          <input type="range" id="trayTilt" min="-45" max="45" step="1" value="0">
+        </div>
       </div>
+      <div class="range-row">
+        <label>X</label>
+        <div class="range-stack">
+          <span class="range-value" id="trayXValue">50%</span>
+          <input type="range" id="trayXSlider" min="0" max="100" step="1" value="50">
+        </div>
+      </div>
+      <div class="range-row">
+        <label>Y</label>
+        <div class="range-stack">
+          <span class="range-value" id="trayYValue">75%</span>
+          <input type="range" id="trayYSlider" min="0" max="100" step="1" value="75">
+        </div>
+      </div>
+      <div class="pos-info" id="trayPosInfo">X: 50% · Y: 75%</div>
       <div class="row">
         <label>Top</label>
         <input type="color" id="trayColor1" value="#b48b5c">
@@ -1401,15 +1306,17 @@
   </aside>
 
   <main class="play-area" id="playArea">
-    <!-- Sidebar toggle button (always visible) -->
     <button class="sidebar-toggle" id="sidebarToggle" title="Show / hide the sidebar">
       <span class="toggle-icon" id="toggleIcon">◀</span>
       <span class="toggle-text" id="toggleText">Hide Panel</span>
     </button>
 
-    <!-- Snap guide lines -->
     <div class="snap-guide vertical" id="snapGuideV"></div>
     <div class="snap-guide horizontal" id="snapGuideH"></div>
+
+    <div class="tray-wrap" id="trayWrap">
+      <div class="tray" id="tray"></div>
+    </div>
 
     <div class="character-wrap" id="characterWrap">
       <div class="character" id="character">
@@ -1428,10 +1335,6 @@
         <div class="head-drop-indicator" id="headDropIndicator"></div>
       </div>
     </div>
-
-    <div class="tray-wrap" id="trayWrap">
-      <div class="tray" id="tray"></div>
-    </div>
   </main>
 </div>
 
@@ -1447,218 +1350,6 @@
   (function() {
     function uid() { return 'x_' + Math.random().toString(36).substr(2, 9); }
 
-    // ============================================================
-    // SOUND SYSTEM — IndexedDB storage, in-app upload, shuffle bag
-    // ============================================================
-    const AUDIO_ACCEPT = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.opus,.flac,.mp4,.m4b,.caf,.aiff,.aif,.weba';
-
-    const SOUND_EMOTIONS = [
-      { key: 'blink',      label: 'Blink',       icon: '👁️' },
-      { key: 'smile',      label: 'Smile',       icon: '😊' },
-      { key: 'laugh',      label: 'Laugh',       icon: '😂' },
-      { key: 'blush',      label: 'Blush',       icon: '😳' },
-      { key: 'eating',     label: 'Eating',      icon: '🍽️' },
-      { key: 'swallowing', label: 'Swallowing',  icon: '😮‍💨' },
-      { key: 'burping',    label: 'Burping',     icon: '💨' },
-      { key: 'sipping',    label: 'Sipping',     icon: '🥤' }
-    ];
-
-    let soundDB = null;
-    const soundCache = {};
-    const soundBags  = {};
-
-    function openSoundDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open('mukbang_sounds', 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains('sounds')) {
-            const store = db.createObjectStore('sounds', { keyPath: 'id' });
-            store.createIndex('emotion', 'emotion', { unique: false });
-          }
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    function dbGetAll() {
-      return new Promise((resolve, reject) => {
-        const tx = soundDB.transaction('sounds', 'readonly');
-        const req = tx.objectStore('sounds').getAll();
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    function dbAdd(record) {
-      return new Promise((resolve, reject) => {
-        const tx = soundDB.transaction('sounds', 'readwrite');
-        const req = tx.objectStore('sounds').put(record);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    function dbDelete(id) {
-      return new Promise((resolve, reject) => {
-        const tx = soundDB.transaction('sounds', 'readwrite');
-        const req = tx.objectStore('sounds').delete(id);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function loadAllSounds() {
-      const rows = await dbGetAll();
-      SOUND_EMOTIONS.forEach(e => { soundCache[e.key] = []; });
-      rows.forEach(r => {
-        if (!soundCache[r.emotion]) soundCache[r.emotion] = [];
-        const url = URL.createObjectURL(r.blob);
-        soundCache[r.emotion].push({ id: r.id, name: r.name, url });
-      });
-      SOUND_EMOTIONS.forEach(e => { soundBags[e.key] = []; });
-    }
-
-    function shuffleArr(a) {
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    }
-
-    // LAYERED PLAYBACK — fresh Audio each call, so no waiting
-    function playSound(emotionKey) {
-      const list = soundCache[emotionKey];
-      if (!list || list.length === 0) return;
-
-      if (!soundBags[emotionKey] || soundBags[emotionKey].length === 0) {
-        soundBags[emotionKey] = shuffleArr(list.map(s => s.id));
-      }
-      const id = soundBags[emotionKey].shift();
-      const entry = list.find(s => s.id === id);
-      if (!entry) return;
-
-      const audio = new Audio(entry.url);
-      audio.volume = 0.85;
-      audio.play().catch(() => {});
-    }
-
-    // ============================================================
-    // SOUND UI BUILDER
-    // ============================================================
-    const soundEditorsEl = document.getElementById('soundEditors');
-
-    function buildSoundEditors() {
-      const prevScrollTop = document.getElementById('sidebar').scrollTop;
-      soundEditorsEl.innerHTML = '';
-      SOUND_EMOTIONS.forEach(emotion => {
-        const list = soundCache[emotion.key] || [];
-        const card = document.createElement('div');
-        card.className = 'sound-editor';
-        card.dataset.emotion = emotion.key;
-
-        const head = document.createElement('div');
-        head.className = 'sound-head';
-        head.innerHTML = `
-          <span class="sound-icon">${emotion.icon}</span>
-          <span class="sound-label">${emotion.label}</span>
-          <span class="sound-count">${list.length}</span>
-        `;
-        card.appendChild(head);
-
-        const listEl = document.createElement('div');
-        listEl.className = 'sound-list';
-
-        if (list.length === 0) {
-          const empty = document.createElement('div');
-          empty.className = 'sound-empty';
-          empty.textContent = 'No sounds yet';
-          listEl.appendChild(empty);
-        } else {
-          list.forEach(sound => {
-            const row = document.createElement('div');
-            row.className = 'sound-row';
-
-            const nameEl = document.createElement('span');
-            nameEl.className = 'sound-name';
-            nameEl.textContent = sound.name;
-            nameEl.title = 'Click to preview';
-            nameEl.addEventListener('click', () => {
-              const a = new Audio(sound.url);
-              a.volume = 0.85;
-              a.play().catch(() => {});
-            });
-
-            const playBtn = document.createElement('button');
-            playBtn.className = 'sound-play';
-            playBtn.title = 'Preview';
-            playBtn.textContent = '▶';
-            playBtn.addEventListener('click', () => {
-              const a = new Audio(sound.url);
-              a.volume = 0.85;
-              a.play().catch(() => {});
-            });
-
-            const delBtn = document.createElement('button');
-            delBtn.className = 'sound-del';
-            delBtn.title = 'Delete';
-            delBtn.textContent = '✕';
-            delBtn.addEventListener('click', async () => {
-              await dbDelete(sound.id);
-              URL.revokeObjectURL(sound.url);
-              await loadAllSounds();
-              buildSoundEditors();
-            });
-
-            row.appendChild(nameEl);
-            row.appendChild(playBtn);
-            row.appendChild(delBtn);
-            listEl.appendChild(row);
-          });
-        }
-        card.appendChild(listEl);
-
-        const addBtn = document.createElement('button');
-        addBtn.className = 'sound-add-btn';
-        addBtn.textContent = '＋ Add sound(s)';
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = AUDIO_ACCEPT;
-        fileInput.multiple = true;
-        fileInput.style.display = 'none';
-
-        addBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', async (e) => {
-          const files = Array.from(e.target.files || []);
-          for (const f of files) {
-            const looksAudio =
-              (f.type && f.type.startsWith('audio/')) ||
-              /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|mp4|m4b|caf|aiff|aif|weba)$/i.test(f.name);
-            if (!looksAudio) continue;
-
-            const rec = {
-              id: uid(),
-              emotion: emotion.key,
-              name: f.name,
-              blob: f
-            };
-            await dbAdd(rec);
-          }
-          fileInput.value = '';
-          await loadAllSounds();
-          buildSoundEditors();
-          document.getElementById('sidebar').scrollTop = prevScrollTop;
-        });
-        card.appendChild(addBtn);
-        card.appendChild(fileInput);
-
-        soundEditorsEl.appendChild(card);
-      });
-      document.getElementById('sidebar').scrollTop = prevScrollTop;
-    }
-
     let backgrounds = [];
     let foods = [];
     let drinks = [];
@@ -1670,6 +1361,7 @@
 
     let isBusy = false;
     let hasBurped = false;
+    let trayLocked = false;
 
     let isDragging = false;
     let dragEl = null;
@@ -1707,6 +1399,7 @@
     const toggleText = document.getElementById('toggleText');
     const snapGuideVEl = document.getElementById('snapGuideV');
     const snapGuideHEl = document.getElementById('snapGuideH');
+    const trayLockBtn = document.getElementById('trayLockBtn');
 
     const layout = {
       charX: 0.5, charY: 0.25,
@@ -1715,7 +1408,6 @@
       trayTilt: 0
     };
 
-    // Snap distance in pixels
     const SNAP_DISTANCE = 18;
 
     // ============================================================
@@ -1740,6 +1432,19 @@
     sidebarToggleBtn.addEventListener('click', toggleSidebar);
 
     // ============================================================
+    // TRAY LOCK
+    // ============================================================
+    trayLockBtn.addEventListener('click', () => {
+      trayLocked = !trayLocked;
+      trayLockBtn.textContent = trayLocked ? '🔒' : '🔓';
+      trayLockBtn.classList.toggle('locked', trayLocked);
+      trayLockBtn.title = trayLocked ? 'Tray locked — click to unlock' : 'Tray unlocked — click to lock';
+      trayWrapEl.classList.toggle('tray-locked', trayLocked);
+      trayWrapEl.style.cursor = trayLocked ? 'default' : 'grab';
+      trayWrapEl.style.filter = trayLocked ? 'brightness(0.92)' : '';
+    });
+
+    // ============================================================
     // HAT POSITION HELPERS
     // ============================================================
     const HAT_POSITIONS = {
@@ -1755,7 +1460,90 @@
     }
 
     // ============================================================
-    // RANDOM EMOTION ENGINE
+    // POSITION READOUTS
+    // ============================================================
+    const charXSlider = document.getElementById('charXSlider');
+    const charYSlider = document.getElementById('charYSlider');
+    const charXValueEl = document.getElementById('charXValue');
+    const charYValueEl = document.getElementById('charYValue');
+    const charPosInfoEl = document.getElementById('charPosInfo');
+
+    const trayXSlider = document.getElementById('trayXSlider');
+    const trayYSlider = document.getElementById('trayYSlider');
+    const trayXValueEl = document.getElementById('trayXValue');
+    const trayYValueEl = document.getElementById('trayYValue');
+    const trayPosInfoEl = document.getElementById('trayPosInfo');
+
+    const trayWValueEl = document.getElementById('trayWValue');
+    const trayHValueEl = document.getElementById('trayHValue');
+    const trayTiltValueEl = document.getElementById('trayTiltValue');
+    const charSizeValueEl = document.getElementById('charSizeValue');
+
+    function refreshPositionUI() {
+      const pw = playAreaEl.clientWidth;
+      const ph = playAreaEl.clientHeight;
+      const charPxX = Math.round(layout.charX * pw);
+      const charPxY = Math.round(layout.charY * ph);
+      const charPctX = Math.round(layout.charX * 100);
+      const charPctY = Math.round(layout.charY * 100);
+
+      if (charXSlider) {
+        const v = parseInt(charXSlider.value, 10);
+        if (v !== charPctX) charXSlider.value = charPctX;
+      }
+      if (charYSlider) {
+        const v = parseInt(charYSlider.value, 10);
+        if (v !== charPctY) charYSlider.value = charPctY;
+      }
+      if (charXValueEl) charXValueEl.textContent = charPctX + '%';
+      if (charYValueEl) charYValueEl.textContent = charPctY + '%';
+      if (charPosInfoEl) charPosInfoEl.textContent = `X: ${charPxX}px (${charPctX}%) · Y: ${charPxY}px (${charPctY}%)`;
+
+      const trayPxX = Math.round(layout.trayX * pw);
+      const trayPxY = Math.round(layout.trayY * ph);
+      const trayPctX = Math.round(layout.trayX * 100);
+      const trayPctY = Math.round(layout.trayY * 100);
+
+      if (trayXSlider) {
+        const v = parseInt(trayXSlider.value, 10);
+        if (v !== trayPctX) trayXSlider.value = trayPctX;
+      }
+      if (trayYSlider) {
+        const v = parseInt(trayYSlider.value, 10);
+        if (v !== trayPctY) trayYSlider.value = trayPctY;
+      }
+      if (trayXValueEl) trayXValueEl.textContent = trayPctX + '%';
+      if (trayYValueEl) trayYValueEl.textContent = trayPctY + '%';
+      if (trayPosInfoEl) trayPosInfoEl.textContent = `X: ${trayPxX}px (${trayPctX}%) · Y: ${trayPxY}px (${trayPctY}%)`;
+
+      if (trayWValueEl) trayWValueEl.textContent = layout.trayW + 'px';
+      if (trayHValueEl) trayHValueEl.textContent = layout.trayH + 'px';
+      if (trayTiltValueEl) trayTiltValueEl.textContent = layout.trayTilt + '°';
+    }
+
+    charXSlider.addEventListener('input', (e) => {
+      layout.charX = parseInt(e.target.value, 10) / 100;
+      applyLayout();
+      refreshPositionUI();
+    });
+    charYSlider.addEventListener('input', (e) => {
+      layout.charY = parseInt(e.target.value, 10) / 100;
+      applyLayout();
+      refreshPositionUI();
+    });
+    trayXSlider.addEventListener('input', (e) => {
+      layout.trayX = parseInt(e.target.value, 10) / 100;
+      applyLayout();
+      refreshPositionUI();
+    });
+    trayYSlider.addEventListener('input', (e) => {
+      layout.trayY = parseInt(e.target.value, 10) / 100;
+      applyLayout();
+      refreshPositionUI();
+    });
+
+    // ============================================================
+    // RANDOM EMOTIONS
     // ============================================================
     const EMOTION_BUSY_CLASSES = ['eating', 'smiling', 'burping', 'sipping', 'laughing', 'blushing'];
 
@@ -1807,7 +1595,6 @@
     function doBlinkOnce() {
       eyeLeft.classList.add('blinking');
       eyeRight.classList.add('blinking');
-      playSound('blink');
 
       const doubleBlink = Math.random() < 0.3;
       setTimeout(() => {
@@ -1830,7 +1617,6 @@
     function doSmileOnce() {
       characterEl.classList.add('smiling');
       mouthEl.classList.add('mouth-wow');
-      playSound('smile');
       const holdMs = 700 + Math.random() * 900;
       setTimeout(() => {
         characterEl.classList.remove('smiling');
@@ -1841,7 +1627,6 @@
     function doLaughOnce() {
       characterEl.classList.add('laughing');
       mouthEl.classList.add('mouth-laugh');
-      playSound('laugh');
 
       const laughTexts = ['HA!', 'HEHE!', 'HAHA!', '😄', 'HOHO!', '😂'];
       const laughCount = 3 + Math.floor(Math.random() * 3);
@@ -1868,7 +1653,6 @@
 
     function doBlushOnce() {
       characterEl.classList.add('blushing');
-      playSound('blush');
       const holdMs = 1400 + Math.random() * 1000;
       setTimeout(() => {
         characterEl.classList.remove('blushing');
@@ -1914,8 +1698,7 @@
     function applyTrayTilt(deg) {
       layout.trayTilt = deg;
       trayEl.style.transform = `rotateX(${deg}deg)`;
-      const valueEl = document.getElementById('trayTiltValue');
-      if (valueEl) valueEl.textContent = deg + '°';
+      refreshPositionUI();
       const slider = document.getElementById('trayTilt');
       if (slider && parseInt(slider.value, 10) !== deg) slider.value = deg;
     }
@@ -1952,16 +1735,16 @@
       trayWrapEl.style.top = (layout.trayY * ph) + 'px';
       trayEl.style.width = layout.trayW + 'px';
       trayEl.style.height = layout.trayH + 'px';
+      trayEl.style.transform = `rotateX(${layout.trayTilt}deg)`;
       const wSlider = document.getElementById('trayW');
       const hSlider = document.getElementById('trayH');
       if (wSlider) wSlider.value = layout.trayW;
       if (hSlider) hSlider.value = layout.trayH;
-      // re-apply tilt so it survives layout changes
-      trayEl.style.transform = `rotateX(${layout.trayTilt}deg)`;
+      refreshPositionUI();
     }
 
     // ============================================================
-    // CHOPSTICK PAIR HELPERS
+    // CHOPSTICK HELPERS
     // ============================================================
     function positionChopsticksAtFoodTop(foodRect) {
       const cx = foodRect.left + foodRect.width / 2;
@@ -2017,7 +1800,7 @@
     }
 
     // ============================================================
-    // DRAG CHARACTER / TRAY — with center snapping
+    // DRAG CHARACTER / TRAY
     // ============================================================
     function makeDraggable(wrapEl, keyPrefix) {
       let dragging = false;
@@ -2032,6 +1815,7 @@
         if (e.target.closest('.head-drop-indicator')) return;
         if (e.target.closest('.blush')) return;
         if (isBusy) return;
+        if (keyPrefix === 'tray' && trayLocked) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         e.preventDefault();
@@ -2068,7 +1852,6 @@
         cx = Math.max(halfW, Math.min(playRect.width - halfW, cx));
         cy = Math.max(halfH, Math.min(playRect.height - halfH, cy));
 
-        // ===== Center snapping (independent per axis) =====
         const centerX = playRect.width / 2;
         const centerY = playRect.height / 2;
 
@@ -2078,19 +1861,17 @@
         if (snappedX) cx = centerX;
         if (snappedY) cy = centerY;
 
-        showSnapGuide(snappedX ? 'v' : null);
-        showSnapGuide(snappedY ? 'h' : null);
         if (snappedX) showSnapGuide('v');
+        else snapGuideVEl.classList.remove('active');
         if (snappedY) showSnapGuide('h');
-
-        // Clear guides that are no longer snapped
-        if (!snappedX) snapGuideVEl.classList.remove('active');
-        if (!snappedY) snapGuideHEl.classList.remove('active');
+        else snapGuideHEl.classList.remove('active');
 
         wrapEl.style.left = cx + 'px';
         wrapEl.style.top = cy + 'px';
         layout[keyPrefix + 'X'] = cx / playRect.width;
         layout[keyPrefix + 'Y'] = cy / playRect.height;
+
+        refreshPositionUI();
       }
 
       function onUp(e) {
@@ -2099,6 +1880,7 @@
         dragPointerId = null;
         wrapEl.classList.remove('dragging');
         hideSnapGuides();
+        refreshPositionUI();
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointercancel', onUp);
@@ -2119,6 +1901,7 @@
       wrapEl.style.top = cy + 'px';
       layout[keyX] = cx / playRect.width;
       layout[keyY] = cy / playRect.height;
+      refreshPositionUI();
     }
 
     function rectsOverlap(a, b) {
@@ -2248,7 +2031,7 @@
     }
 
     // ============================================================
-    // BACKGROUND APPLICATION
+    // BACKGROUND
     // ============================================================
     function applyBackground(bg) {
       playAreaEl.style.background = '';
@@ -2275,9 +2058,6 @@
       }
     }
 
-    // ============================================================
-    // SIDEBAR: BACKGROUND EDITORS
-    // ============================================================
     function buildBackgroundEditors() {
       const prevScrollTop = document.getElementById('sidebar').scrollTop;
       backgroundEditorsEl.innerHTML = '';
@@ -2359,7 +2139,7 @@
     }
 
     // ============================================================
-    // FOOD EDITORS
+    // FOOD
     // ============================================================
     function buildFoodEditors() {
       const prevScrollTop = document.getElementById('sidebar').scrollTop;
@@ -2375,7 +2155,7 @@
                    onerror="this.src='https://via.placeholder.com/90?text=?'">
             </div>
             <input class="name-input" type="text" value="${food.name}" placeholder="Name">
-            <button class="icon-btn add" title="Add one to the tray">＋</button>
+            <button class="icon-btn add" title="Add one to the play area">＋</button>
             <button class="icon-btn delete" title="Remove this food">✕</button>
           </div>
           <input class="url-input" type="text" value="${food.url.startsWith('data:') ? '' : food.url}" placeholder="${food.url.startsWith('data:') ? '📁 local file' : 'https://image-url.jpg'}">
@@ -2392,7 +2172,7 @@
           preview.src = urlInput.value;
           trayItems.forEach(t => {
             if (t.foodId === food.id) {
-              const el = trayEl.querySelector(`[data-uid="${t.uid}"] .food-img`);
+              const el = playAreaEl.querySelector(`[data-uid="${t.uid}"] .food-img`);
               if (el) el.src = urlInput.value;
             }
           });
@@ -2400,14 +2180,14 @@
         wirePreviewUpload(previewWrap, food, preview, urlInput, (dataUrl) => {
           trayItems.forEach(t => {
             if (t.foodId === food.id) {
-              const el = trayEl.querySelector(`[data-uid="${t.uid}"] .food-img`);
+              const el = playAreaEl.querySelector(`[data-uid="${t.uid}"] .food-img`);
               if (el) el.src = dataUrl;
             }
           });
         });
         card.querySelector('.name-input').addEventListener('input', (e) => { food.name = e.target.value; });
         card.querySelector('.icon-btn.add').addEventListener('click', () => {
-          spawnTrayItem(food.id);
+          spawnFoodItem(food.id);
           flashCard(card);
         });
         card.querySelector('.icon-btn.delete').addEventListener('click', () => {
@@ -2431,7 +2211,7 @@
         wireSizeSlider(card, food, (newSize) => {
           trayItems.forEach(t => {
             if (t.foodId === food.id) {
-              const el = trayEl.querySelector(`[data-uid="${t.uid}"] .food-img`);
+              const el = playAreaEl.querySelector(`[data-uid="${t.uid}"] .food-img`);
               if (el) {
                 el.style.width = newSize + 'px';
                 el.style.height = newSize + 'px';
@@ -2445,7 +2225,7 @@
     }
 
     // ============================================================
-    // DRINK EDITORS
+    // DRINKS
     // ============================================================
     function buildDrinkEditors() {
       const prevScrollTop = document.getElementById('sidebar').scrollTop;
@@ -2516,7 +2296,7 @@
     }
 
     // ============================================================
-    // PHOTO EDITORS
+    // PHOTOS
     // ============================================================
     function buildPhotoEditors() {
       const prevScrollTop = document.getElementById('sidebar').scrollTop;
@@ -2614,25 +2394,36 @@
     }
 
     // ============================================================
-    // TRAY SPAWN / RENDER
+    // FOOD SPAWN / RENDER — free on the play area, no tray binding
     // ============================================================
-    function spawnTrayItem(foodId) {
+    function spawnFoodItem(foodId) {
       const food = foods.find(f => f.id === foodId);
       if (!food) return;
+      const pw = playAreaEl.clientWidth;
+      const ph = playAreaEl.clientHeight;
       const itemSize = food.size || 90;
-      const pad = 20;
+
+      // Spawn near the tray but as free items on the play area
+      const trayRect = trayEl.getBoundingClientRect();
+      const playRect = playAreaEl.getBoundingClientRect();
+      const trayCenterX = trayRect.left - playRect.left + trayRect.width / 2;
+      const trayCenterY = trayRect.top - playRect.top + trayRect.height / 2;
+
       let x, y, tries = 0;
       do {
-        x = pad + Math.random() * Math.max(10, layout.trayW - itemSize - pad * 2);
-        y = pad + Math.random() * Math.max(10, layout.trayH - itemSize - pad * 2);
+        x = trayCenterX + (Math.random() - 0.5) * Math.max(80, trayRect.width * 0.7);
+        y = trayCenterY + (Math.random() - 0.5) * Math.max(80, trayRect.height * 0.7);
+        x = Math.max(20, Math.min(pw - itemSize - 20, x - itemSize / 2));
+        y = Math.max(20, Math.min(ph - itemSize - 20, y - itemSize / 2));
         tries++;
-      } while (overlapsExisting(x, y, itemSize) && tries < 60);
+      } while (foodOverlaps(x, y, itemSize) && tries < 60);
+
       trayItems.push({ uid: uid(), foodId, x, y });
       renderTray();
       hasBurped = false;
     }
 
-    function overlapsExisting(x, y, size) {
+    function foodOverlaps(x, y, size) {
       const minDist = size * 0.75;
       return trayItems.some(t => {
         const dx = t.x - x;
@@ -2642,7 +2433,8 @@
     }
 
     function renderTray() {
-      trayEl.innerHTML = '';
+      playAreaEl.querySelectorAll('.food-item').forEach(el => el.remove());
+
       trayItems.forEach(t => {
         const food = foods.find(f => f.id === t.foodId);
         if (!food) return;
@@ -2666,7 +2458,7 @@
 
         itemDiv.appendChild(img);
         itemDiv.addEventListener('pointerdown', onPointerDown);
-        trayEl.appendChild(itemDiv);
+        playAreaEl.appendChild(itemDiv);
       });
     }
 
@@ -3108,33 +2900,29 @@
         if (chopstickBackEl.classList.contains('active')) {
           hideChopsticks();
         }
-        returnFoodToTray(item);
+        returnFoodToSpot(item);
       }
     }
 
-    function returnFoodToTray(item) {
+    // Food drops wherever you let go — no tray snapping.
+    function returnFoodToSpot(item) {
       item.classList.remove('dragging');
-      const trayRect = trayEl.getBoundingClientRect();
+      const playRect = playAreaEl.getBoundingClientRect();
       const itemRect = item.getBoundingClientRect();
-      const itemCenterX = itemRect.left + itemRect.width / 2;
-      const itemCenterY = itemRect.top + itemRect.height / 2;
-      const insideTray = (
-        itemCenterX >= trayRect.left && itemCenterX <= trayRect.right &&
-        itemCenterY >= trayRect.top && itemCenterY <= trayRect.bottom
-      );
-      if (insideTray) {
-        let newX = itemRect.left - trayRect.left;
-        let newY = itemRect.top - trayRect.top;
-        const maxX = Math.max(0, layout.trayW - itemRect.width);
-        const maxY = Math.max(0, layout.trayH - itemRect.height);
-        newX = Math.max(0, Math.min(maxX, newX));
-        newY = Math.max(0, Math.min(maxY, newY));
-        dragItemData.x = newX;
-        dragItemData.y = newY;
-      }
+
+      let newX = itemRect.left - playRect.left;
+      let newY = itemRect.top - playRect.top;
+      const maxX = Math.max(0, playRect.width - itemRect.width);
+      const maxY = Math.max(0, playRect.height - itemRect.height);
+      newX = Math.max(0, Math.min(maxX, newX));
+      newY = Math.max(0, Math.min(maxY, newY));
+
+      dragItemData.x = newX;
+      dragItemData.y = newY;
+
       item.style.position = 'absolute';
-      item.style.left = dragItemData.x + 'px';
-      item.style.top = dragItemData.y + 'px';
+      item.style.left = newX + 'px';
+      item.style.top = newY + 'px';
       item.style.width = '';
       item.style.height = '';
       item.style.margin = '';
@@ -3143,7 +2931,7 @@
       item.style.zIndex = '';
       item.style.opacity = '';
       item.style.pointerEvents = '';
-      trayEl.appendChild(item);
+      playAreaEl.appendChild(item);
     }
 
     function returnDrinkToSpot(item) {
@@ -3278,7 +3066,6 @@
 
         characterEl.classList.add('eating', 'chewing');
         mouthEl.classList.add('mouth-chew');
-        playSound('eating');
 
         const crumbInterval = setInterval(() => {
           spawnCrumb(mouthCenterX, mouthCenterY);
@@ -3290,9 +3077,6 @@
           mouthEl.classList.remove('mouth-chew');
           characterEl.classList.add('swallowing');
           mouthEl.classList.add('mouth-swallow');
-
-          playSound('swallowing');
-
           const uidVal = item.dataset.uid;
           trayItems = trayItems.filter(t => t.uid !== uidVal);
           setTimeout(() => {
@@ -3330,8 +3114,6 @@
       mouthEl.classList.add('mouth-wow', 'mouth-sip-bubble');
       characterEl.classList.add('sipping', 'eating');
 
-      playSound('sipping');
-
       startFizz(mouthRect);
       const swallowGuard = setInterval(() => {
         characterEl.classList.remove('swallowing');
@@ -3364,8 +3146,6 @@
       mouthEl.classList.remove('mouth-wow');
       characterEl.classList.add('burping');
       mouthEl.classList.add('mouth-burp');
-
-      playSound('burping');
 
       const mouthRect = mouthEl.getBoundingClientRect();
       const mouthCenterX = mouthRect.left + mouthRect.width / 2;
@@ -3429,7 +3209,7 @@
     }
 
     // ============================================================
-    // ADD NEW ITEMS — no auto-scroll
+    // ADD NEW ITEMS
     // ============================================================
     addBackgroundBtn.addEventListener('click', () => {
       backgrounds.push({
@@ -3463,7 +3243,10 @@
 
     document.getElementById('charSkinColor').addEventListener('input', (e) => { characterEl.style.background = e.target.value; });
     document.getElementById('charMouthColor').addEventListener('input', (e) => { mouthEl.style.background = e.target.value; });
-    document.getElementById('charSize').addEventListener('input', (e) => { characterEl.style.setProperty('--user-scale', e.target.value); });
+    document.getElementById('charSize').addEventListener('input', (e) => {
+      characterEl.style.setProperty('--user-scale', e.target.value);
+      if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(e.target.value).toFixed(2) + '×';
+    });
     document.getElementById('trayW').addEventListener('input', (e) => {
       layout.trayW = parseInt(e.target.value, 10);
       applyLayout();
@@ -3493,22 +3276,15 @@
       }
     });
 
-    async function init() {
+    function init() {
       buildBackgroundEditors();
       buildFoodEditors();
       buildDrinkEditors();
       buildPhotoEditors();
       applyLayout();
 
-      try {
-        soundDB = await openSoundDB();
-        await loadAllSounds();
-      } catch (err) {
-        console.warn('Sound DB unavailable:', err);
-      }
-      buildSoundEditors();
-
       updateToggleLabel();
+      refreshPositionUI();
 
       requestAnimationFrame(() => {
         layout.charX = 0.5;
@@ -3529,5 +3305,6 @@
     init();
   })();
 </script>
+
 </body>
 </html>
