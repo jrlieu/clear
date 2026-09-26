@@ -314,17 +314,38 @@
 
     /* ============================================================
        EYE
-       - BLINK: original squash (scaleY on the whole .eye), no dash.
-       - SMILE / LAUGH / BLUSH / SIP: circle hides, fixed-width dash
-         fades in. Simple opacity swap, no delays.
+       - Blink = original squash (scaleY on the whole .eye), NO dash.
+       - Smile / Laugh / Blush = circle + shadows fade out, dash fades in.
+       - Eating / Sipping = partial squash, no dash.
+
+       IMPORTANT: while a dash state is active, the eye container's
+       transform is reset to identity AND its transform transition is
+       disabled — otherwise the eye would visibly un-squash and drag
+       the dash along with it, which is the "glitch" you saw.
        ============================================================ */
     .eye {
-      width: 40px; height: 40px; background: #3b2a1c;
-      border-radius: 50%; position: relative;
-      box-shadow: inset -6px -6px 0 #1f140e, 0 5px 0 #6b4f32;
-      transition: transform 0.12s ease-in-out, background 0.12s ease, box-shadow 0.12s ease;
-      overflow: hidden;
+      width: 40px; height: 40px;
+      position: relative;
+      overflow: visible;
+      transition: transform 0.12s ease-in-out;
     }
+
+    /* The dark circle of the eye (with its inset highlight + drop shadow) */
+    .eye::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #3b2a1c;
+      border-radius: 50%;
+      box-shadow: inset -6px -6px 0 #1f140e, 0 5px 0 #6b4f32;
+      transform: scaleY(1);
+      opacity: 1;
+      transform-origin: center center;
+      transition:
+        transform 0.16s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     .eye .pupil {
       position: absolute; top: 8px; left: 8px;
       width: 14px; height: 14px; background: white;
@@ -332,56 +353,68 @@
       transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px));
       transition: transform 0.08s linear, opacity 0.12s ease;
       pointer-events: none;
+      z-index: 2;
     }
 
-    /* The dash — flat, fixed width, only opacity animates */
+    /* The clean dash — flat, no shadows, no bumps */
     .eye .lash {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 38px;
+      width: 34px;
       height: 4px;
       background: #3b2a1c;
       border-radius: 2px;
       box-shadow: none;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scaleX(0.4);
+      transform-origin: center center;
       opacity: 0;
-      transition: opacity 0.12s ease-in-out;
+      transition:
+        opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
       pointer-events: none;
       z-index: 3;
     }
 
-    /* Blink — original squash, no dash */
+    /* -------- BLINK: pure squash, NO dash -------- */
     .eye.blinking { transform: scaleY(0.08); }
 
-    /* Eating keeps its partial squint, no dash */
-    .character.eating .eye { transform: scaleY(0.55); }
-
-    /* -------- DASH STATES: smile / laugh / blush / sip --------
-       Circle + its shadow disappear (background transparent),
-       pupil hides, and the flat fixed-width dash fades in.
+    /* -------- DASH STATES: smile / laugh / blush --------
+       Circle + its shadows fade out, pupil fades out,
+       flat dash fades in.
+       Also: force the eye container to neutral and stop it animating
+       its own transform — that is what removes the glitch.
     */
     .character.smiling .eye,
     .character.laughing .eye,
-    .character.blushing .eye,
-    .character.sipping .eye {
-      background: transparent;
-      box-shadow: none;
+    .character.blushing .eye {
+      transform: none;
+      transition: none;
+    }
+
+    .character.smiling .eye::before,
+    .character.laughing .eye::before,
+    .character.blushing .eye::before {
+      opacity: 0;
+      transform: scaleY(0.2);
     }
 
     .character.smiling .eye .pupil,
     .character.laughing .eye .pupil,
-    .character.blushing .eye .pupil,
-    .character.sipping .eye .pupil {
+    .character.blushing .eye .pupil {
       opacity: 0;
     }
 
     .character.smiling .eye .lash,
     .character.laughing .eye .lash,
-    .character.blushing .eye .lash,
-    .character.sipping .eye .lash {
+    .character.blushing .eye .lash {
       opacity: 1;
+      transform: translate(-50%, -50%) scaleX(1);
     }
+
+    /* Squint during eating / sipping — keep circle but shrink vertically a bit */
+    .character.eating .eye { transform: scaleY(0.55); }
+    .character.sipping .eye { transform: scaleY(0.28); }
 
     .mouth {
       width: 100px; height: 44px; background: #b13e3e;
