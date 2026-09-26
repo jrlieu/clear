@@ -314,8 +314,10 @@
 
     /* ============================================================
        EYE — circle is ::before so the dash can crossfade over it.
-       When closed, the circle + all its shadows fade out completely,
-       leaving ONLY a clean flat dash. No bulges.
+       Blink is a pure crossfade with asymmetric timing:
+         • CLOSING (dash fades IN):  0.14s  — smooth
+         • OPENING (dash fades OUT): 0.06s  — snappy, no linger
+       No resizing, no bulges.
        ============================================================ */
     .eye {
       width: 40px; height: 40px;
@@ -334,9 +336,10 @@
       transform: scaleY(1);
       opacity: 1;
       transform-origin: center center;
+      /* OPENING transition: circle reappears snappily */
       transition:
-        transform 0.16s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+        transform 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.1s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .eye .pupil {
@@ -344,34 +347,35 @@
       width: 14px; height: 14px; background: white;
       border-radius: 50%; box-shadow: 0 0 6px white;
       transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px));
-      transition: transform 0.08s linear, opacity 0.12s ease;
+      /* OPENING: pupil comes back quickly */
+      transition: transform 0.08s linear, opacity 0.08s ease;
       pointer-events: none;
       z-index: 2;
     }
 
-    /* The clean dash — flat, no shadows, no bumps */
+    /* The clean dash — FIXED full width, only opacity animates.
+       Default (open state) = fast fade OUT so it doesn't linger. */
     .eye .lash {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 34px;
+      width: 38px;
       height: 4px;
       background: #3b2a1c;
       border-radius: 2px;
       box-shadow: none;
-      transform: translate(-50%, -50%) scaleX(0.4);
-      transform-origin: center center;
+      transform: translate(-50%, -50%);
       opacity: 0;
-      transition:
-        opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1),
-        transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.06s cubic-bezier(0.4, 0, 1, 1); /* fast fade OUT */
       pointer-events: none;
       z-index: 3;
     }
 
     /* -------- CLOSED STATE --------
        Circle + its shadows fade out entirely,
-       pupil fades out, and the flat dash fades in.
+       pupil fades out, and the flat dash fades in at full width.
+       Closing timing is slightly slower (0.14s) so the eye-close
+       feels smooth and readable; opening is fast (above).
     */
     .eye.blinking::before,
     .character.smiling .eye::before,
@@ -379,6 +383,10 @@
     .character.blushing .eye::before {
       opacity: 0;
       transform: scaleY(0.2);
+      /* CLOSING: circle fades out over 0.14s */
+      transition:
+        transform 0.14s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.14s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .eye.blinking .pupil,
@@ -386,6 +394,7 @@
     .character.laughing .eye .pupil,
     .character.blushing .eye .pupil {
       opacity: 0;
+      transition: transform 0.08s linear, opacity 0.1s ease;
     }
 
     .eye.blinking .lash,
@@ -393,7 +402,7 @@
     .character.laughing .eye .lash,
     .character.blushing .eye .lash {
       opacity: 1;
-      transform: translate(-50%, -50%) scaleX(1);
+      transition: opacity 0.14s cubic-bezier(0.4, 0, 0.2, 1); /* slow fade IN */
     }
 
     /* Squint during eating / sipping — keep circle but shrink vertically a bit */
