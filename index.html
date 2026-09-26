@@ -286,6 +286,25 @@
     }
     .position-row button.active { background: #7a4a8f; color: #fbe9d2; border-color: #ffcf9e; }
 
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #ffcf9e;
+    }
+    .color-row label { flex-shrink: 0; width: 46px; }
+    .color-row input[type="color"] {
+      flex: 1;
+      height: 26px;
+      border-radius: 6px;
+      border: 2px solid #6e4a24;
+      background: #2b1b0e;
+      cursor: pointer;
+      padding: 0;
+    }
+
     .drink-tag, .photo-tag, .background-tag {
       font-size: 0.65rem;
       font-weight: 800;
@@ -1192,7 +1211,7 @@
     // ============================================================
     // TRAY LOCK
     // — freezes position, size, tilt; blocks dragging; disables sliders.
-    // — REMOVED the brightness filter (it broke the 3D perspective look).
+    // — NO visual change to the tray itself.
     // ============================================================
     trayLockBtn.addEventListener('click', () => {
       trayLocked = !trayLocked;
@@ -1680,13 +1699,15 @@
         return;
       }
       if (bg.url && bg.url.length > 0) {
-        playAreaEl.style.backgroundColor = '#fbe9d2';
+        // Photo wins, but color sits behind it (visible if photo has transparency)
+        playAreaEl.style.backgroundColor = bg.color || '#fbe9d2';
         playAreaEl.style.backgroundImage = `url("${bg.url}")`;
         playAreaEl.style.backgroundSize = 'cover';
         playAreaEl.style.backgroundPosition = 'center';
         playAreaEl.style.backgroundRepeat = 'no-repeat';
       } else {
-        playAreaEl.style.backgroundColor = '#fbe9d2';
+        // No photo — just the color
+        playAreaEl.style.backgroundColor = bg.color || '#fbe9d2';
         playAreaEl.style.backgroundImage = 'none';
       }
     }
@@ -1708,17 +1729,26 @@
             <button class="icon-btn delete" title="Remove this background">✕</button>
           </div>
           <input class="url-input" type="text" value="${bg.url.startsWith('data:') ? '' : bg.url}" placeholder="${bg.url.startsWith('data:') ? '📁 local file' : 'https://image-url.jpg (optional)'}">
+          <div class="color-row">
+            <label>Color</label>
+            <input type="color" class="color-picker" value="${bg.color || '#fbe9d2'}">
+          </div>
           <div class="background-tag">🖼️ BG — click ＋ to apply</div>
         `;
         const previewWrap = card.querySelector('.preview-wrap');
         const preview = card.querySelector('.preview');
         const urlInput = card.querySelector('.url-input');
+        const colorPicker = card.querySelector('.color-picker');
         urlInput.addEventListener('input', () => {
           bg.url = urlInput.value;
           preview.src = urlInput.value || 'https://via.placeholder.com/90?text=?';
           if (bg.applied) applyBackground(bg);
         });
         wirePreviewUpload(previewWrap, bg, preview, urlInput, () => { if (bg.applied) applyBackground(bg); });
+        colorPicker.addEventListener('input', () => {
+          bg.color = colorPicker.value;
+          if (bg.applied) applyBackground(bg);
+        });
         card.querySelector('.name-input').addEventListener('input', e => { bg.name = e.target.value; });
         card.querySelector('.icon-btn.add').addEventListener('click', () => {
           if (bg.applied) { bg.applied = false; applyBackground(null); }
@@ -2655,7 +2685,7 @@
     // ADD NEW ITEMS — NEW ITEMS GO TO TOP OF LIST (unshift)
     // ============================================================
     addBackgroundBtn.addEventListener('click', () => {
-      backgrounds.unshift({ id: uid(), name: 'New BG', url: '', applied: false });
+      backgrounds.unshift({ id: uid(), name: 'New BG', url: '', color: '#fbe9d2', applied: false });
       buildBackgroundEditors();
     });
     addFoodBtn.addEventListener('click', () => {
