@@ -441,11 +441,19 @@
       transform-origin: center center; transform-style: preserve-3d;
     }
 
+    /* ============================================================
+       STACKING ORDER — DRINKS ALWAYS BEHIND FOOD
+       .food-item   → z-index 5 (highest)
+       .drink-item  → z-index 3 (below food)
+       .drink hover → z-index 4 (above other drinks, still below food)
+       ============================================================ */
     .food-item, .drink-item {
       position: absolute; display: flex; flex-direction: column;
-      align-items: center; cursor: grab; touch-action: none; z-index: 3;
+      align-items: center; cursor: grab; touch-action: none;
     }
-    .drink-item:hover:not(.dragging):not(.eaten) { z-index: 10; }
+    .food-item { z-index: 5; }
+    .drink-item { z-index: 3; }
+    .drink-item:hover:not(.dragging):not(.eaten) { z-index: 4; }
 
     .food-item.dragging, .drink-item.dragging {
       cursor: grabbing; z-index: 2147483646 !important;
@@ -757,7 +765,6 @@
     let photoItems = [];
 
     let isBusy = false;
-    let hasBurped = false;
     let trayLocked = false;
     let charLocked = false;
 
@@ -829,18 +836,17 @@
     const SNAP_DISTANCE = 18;
 
     // ============================================================
-    // PERSISTENCE — saves templates AND spawned instances + layout
+    // PERSISTENCE
     // ============================================================
     const STORAGE_KEY = 'mukbang_state_v1';
     let saveTimer = null;
-    let pendingSpawnedItems = null;  // holds loaded data until play area is sized
+    let pendingSpawnedItems = null;
 
     function saveState() {
       try {
         const pw = playAreaEl.clientWidth || 1;
         const ph = playAreaEl.clientHeight || 1;
 
-        // Store spawned positions as fractions of the play area so they survive resizes
         const trayItemsSaved = trayItems.map(t => ({
           uid: t.uid, foodId: t.foodId,
           xPct: t.x / pw, yPct: t.y / ph
@@ -913,7 +919,6 @@
       }
     }
 
-    // Restore spawned items once the play area has its real size
     function restoreSpawnedItems() {
       if (!pendingSpawnedItems) return;
       const pw = playAreaEl.clientWidth;
@@ -1950,7 +1955,7 @@
     }
 
     // ============================================================
-    // SPAWN (boundless)
+    // SPAWN
     // ============================================================
     function spawnFoodItem(foodId) {
       const food = foods.find(f => f.id === foodId);
@@ -1969,7 +1974,6 @@
       const newItem = { uid: uid(), foodId, x, y };
       trayItems.push(newItem);
       renderSingleFoodItem(newItem);
-      hasBurped = false;
       scheduleSave();
     }
     function foodOverlaps(x, y, size) {
@@ -2375,6 +2379,9 @@
       scheduleSave();
     }
 
+    // ============================================================
+    // EAT FOOD — NO burp after food anymore
+    // ============================================================
     function eatFood(item, mouthRect) {
       item.dataset.eaten = 'true';
       isBusy = true;
@@ -2420,15 +2427,15 @@
             characterEl.classList.remove('swallowing', 'eating');
             mouthEl.classList.remove('mouth-swallow');
             isBusy = false;
-            if (trayItems.length === 0 && !hasBurped) {
-              hasBurped = true;
-              setTimeout(() => doBurp(), 400);
-            }
+            // NOTE: NO burp here anymore — burp only happens after sipping.
           }, 500);
         }, 900);
       }, 380);
     }
 
+    // ============================================================
+    // SIP DRINK — burp fires at the end
+    // ============================================================
     function beginSip(item, mouthRect) {
       item.dataset.eaten = 'true';
       isBusy = true;
@@ -2466,7 +2473,11 @@
         drinkItems = drinkItems.filter(t => t.uid !== uidVal);
         scheduleSave();
         setTimeout(() => item.remove(), 550);
-        setTimeout(() => { isBusy = false; }, 200);
+        setTimeout(() => {
+          isBusy = false;
+          // Burp after drinking — the ONLY place a burp can trigger.
+          setTimeout(() => doBurp(), 300);
+        }, 200);
       }, 1600);
     }
 
@@ -2618,7 +2629,7 @@
     // INIT
     // ============================================================
     function init() {
-      loadState();  // Restore all data including spawned items + layout
+      loadState();
       buildBackgroundEditors();
       buildFoodEditors();
       buildDrinkEditors();
@@ -2626,7 +2637,6 @@
       applyLayout();
       refreshPositionUI();
 
-      // Restore lock button visuals
       if (charLocked) {
         charLockBtn.textContent = '🔒';
         charLockBtn.classList.add('locked');
@@ -2650,14 +2660,11 @@
         trayYSlider.disabled = true;
       }
 
-      // Re-apply the previously-applied background
       const applied = backgrounds.find(b => b.applied);
       if (applied) applyBackground(applied);
 
       requestAnimationFrame(() => {
-        // Re-apply layout now that the play area has its real size
         applyLayout();
-        // Rebuild any spawned items that were placed before reload
         restoreSpawnedItems();
         makeDraggable(characterWrapEl, 'char');
         makeDraggable(trayWrapEl, 'tray');
