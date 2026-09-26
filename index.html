@@ -308,7 +308,7 @@
     .blush.right { right: 2px; top: 40%; }
 
     .character.blushing .blush { opacity: 1; transform: translateZ(0) scale(1.1); }
-    .character.blushing .eye { transform: scaleY(0.3); }
+    .character.blushing .eye { transform: scaleY(0.01); }
 
     .face { position: relative; display: flex; flex-direction: column; align-items: center; }
     .eyes { display: flex; gap: 52px; margin-bottom: 12px; }
@@ -326,11 +326,11 @@
       transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px));
       transition: transform 0.08s linear; pointer-events: none;
     }
-    .eye.blinking { transform: scaleY(0.08); }
+    .eye.blinking { transform: scaleY(0.01); }
     .character.eating .eye { transform: scaleY(0.55); }
-    .character.smiling .eye { transform: scaleY(0.35); }
+    .character.smiling .eye { transform: scaleY(0.01); }
     .character.sipping .eye { transform: scaleY(0.28); }
-    .character.laughing .eye { transform: scaleY(0.1); }
+    .character.laughing .eye { transform: scaleY(0.01); }
 
     .mouth {
       width: 100px; height: 44px; background: #b13e3e;
@@ -776,6 +776,12 @@
     let pointerId = null;
 
     let fizzInterval = null;
+
+    // Tracks whether the currently-dragged drink was sipping (hovered over mouth) at any point.
+    // If yes, when it unhovers we burp (after a 500ms delay).
+    let drinkSippedThisDrag = false;
+    let drinkIsCurrentlySipping = false;
+    let burpDelayTimer = null;
 
     document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
     document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
@@ -1236,8 +1242,8 @@
         t.style.left = (cx + (Math.random() - 0.5) * 60) + 'px';
         t.style.top = (cy - Math.random() * 20) + 'px';
         document.body.appendChild(t); setTimeout(() => t.remove(), 1300);
-      }, i * 260);
-      setTimeout(() => { characterEl.classList.remove('laughing'); mouthEl.classList.remove('mouth-laugh'); }, 1200 + Math.random() * 1400);
+      }, i * 180);
+      setTimeout(() => { characterEl.classList.remove('laughing'); mouthEl.classList.remove('mouth-laugh'); }, 1000);
     }
     function doBlushOnce() {
       if (!canDoExpressiveEmotion()) return;
@@ -1732,7 +1738,7 @@
             <button class="icon-btn delete" title="Remove this drink">✕</button>
           </div>
           <input class="url-input" type="text" value="${drink.url.startsWith('data:') ? '' : drink.url}" placeholder="${drink.url.startsWith('data:') ? '📁 local file' : 'https://image-url.jpg'}">
-          <div class="drink-tag">🥤 DRINK — sip, never swallow</div>
+          <div class="drink-tag">🥤 DRINK — hover at mouth to sip</div>
         `;
         const previewWrap = card.querySelector('.preview-wrap');
         const preview = card.querySelector('.preview');
@@ -2123,6 +2129,10 @@
       dragItemData = drinkItems.find(t => t.uid === uidVal);
       dragItemKind = 'drink';
       if (!dragItemData) return;
+      // Reset sip tracking for this drag
+      drinkSippedThisDrag = false;
+      drinkIsCurrentlySipping = false;
+      if (burpDelayTimer) { clearTimeout(burpDelayTimer); burpDelayTimer = null; }
       const rect = item.getBoundingClientRect();
       dragOffsetX = e.clientX - rect.left;
       dragOffsetY = e.clientY - rect.top;
@@ -2193,7 +2203,7 @@
     }
 
     // ============================================================
-    // POINTER MOVE
+    // POINTER MOVE — drinks fizz while hovering over mouth; burp fires 500ms after unhover
     // ============================================================
     function onPointerMove(e) {
       if (!isDragging || !dragEl || e.pointerId !== pointerId) return;
@@ -2209,35 +2219,54 @@
       const dragRect = dragEl.getBoundingClientRect();
       const mouthRect = mouthEl.getBoundingClientRect();
       const isOverMouth = rectsOverlap(dragRect, mouthRect);
+
       if (dragItemKind === 'photo') {
-        mouthEl.classList.remove('hint');
-        mouthEl.classList.remove('mouth-wow');
-        mouthEl.classList.remove('mouth-sip-bubble');
+        mouthEl.classList.remove('hint', 'mouth-wow', 'mouth-sip-bubble');
         characterEl.classList.remove('sipping');
         stopFizz();
         return;
       }
-      if (isOverMouth && dragItemKind === 'drink') {
-        if (!mouthEl.classList.contains('mouth-wow')) {
-          mouthEl.classList.add('mouth-wow');
-          mouthEl.classList.add('mouth-sip-bubble');
-          characterEl.classList.add('sipping');
+
+      if (dragItemKind === 'drink') {
+        if (isOverMouth) {
+          // Entering / staying in hover state → cancel any pending burp, start/maintain fizz + sip face
+          if (burpDelayTimer) { clearTimeout(burpDelayTimer); burpDelayTimer = null; }
+          if (!drinkIsCurrentlySipping) {
+            drinkIsCurrentlySipping = true;
+            drinkSippedThisDrag = true;
+            mouthEl.classList.add('mouth-wow', 'mouth-sip-bubble');
+            characterEl.classList.add('sipping');
+          }
+          startFizz(mouthRect);
+        } else {
+          // Left the mouth → stop fizz, remove sip face, and schedule burp after 500ms
+          if (drinkIsCurrentlySipping) {
+            drinkIsCurrentlySipping = false;
+            stopFizz();
+            mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
+            characterEl.classList.remove('sipping');
+            // Schedule burp 500ms from now; cancelled if the drink re-enters the mouth
+            if (burpDelayTimer) clearTimeout(burpDelayTimer);
+            burpDelayTimer = setTimeout(() => {
+              burpDelayTimer = null;
+              doBurp();
+              drinkSippedThisDrag = false;
+            }, 500);
+          } else {
+            stopFizz();
+          }
         }
-        mouthEl.classList.remove('hint');
-        startFizz(mouthRect);
-      } else if (isOverMouth && dragItemKind === 'food') {
-        mouthEl.classList.remove('mouth-wow');
-        mouthEl.classList.remove('mouth-sip-bubble');
+        return;
+      }
+
+      // FOOD
+      if (isOverMouth) {
+        mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
         characterEl.classList.remove('sipping');
         mouthEl.classList.add('hint');
         stopFizz();
       } else {
         mouthEl.classList.remove('hint');
-        if (dragItemKind === 'drink') {
-          mouthEl.classList.remove('mouth-wow');
-          mouthEl.classList.remove('mouth-sip-bubble');
-          characterEl.classList.remove('sipping');
-        }
         stopFizz();
       }
     }
@@ -2269,7 +2298,7 @@
     }
 
     // ============================================================
-    // POINTER UP
+    // POINTER UP — drink is just dropped, never consumed
     // ============================================================
     function onPointerUp(e) {
       if (!isDragging || !dragEl || e.pointerId !== pointerId) return;
@@ -2293,13 +2322,26 @@
         return;
       }
       if (kind === 'drink') {
-        stopFizz();
-        if (isOverMouth) beginSip(item, mouthRect);
-        else {
+        // If released while still over the mouth, clean up and schedule the delayed burp
+        if (drinkIsCurrentlySipping) {
+          drinkIsCurrentlySipping = false;
+          stopFizz();
           mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
           characterEl.classList.remove('sipping');
-          returnDrinkToSpot(item);
+          if (burpDelayTimer) { clearTimeout(burpDelayTimer); burpDelayTimer = null; }
+          burpDelayTimer = setTimeout(() => {
+            burpDelayTimer = null;
+            doBurp();
+            drinkSippedThisDrag = false;
+          }, 500);
+        } else {
+          stopFizz();
+          mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
+          characterEl.classList.remove('sipping');
+          // If a burp was already pending from an unhover, let it fire normally.
         }
+        // Drink is NEVER consumed — always returned to the play area
+        returnDrinkToSpot(item);
         return;
       }
       if (isOverMouth) eatFood(item, mouthRect);
@@ -2380,7 +2422,7 @@
     }
 
     // ============================================================
-    // EAT FOOD — NO burp after food anymore
+    // EAT FOOD — food gets chewed + swallowed
     // ============================================================
     function eatFood(item, mouthRect) {
       item.dataset.eaten = 'true';
@@ -2427,63 +2469,19 @@
             characterEl.classList.remove('swallowing', 'eating');
             mouthEl.classList.remove('mouth-swallow');
             isBusy = false;
-            // NOTE: NO burp here anymore — burp only happens after sipping.
           }, 500);
         }, 900);
       }, 380);
     }
 
     // ============================================================
-    // SIP DRINK — burp fires at the end
+    // BURP — fires 500ms after a drink leaves the mouth
     // ============================================================
-    function beginSip(item, mouthRect) {
-      item.dataset.eaten = 'true';
-      isBusy = true;
-      characterEl.classList.remove('swallowing');
-      mouthEl.classList.remove('mouth-swallow');
-      const mouthCenterX = mouthRect.left + mouthRect.width / 2;
-      const mouthCenterY = mouthRect.top + mouthRect.height / 2;
-      const itemRect = item.getBoundingClientRect();
-      const itemCenterX = itemRect.left + itemRect.width / 2;
-      const itemCenterY = itemRect.top + itemRect.height / 2;
-      const deltaX = mouthCenterX - itemCenterX;
-      const deltaY = (mouthCenterY + mouthRect.height * 0.35) - itemCenterY;
-      item.classList.add('eating-now');
-      item.style.position = 'fixed';
-      item.style.transition = 'transform 0.3s ease-out';
-      item.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.85)`;
-      item.style.opacity = '1';
-      item.style.pointerEvents = 'none';
-      mouthEl.classList.add('mouth-wow', 'mouth-sip-bubble');
-      characterEl.classList.add('sipping', 'eating');
-      startFizz(mouthRect);
-      const swallowGuard = setInterval(() => {
-        characterEl.classList.remove('swallowing');
-        mouthEl.classList.remove('mouth-swallow');
-      }, 50);
-      setTimeout(() => {
-        clearInterval(swallowGuard);
-        stopFizz();
-        item.style.transition = 'transform 0.5s ease-in, opacity 0.5s ease-in';
-        item.style.transform += ' translateY(-55px) scale(0.5)';
-        item.style.opacity = '0';
-        characterEl.classList.remove('sipping', 'eating');
-        mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
-        const uidVal = item.dataset.uid;
-        drinkItems = drinkItems.filter(t => t.uid !== uidVal);
-        scheduleSave();
-        setTimeout(() => item.remove(), 550);
-        setTimeout(() => {
-          isBusy = false;
-          // Burp after drinking — the ONLY place a burp can trigger.
-          setTimeout(() => doBurp(), 300);
-        }, 200);
-      }, 1600);
-    }
-
     function doBurp() {
-      if (characterEl.classList.contains('eating') ||
-          characterEl.classList.contains('burping') ||
+      if (characterEl.classList.contains('burping') ||
+          characterEl.classList.contains('eating') ||
+          characterEl.classList.contains('chewing') ||
+          characterEl.classList.contains('swallowing') ||
           characterEl.classList.contains('sipping') ||
           characterEl.classList.contains('laughing') ||
           characterEl.classList.contains('blushing')) return;
