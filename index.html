@@ -183,7 +183,7 @@
     .icon-btn.locked {
       border-color: #b06a2a !important;
       color: #ffcf9e !important;
-      background: rgba(176, 106, 42, 0.35) !important;
+      background: rgba(176, 106, 42, 0.55) !important;
     }
 
     .url-input {
@@ -246,6 +246,13 @@
       font-family: monospace;
       color: #fff5e6;
       font-size: 0.7rem;
+    }
+
+    /* Disabled range slider feedback */
+    input[type="range"]:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      accent-color: #7a5733;
     }
 
     .chopstick-row { display: flex; gap: 6px; font-size: 0.7rem; }
@@ -359,6 +366,7 @@
       z-index: 2;
     }
     .character-wrap.dragging { cursor: grabbing; z-index: 100; }
+    .character-wrap.char-locked { cursor: default; }
 
     .character {
       --base-scale: 1.4;
@@ -867,7 +875,10 @@
     </div>
     <div id="photoEditors"></div>
 
-    <div class="side-title"><span>😋 CHARACTER</span></div>
+    <div class="side-title">
+      <span>😋 CHARACTER</span>
+      <button class="icon-btn" id="charLockBtn" title="Lock / unlock character" style="border-color: #4a8f4a; color: #a8e6a8;">🔓</button>
+    </div>
     <div class="char-editor">
       <div class="range-row">
         <label>Size</label>
@@ -996,6 +1007,7 @@
     let isBusy = false;
     let hasBurped = false;
     let trayLocked = false;
+    let charLocked = false;
 
     let isDragging = false;
     let dragEl = null;
@@ -1043,11 +1055,18 @@
     const snapGuideVEl = document.getElementById('snapGuideV');
     const snapGuideHEl = document.getElementById('snapGuideH');
     const trayLockBtn = document.getElementById('trayLockBtn');
+    const charLockBtn = document.getElementById('charLockBtn');
 
     const saveCharPresetBtn = document.getElementById('saveCharPresetBtn');
     const loadCharPresetBtn = document.getElementById('loadCharPresetBtn');
     const saveTrayPresetBtn = document.getElementById('saveTrayPresetBtn');
     const loadTrayPresetBtn = document.getElementById('loadTrayPresetBtn');
+
+    // Sliders affected by locks
+    const charSizeSlider = document.getElementById('charSize');
+    const trayWSlider = document.getElementById('trayW');
+    const trayHSlider = document.getElementById('trayH');
+    const trayTiltSlider = document.getElementById('trayTilt');
 
     const layout = {
       charX: 0.5, charY: 0.25,
@@ -1085,7 +1104,7 @@
     // ============================================================
     function saveCharacterPreset() {
       const preset = {
-        size: document.getElementById('charSize').value,
+        size: charSizeSlider.value,
         x: layout.charX,
         y: layout.charY
       };
@@ -1098,12 +1117,12 @@
       if (!raw) { flashMessage('No character preset saved yet.', true); return; }
       try {
         const p = JSON.parse(raw);
-        if (p.size) document.getElementById('charSize').value = p.size;
+        if (p.size) charSizeSlider.value = p.size;
         if (p.x !== undefined) layout.charX = p.x;
         if (p.y !== undefined) layout.charY = p.y;
 
-        characterEl.style.setProperty('--user-scale', document.getElementById('charSize').value);
-        if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(document.getElementById('charSize').value).toFixed(2) + '×';
+        characterEl.style.setProperty('--user-scale', charSizeSlider.value);
+        if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(charSizeSlider.value).toFixed(2) + '×';
         applyLayout();
         clampWrapperInside(characterWrapEl, 'charX', 'charY');
         refreshPositionUI();
@@ -1133,8 +1152,7 @@
         applyLayout();
         clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
         refreshPositionUI();
-        const tiltSlider = document.getElementById('trayTilt');
-        if (tiltSlider) tiltSlider.value = layout.trayTilt;
+        if (trayTiltSlider) trayTiltSlider.value = layout.trayTilt;
         flashMessage('Tray preset loaded!');
       } catch(e) { flashMessage('Failed to load tray preset.', true); }
     }
@@ -1153,15 +1171,43 @@
     loadTrayPresetBtn.addEventListener('click', loadTrayPreset);
 
     // ============================================================
+    // CHARACTER LOCK
+    // — freezes position and size; blocks dragging; disables sliders.
+    // — NO visual change to the character itself.
+    // ============================================================
+    charLockBtn.addEventListener('click', () => {
+      charLocked = !charLocked;
+      charLockBtn.textContent = charLocked ? '🔒' : '🔓';
+      charLockBtn.classList.toggle('locked', charLocked);
+      charLockBtn.title = charLocked ? 'Unlock character' : 'Lock character position';
+      characterWrapEl.classList.toggle('char-locked', charLocked);
+      characterWrapEl.style.cursor = charLocked ? 'default' : 'grab';
+      // Disable / enable character sliders
+      charSizeSlider.disabled = charLocked;
+      charXSlider.disabled = charLocked;
+      charYSlider.disabled = charLocked;
+      flashMessage(charLocked ? '🔒 Character locked' : '🔓 Character unlocked');
+    });
+
+    // ============================================================
     // TRAY LOCK
+    // — freezes position, size, tilt; blocks dragging; disables sliders.
+    // — REMOVED the brightness filter (it broke the 3D perspective look).
     // ============================================================
     trayLockBtn.addEventListener('click', () => {
       trayLocked = !trayLocked;
       trayLockBtn.textContent = trayLocked ? '🔒' : '🔓';
       trayLockBtn.classList.toggle('locked', trayLocked);
+      trayLockBtn.title = trayLocked ? 'Unlock tray' : 'Lock tray position';
       trayWrapEl.classList.toggle('tray-locked', trayLocked);
       trayWrapEl.style.cursor = trayLocked ? 'default' : 'grab';
-      trayWrapEl.style.filter = trayLocked ? 'brightness(0.92)' : '';
+      // Disable / enable tray sliders
+      trayWSlider.disabled = trayLocked;
+      trayHSlider.disabled = trayLocked;
+      trayTiltSlider.disabled = trayLocked;
+      trayXSlider.disabled = trayLocked;
+      trayYSlider.disabled = trayLocked;
+      flashMessage(trayLocked ? '🔒 Tray locked' : '🔓 Tray unlocked');
     });
 
     // ============================================================
@@ -1223,10 +1269,10 @@
       if (trayTiltValueEl) trayTiltValueEl.textContent = layout.trayTilt + '°';
     }
 
-    charXSlider.addEventListener('input', e => { layout.charX = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
-    charYSlider.addEventListener('input', e => { layout.charY = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
-    trayXSlider.addEventListener('input', e => { layout.trayX = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
-    trayYSlider.addEventListener('input', e => { layout.trayY = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
+    charXSlider.addEventListener('input', e => { if (charLocked) return; layout.charX = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
+    charYSlider.addEventListener('input', e => { if (charLocked) return; layout.charY = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
+    trayXSlider.addEventListener('input', e => { if (trayLocked) return; layout.trayX = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
+    trayYSlider.addEventListener('input', e => { if (trayLocked) return; layout.trayY = parseInt(e.target.value, 10) / 100; applyLayout(); refreshPositionUI(); });
 
     // ============================================================
     // RANDOM EMOTIONS
@@ -1348,11 +1394,11 @@
     // TRAY TILT
     // ============================================================
     function applyTrayTilt(deg) {
+      if (trayLocked) return;
       layout.trayTilt = deg;
       trayEl.style.transform = `rotateX(${deg}deg)`;
       refreshPositionUI();
-      const slider = document.getElementById('trayTilt');
-      if (slider && parseInt(slider.value, 10) !== deg) slider.value = deg;
+      if (trayTiltSlider && parseInt(trayTiltSlider.value, 10) !== deg) trayTiltSlider.value = deg;
     }
 
     // ============================================================
@@ -1373,17 +1419,23 @@
     // ============================================================
     function applyLayout() {
       const pw = playAreaEl.clientWidth, ph = playAreaEl.clientHeight;
-      characterWrapEl.style.left = (layout.charX * pw) + 'px';
-      characterWrapEl.style.top = (layout.charY * ph) + 'px';
-      trayWrapEl.style.left = (layout.trayX * pw) + 'px';
-      trayWrapEl.style.top = (layout.trayY * ph) + 'px';
-      trayEl.style.width = layout.trayW + 'px';
-      trayEl.style.height = layout.trayH + 'px';
-      trayEl.style.transform = `rotateX(${layout.trayTilt}deg)`;
-      const wSlider = document.getElementById('trayW');
-      const hSlider = document.getElementById('trayH');
-      if (wSlider) wSlider.value = layout.trayW;
-      if (hSlider) hSlider.value = layout.trayH;
+
+      // Character position — only update if not locked
+      if (!charLocked) {
+        characterWrapEl.style.left = (layout.charX * pw) + 'px';
+        characterWrapEl.style.top = (layout.charY * ph) + 'px';
+      }
+
+      // Tray position, size, tilt — only update if not locked
+      if (!trayLocked) {
+        trayWrapEl.style.left = (layout.trayX * pw) + 'px';
+        trayWrapEl.style.top = (layout.trayY * ph) + 'px';
+        trayEl.style.width = layout.trayW + 'px';
+        trayEl.style.height = layout.trayH + 'px';
+        trayEl.style.transform = `rotateX(${layout.trayTilt}deg)`;
+        if (trayWSlider) trayWSlider.value = layout.trayW;
+        if (trayHSlider) trayHSlider.value = layout.trayH;
+      }
       refreshPositionUI();
     }
 
@@ -1444,6 +1496,7 @@
         if (e.target.closest('.mouth')) return;
         if (isBusy) return;
         if (keyPrefix === 'tray' && trayLocked) return;
+        if (keyPrefix === 'char' && charLocked) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         e.preventDefault();
@@ -2618,21 +2671,24 @@
       buildPhotoEditors();
     });
 
-    document.getElementById('charSize').addEventListener('input', e => {
+    charSizeSlider.addEventListener('input', e => {
+      if (charLocked) return;
       characterEl.style.setProperty('--user-scale', e.target.value);
       if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(e.target.value).toFixed(2) + '×';
     });
-    document.getElementById('trayW').addEventListener('input', e => {
+    trayWSlider.addEventListener('input', e => {
+      if (trayLocked) return;
       layout.trayW = parseInt(e.target.value, 10);
       applyLayout();
       clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
     });
-    document.getElementById('trayH').addEventListener('input', e => {
+    trayHSlider.addEventListener('input', e => {
+      if (trayLocked) return;
       layout.trayH = parseInt(e.target.value, 10);
       applyLayout();
       clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
     });
-    document.getElementById('trayTilt').addEventListener('input', e => applyTrayTilt(parseInt(e.target.value, 10)));
+    trayTiltSlider.addEventListener('input', e => applyTrayTilt(parseInt(e.target.value, 10)));
 
     function init() {
       buildBackgroundEditors();
@@ -2650,9 +2706,18 @@
         showMouthHintOnce();
       });
       window.addEventListener('resize', () => {
-        applyLayout();
-        clampWrapperInside(characterWrapEl, 'charX', 'charY');
-        clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
+        // Re-apply layout based on current percentages (keeps relative position on resize)
+        // but do NOT clamp locked elements — the user wants them frozen exactly where they were
+        const pw = playAreaEl.clientWidth, ph = playAreaEl.clientHeight;
+        if (!charLocked) {
+          characterWrapEl.style.left = (layout.charX * pw) + 'px';
+          characterWrapEl.style.top = (layout.charY * ph) + 'px';
+        }
+        if (!trayLocked) {
+          trayWrapEl.style.left = (layout.trayX * pw) + 'px';
+          trayWrapEl.style.top = (layout.trayY * ph) + 'px';
+        }
+        refreshPositionUI();
       });
     }
 
