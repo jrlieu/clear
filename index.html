@@ -308,29 +308,97 @@
     .blush.right { right: 2px; top: 40%; }
 
     .character.blushing .blush { opacity: 1; transform: translateZ(0) scale(1.1); }
-    .character.blushing .eye { transform: scaleY(0.20); }
 
     .face { position: relative; display: flex; flex-direction: column; align-items: center; }
     .eyes { display: flex; gap: 52px; margin-bottom: 12px; }
 
+    /* ============================================================
+       EYE — circle is ::before so the dash can crossfade over it.
+       When closed, the circle + all its shadows fade out completely,
+       leaving ONLY a clean flat dash. No bulges.
+       ============================================================ */
     .eye {
-      width: 40px; height: 40px; background: #3b2a1c;
-      border-radius: 50%; position: relative;
-      box-shadow: inset -6px -6px 0 #1f140e, 0 5px 0 #6b4f32;
-      transition: transform 0.12s ease-in-out; overflow: hidden;
+      width: 40px; height: 40px;
+      position: relative;
+      overflow: visible;
     }
+
+    /* The dark circle of the eye (with its inset highlight + drop shadow) */
+    .eye::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #3b2a1c;
+      border-radius: 50%;
+      box-shadow: inset -6px -6px 0 #1f140e, 0 5px 0 #6b4f32;
+      transform: scaleY(1);
+      opacity: 1;
+      transform-origin: center center;
+      transition:
+        transform 0.16s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     .eye .pupil {
       position: absolute; top: 8px; left: 8px;
       width: 14px; height: 14px; background: white;
       border-radius: 50%; box-shadow: 0 0 6px white;
       transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px));
-      transition: transform 0.08s linear; pointer-events: none;
+      transition: transform 0.08s linear, opacity 0.12s ease;
+      pointer-events: none;
+      z-index: 2;
     }
-    .eye.blinking { transform: scaleY(0.20); }
+
+    /* The clean dash — flat, no shadows, no bumps */
+    .eye .lash {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 34px;
+      height: 4px;
+      background: #3b2a1c;
+      border-radius: 2px;
+      box-shadow: none;
+      transform: translate(-50%, -50%) scaleX(0.4);
+      transform-origin: center center;
+      opacity: 0;
+      transition:
+        opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* -------- CLOSED STATE --------
+       Circle + its shadows fade out entirely,
+       pupil fades out, and the flat dash fades in.
+    */
+    .eye.blinking::before,
+    .character.smiling .eye::before,
+    .character.laughing .eye::before,
+    .character.blushing .eye::before {
+      opacity: 0;
+      transform: scaleY(0.2);
+    }
+
+    .eye.blinking .pupil,
+    .character.smiling .eye .pupil,
+    .character.laughing .eye .pupil,
+    .character.blushing .eye .pupil {
+      opacity: 0;
+    }
+
+    .eye.blinking .lash,
+    .character.smiling .eye .lash,
+    .character.laughing .eye .lash,
+    .character.blushing .eye .lash {
+      opacity: 1;
+      transform: translate(-50%, -50%) scaleX(1);
+    }
+
+    /* Squint during eating / sipping — keep circle but shrink vertically a bit */
     .character.eating .eye { transform: scaleY(0.55); }
-    .character.smiling .eye { transform: scaleY(0.20); }
     .character.sipping .eye { transform: scaleY(0.28); }
-    .character.laughing .eye { transform: scaleY(0.20); }
 
     .mouth {
       width: 100px; height: 44px; background: #b13e3e;
@@ -728,8 +796,14 @@
       <div class="character" id="character">
         <div class="face">
           <div class="eyes">
-            <div class="eye" id="eyeLeft"><div class="pupil"></div></div>
-            <div class="eye" id="eyeRight"><div class="pupil"></div></div>
+            <div class="eye" id="eyeLeft">
+              <div class="pupil"></div>
+              <div class="lash"></div>
+            </div>
+            <div class="eye" id="eyeRight">
+              <div class="pupil"></div>
+              <div class="lash"></div>
+            </div>
           </div>
           <div class="mouth" id="mouth" title="Tap to open / close the panel">
             <div class="cheek-bulge left"></div>
@@ -777,8 +851,6 @@
 
     let fizzInterval = null;
 
-    // Tracks whether the currently-dragged drink was sipping (hovered over mouth) at any point.
-    // If yes, when it unhovers we burp (after a 500ms delay).
     let drinkSippedThisDrag = false;
     let drinkIsCurrentlySipping = false;
     let burpDelayTimer = null;
@@ -2129,7 +2201,6 @@
       dragItemData = drinkItems.find(t => t.uid === uidVal);
       dragItemKind = 'drink';
       if (!dragItemData) return;
-      // Reset sip tracking for this drag
       drinkSippedThisDrag = false;
       drinkIsCurrentlySipping = false;
       if (burpDelayTimer) { clearTimeout(burpDelayTimer); burpDelayTimer = null; }
@@ -2203,7 +2274,7 @@
     }
 
     // ============================================================
-    // POINTER MOVE — drinks fizz while hovering over mouth; burp fires 500ms after unhover
+    // POINTER MOVE
     // ============================================================
     function onPointerMove(e) {
       if (!isDragging || !dragEl || e.pointerId !== pointerId) return;
@@ -2229,7 +2300,6 @@
 
       if (dragItemKind === 'drink') {
         if (isOverMouth) {
-          // Entering / staying in hover state → cancel any pending burp, start/maintain fizz + sip face
           if (burpDelayTimer) { clearTimeout(burpDelayTimer); burpDelayTimer = null; }
           if (!drinkIsCurrentlySipping) {
             drinkIsCurrentlySipping = true;
@@ -2239,13 +2309,11 @@
           }
           startFizz(mouthRect);
         } else {
-          // Left the mouth → stop fizz, remove sip face, and schedule burp after 500ms
           if (drinkIsCurrentlySipping) {
             drinkIsCurrentlySipping = false;
             stopFizz();
             mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
             characterEl.classList.remove('sipping');
-            // Schedule burp 500ms from now; cancelled if the drink re-enters the mouth
             if (burpDelayTimer) clearTimeout(burpDelayTimer);
             burpDelayTimer = setTimeout(() => {
               burpDelayTimer = null;
@@ -2298,7 +2366,7 @@
     }
 
     // ============================================================
-    // POINTER UP — drink is just dropped, never consumed
+    // POINTER UP
     // ============================================================
     function onPointerUp(e) {
       if (!isDragging || !dragEl || e.pointerId !== pointerId) return;
@@ -2322,7 +2390,6 @@
         return;
       }
       if (kind === 'drink') {
-        // If released while still over the mouth, clean up and schedule the delayed burp
         if (drinkIsCurrentlySipping) {
           drinkIsCurrentlySipping = false;
           stopFizz();
@@ -2338,9 +2405,7 @@
           stopFizz();
           mouthEl.classList.remove('mouth-wow', 'mouth-sip-bubble');
           characterEl.classList.remove('sipping');
-          // If a burp was already pending from an unhover, let it fire normally.
         }
-        // Drink is NEVER consumed — always returned to the play area
         returnDrinkToSpot(item);
         return;
       }
@@ -2422,7 +2487,7 @@
     }
 
     // ============================================================
-    // EAT FOOD — food gets chewed + swallowed
+    // EAT FOOD
     // ============================================================
     function eatFood(item, mouthRect) {
       item.dataset.eaten = 'true';
@@ -2475,7 +2540,7 @@
     }
 
     // ============================================================
-    // BURP — fires 500ms after a drink leaves the mouth
+    // BURP
     // ============================================================
     function doBurp() {
       if (characterEl.classList.contains('burping') ||
@@ -2578,7 +2643,7 @@
     });
 
     // ============================================================
-    // ADD NEW ITEMS — NEW ITEMS GO TO TOP (unshift) + SAVE
+    // ADD NEW ITEMS
     // ============================================================
     addBackgroundBtn.addEventListener('click', () => {
       backgrounds.unshift({ id: uid(), name: 'New BG', url: '', color: '#fbe9d2', applied: false });
