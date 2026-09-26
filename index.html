@@ -312,16 +312,6 @@
     .face { position: relative; display: flex; flex-direction: column; align-items: center; }
     .eyes { display: flex; gap: 52px; margin-bottom: 12px; }
 
-    /* ============================================================
-       EYE
-       - Blink = original squash (scaleY on the whole .eye), NO dash.
-       - Smile / Laugh / Blush / Sip = circle + shadows fade out,
-         dash fades in.
-       - Eating = partial squash, no dash.
-       - While a dash state is active, the eye container's transform
-         is reset to neutral and its transform transition is disabled
-         so the eye can't un-squash and drag the dash along with it.
-       ============================================================ */
     .eye {
       width: 40px; height: 40px;
       position: relative;
@@ -329,7 +319,6 @@
       transition: transform 0.12s ease-in-out;
     }
 
-    /* The dark circle of the eye (with its inset highlight + drop shadow) */
     .eye::before {
       content: '';
       position: absolute;
@@ -355,7 +344,6 @@
       z-index: 2;
     }
 
-    /* The clean dash — flat, no shadows, no bumps */
     .eye .lash {
       position: absolute;
       top: 50%;
@@ -375,14 +363,8 @@
       z-index: 3;
     }
 
-    /* -------- BLINK: pure squash, NO dash -------- */
     .eye.blinking { transform: scaleY(0.08); }
 
-    /* -------- DASH STATES: smile / laugh / blush / sip --------
-       Circle + shadows fade out, pupil fades out, flat dash fades in.
-       Eye container is forced to neutral with no transform transition,
-       so the dash sits on a stable parent — no glitch.
-    */
     .character.smiling .eye,
     .character.laughing .eye,
     .character.blushing .eye,
@@ -414,7 +396,6 @@
       transform: translate(-50%, -50%) scaleX(1);
     }
 
-    /* Eating keeps a partial squint, no dash */
     .character.eating .eye { transform: scaleY(0.55); }
 
     .mouth {
@@ -526,12 +507,6 @@
       transform-origin: center center; transform-style: preserve-3d;
     }
 
-    /* ============================================================
-       STACKING ORDER — DRINKS ALWAYS BEHIND FOOD
-       .food-item   → z-index 5 (highest)
-       .drink-item  → z-index 3 (below food)
-       .drink hover → z-index 4 (above other drinks, still below food)
-       ============================================================ */
     .food-item, .drink-item {
       position: absolute; display: flex; flex-direction: column;
       align-items: center; cursor: grab; touch-action: none;
@@ -646,12 +621,15 @@
       100% { opacity: 0; transform: translate(-50%, -120px) scale(1.6); }
     }
 
+    /* BURP! and laugh text still exist — they're part of the character animation, not UI labels.
+       If you want them gone too, uncomment the display:none below. */
     .burp-text {
       position: fixed; pointer-events: none;
       font-weight: 900; font-size: 1.6rem; color: #fff5e6;
       text-shadow: 2px 2px 0 #6e4a24, -1px -1px 0 #2b1b0e, 0 0 12px #ffcf9e;
       animation: burpText 1.5s ease-out forwards;
       z-index: 2147483645; letter-spacing: 2px;
+      /* display: none; */
     }
     @keyframes burpText {
       0%   { opacity: 0; transform: translate(-50%, 0) scale(0.5) rotate(-8deg); }
@@ -666,6 +644,7 @@
       text-shadow: 2px 2px 0 #b06a2a, -1px -1px 0 #6e4a24, 0 0 10px #ffcf9e;
       animation: laughText 1.2s ease-out forwards;
       z-index: 2147483645; letter-spacing: 1px;
+      /* display: none; */
     }
     @keyframes laughText {
       0%   { opacity: 0; transform: translate(-50%, 0) scale(0.5) rotate(-10deg); }
@@ -674,22 +653,8 @@
       100% { opacity: 0; transform: translate(-50%, -95px) scale(1.15) rotate(6deg); }
     }
 
-    .mouth-hint-bubble {
-      position: fixed; pointer-events: none;
-      background: rgba(74, 46, 26, 0.95); color: #ffcf9e;
-      padding: 6px 12px; border-radius: 10px;
-      border: 2px solid #b48c5c; font-weight: 800;
-      font-size: 0.75rem; letter-spacing: 0.5px;
-      z-index: 2000; box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-      animation: hintBubble 2.4s ease-out forwards;
-      transform: translate(-50%, 0);
-    }
-    @keyframes hintBubble {
-      0%   { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
-      15%  { opacity: 1; transform: translate(-50%, -8px) scale(1); }
-      80%  { opacity: 1; transform: translate(-50%, -14px) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -22px) scale(1); }
-    }
+    /* Mouth hint bubble — removed for recording (JS no-op below anyway) */
+    .mouth-hint-bubble { display: none !important; }
   </style>
 </head>
 <body>
@@ -973,7 +938,7 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       } catch(e) {
         console.warn('Save failed (probably quota exceeded)', e);
-        flashMessage('⚠️ Storage full — some data not saved', true);
+        // silent — no floating label
       }
     }
 
@@ -1062,23 +1027,13 @@
       appEl.classList.toggle('sidebar-hidden');
     }
 
+    // Mouth hint disabled for screen recording
     function showMouthHintOnce() {
-      if (sessionStorage.getItem('mukbang_mouth_hint_shown')) return;
-      sessionStorage.setItem('mukbang_mouth_hint_shown', '1');
-      setTimeout(() => {
-        const r = mouthEl.getBoundingClientRect();
-        const hint = document.createElement('div');
-        hint.className = 'mouth-hint-bubble';
-        hint.textContent = '👆 tap the mouth to open / close the panel';
-        hint.style.left = (r.left + r.width / 2) + 'px';
-        hint.style.top = (r.bottom + 12) + 'px';
-        document.body.appendChild(hint);
-        setTimeout(() => hint.remove(), 2500);
-      }, 800);
+      // no-op — was showing "tap the mouth to open / close the panel"
     }
 
     // ============================================================
-    // PRESET SAVE / LOAD
+    // PRESET SAVE / LOAD  (no toasts — silent)
     // ============================================================
     function saveCharacterPreset() {
       const preset = {
@@ -1087,12 +1042,11 @@
         y: layout.charY
       };
       localStorage.setItem('mukbang_char_preset', JSON.stringify(preset));
-      flashMessage('Character preset saved!');
     }
 
     function loadCharacterPreset() {
       const raw = localStorage.getItem('mukbang_char_preset');
-      if (!raw) { flashMessage('No character preset saved yet.', true); return; }
+      if (!raw) return;
       try {
         const p = JSON.parse(raw);
         if (p.size) charSizeSlider.value = p.size;
@@ -1105,8 +1059,7 @@
         clampWrapperInside(characterWrapEl, 'charX', 'charY');
         refreshPositionUI();
         scheduleSave();
-        flashMessage('Character preset loaded!');
-      } catch(e) { flashMessage('Failed to load character preset.', true); }
+      } catch(e) { /* silent */ }
     }
 
     function saveTrayPreset() {
@@ -1115,12 +1068,11 @@
         x: layout.trayX, y: layout.trayY
       };
       localStorage.setItem('mukbang_tray_preset', JSON.stringify(preset));
-      flashMessage('Tray preset saved!');
     }
 
     function loadTrayPreset() {
       const raw = localStorage.getItem('mukbang_tray_preset');
-      if (!raw) { flashMessage('No tray preset saved yet.', true); return; }
+      if (!raw) return;
       try {
         const p = JSON.parse(raw);
         if (p.w) layout.trayW = p.w;
@@ -1133,17 +1085,10 @@
         refreshPositionUI();
         if (trayTiltSlider) trayTiltSlider.value = layout.trayTilt;
         scheduleSave();
-        flashMessage('Tray preset loaded!');
-      } catch(e) { flashMessage('Failed to load tray preset.', true); }
+      } catch(e) { /* silent */ }
     }
 
-    function flashMessage(msg, isError) {
-      const el = document.createElement('div');
-      el.textContent = msg;
-      el.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:' + (isError ? '#8f2a2a' : '#2e5a3a') + '; color:#fff5e6; padding:8px 20px; border-radius:10px; font-weight:700; font-size:0.85rem; z-index:999999; box-shadow:0 6px 20px rgba(0,0,0,0.5); border:2px solid ' + (isError ? '#ff9e9e' : '#a8e6a8') + '; pointer-events:none;';
-      document.body.appendChild(el);
-      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 350); }, 1400);
-    }
+    // flashMessage removed entirely — no floating labels anywhere
 
     saveCharPresetBtn.addEventListener('click', saveCharacterPreset);
     loadCharPresetBtn.addEventListener('click', loadCharacterPreset);
@@ -1164,7 +1109,6 @@
       charXSlider.disabled = charLocked;
       charYSlider.disabled = charLocked;
       scheduleSave();
-      flashMessage(charLocked ? '🔒 Character locked' : '🔓 Character unlocked');
     });
 
     // ============================================================
@@ -1183,7 +1127,6 @@
       trayXSlider.disabled = trayLocked;
       trayYSlider.disabled = trayLocked;
       scheduleSave();
-      flashMessage(trayLocked ? '🔒 Tray locked' : '🔓 Tray unlocked');
     });
 
     // ============================================================
