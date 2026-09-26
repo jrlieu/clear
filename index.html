@@ -229,7 +229,7 @@
     }
     .range-stack input[type="range"] { width: 100%; accent-color: #ffcf9e; }
 
-    .size-row, .angle-row {
+    .size-row, .angle-row, .distance-row {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -237,9 +237,9 @@
       font-weight: 700;
       color: #ffcf9e;
     }
-    .size-row > label, .angle-row > label { flex-shrink: 0; width: 30px; }
-    .size-row input[type="range"], .angle-row input[type="range"] { flex: 1; accent-color: #ffcf9e; }
-    .size-row .size-value, .angle-row .angle-value {
+    .size-row > label, .angle-row > label, .distance-row > label { flex-shrink: 0; width: 46px; }
+    .size-row input[type="range"], .angle-row input[type="range"], .distance-row input[type="range"] { flex: 1; accent-color: #ffcf9e; }
+    .size-row .size-value, .angle-row .angle-value, .distance-row .distance-value {
       flex-shrink: 0;
       width: 42px;
       text-align: right;
@@ -279,25 +279,6 @@
     }
     .position-row button.active { background: #7a4a8f; color: #fbe9d2; border-color: #ffcf9e; }
 
-    .color-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #ffcf9e;
-    }
-    .color-row label { flex-shrink: 0; width: 46px; }
-    .color-row input[type="color"] {
-      flex: 1;
-      height: 26px;
-      border-radius: 6px;
-      border: 2px solid #6e4a24;
-      background: #2b1b0e;
-      cursor: pointer;
-      padding: 0;
-    }
-
     .drink-tag, .photo-tag, .background-tag {
       font-size: 0.65rem;
       font-weight: 800;
@@ -327,16 +308,6 @@
       font-weight: 700;
     }
     .char-editor label, .tray-editor label { flex-shrink: 0; width: 60px; color: #ffcf9e; }
-    .char-editor input[type="color"], .tray-editor input[type="color"] {
-      width: 40px;
-      height: 30px;
-      border: 2px solid #6e4a24;
-      border-radius: 6px;
-      background: #2b1b0e;
-      cursor: pointer;
-      padding: 0;
-    }
-    .char-editor input[type="range"], .tray-editor input[type="range"] { flex: 1; accent-color: #ffcf9e; }
 
     .pos-info {
       font-size: 0.62rem;
@@ -440,48 +411,41 @@
       100% { transform: scale(calc(var(--base-scale) * var(--user-scale))) translateY(0) rotate(0deg); }
     }
 
-    /* ---------- BLUSH — FIXED FOR IPAD (no square corners) ---------- */
-/* ---------- BLUSH — IPAD-SAFE (no square corners) ---------- */
-.blush {
-  position: absolute;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  /* Pure radial gradient — fully transparent by 100%, no hard stop */
-  background: radial-gradient(circle closest-side,
-    rgba(255, 140, 160, 0.85) 0%,
-    rgba(255, 140, 160, 0.55) 40%,
-    rgba(255, 140, 160, 0.18) 70%,
-    rgba(255, 140, 160, 0.04) 90%,
-    rgba(255, 140, 160, 0) 100%);
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.4);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  /* Kill everything that could cause a hard edge on iOS */
-  border: none;
-  box-shadow: none;
-  overflow: visible;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-  /* Soften any residual edge on WebKit */
-  filter: blur(0.5px);
-  /* Force GPU layer — helps avoid mask/clip rounding bugs on iOS */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
+    /* ---------- BLUSH — IPAD-SAFE (no square corners) ---------- */
+    .blush {
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle closest-side,
+        rgba(255, 140, 160, 0.85) 0%,
+        rgba(255, 140, 160, 0.55) 40%,
+        rgba(255, 140, 160, 0.18) 70%,
+        rgba(255, 140, 160, 0.04) 90%,
+        rgba(255, 140, 160, 0) 100%);
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.4);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      border: none;
+      box-shadow: none;
+      overflow: visible;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      filter: blur(0.5px);
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
 
-.blush.left  { left: 2px;  top: 40%; }
-.blush.right { right: 2px; top: 40%; }
+    .blush.left  { left: 2px;  top: 40%; }
+    .blush.right { right: 2px; top: 40%; }
 
-.character.blushing .blush {
-  opacity: 1;
-  transform: translateZ(0) scale(1.1);
-}
-.character.blushing .eye { transform: scaleY(0.3); }
-
-
+    .character.blushing .blush {
+      opacity: 1;
+      transform: translateZ(0) scale(1.1);
+    }
+    .character.blushing .eye { transform: scaleY(0.3); }
 
     .face { position: relative; display: flex; flex-direction: column; align-items: center; }
     .eyes { display: flex; gap: 52px; margin-bottom: 12px; }
@@ -612,43 +576,6 @@
     @keyframes pulseHint {
       from { opacity: 0.4; transform: translateX(-50%) scale(0.8); }
       to { opacity: 1; transform: translateX(-50%) scale(1.3); }
-    }
-
-    .head-drop-indicator {
-      position: absolute;
-      top: -140px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      border: 4px dashed #d8a8e6;
-      background: radial-gradient(circle, rgba(216, 168, 230, 0.25), rgba(216, 168, 230, 0.05));
-      pointer-events: none;
-      z-index: 6;
-      opacity: 0;
-      transition: opacity 0.15s ease, transform 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .head-drop-indicator::after {
-      content: '🎩';
-      font-size: 2.4rem;
-      opacity: 0.8;
-    }
-    .head-drop-indicator.active {
-      opacity: 1;
-      animation: pulseHead 1s ease-in-out infinite;
-    }
-    .head-drop-indicator.hovering {
-      transform: translateX(-50%) scale(1.1);
-      border-color: #ffcf9e;
-      background: radial-gradient(circle, rgba(255, 207, 158, 0.35), rgba(255, 207, 158, 0.1));
-    }
-    @keyframes pulseHead {
-      0%, 100% { border-color: #d8a8e6; }
-      50% { border-color: #ffcf9e; }
     }
 
     .cheek-bulge {
@@ -888,7 +815,6 @@
       100% { opacity: 0; transform: translate(-50%, -95px) scale(1.15) rotate(6deg); }
     }
 
-    /* Small hint bubble that appears near the mouth */
     .mouth-hint-bubble {
       position: fixed;
       pointer-events: none;
@@ -943,14 +869,6 @@
 
     <div class="side-title"><span>😋 CHARACTER</span></div>
     <div class="char-editor">
-      <div class="row">
-        <label>Skin</label>
-        <input type="color" id="charSkinColor" value="#ffdbb5">
-      </div>
-      <div class="row">
-        <label>Mouth</label>
-        <input type="color" id="charMouthColor" value="#b13e3e">
-      </div>
       <div class="range-row">
         <label>Size</label>
         <div class="range-stack">
@@ -1020,18 +938,6 @@
         </div>
       </div>
       <div class="pos-info" id="trayPosInfo">X: 50% · Y: 75%</div>
-      <div class="row">
-        <label>Top</label>
-        <input type="color" id="trayColor1" value="#b48b5c">
-      </div>
-      <div class="row">
-        <label>Bottom</label>
-        <input type="color" id="trayColor2" value="#8f623a">
-      </div>
-      <div class="row">
-        <label>Edge</label>
-        <input type="color" id="trayBorderColor" value="#7a5733">
-      </div>
       <div style="display:flex; gap:6px; margin-top:4px;">
         <button class="icon-btn" id="saveTrayPresetBtn" style="flex:1; border-color:#a8e6a8; color:#a8e6a8; font-size:0.7rem; padding:4px;">💾 Save</button>
         <button class="icon-btn" id="loadTrayPresetBtn" style="flex:1; border-color:#ffcf9e; color:#ffcf9e; font-size:0.7rem; padding:4px;">📂 Use</button>
@@ -1061,7 +967,6 @@
         </div>
         <div class="blush left"></div>
         <div class="blush right"></div>
-        <div class="head-drop-indicator" id="headDropIndicator"></div>
       </div>
     </div>
   </main>
@@ -1101,7 +1006,6 @@
 
     let fizzInterval = null;
 
-    // Prevent pinch zoom
     document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
     document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
     document.addEventListener('gestureend', e => e.preventDefault(), { passive: false });
@@ -1122,7 +1026,6 @@
     const characterWrapEl = document.getElementById('characterWrap');
     const characterEl = document.getElementById('character');
     const mouthEl = document.getElementById('mouth');
-    const headDropIndicatorEl = document.getElementById('headDropIndicator');
     const chopstickBackEl = document.getElementById('chopstickBack');
     const chopstickFrontEl = document.getElementById('chopstickFront');
     const backgroundEditorsEl = document.getElementById('backgroundEditors');
@@ -1156,13 +1059,12 @@
     const SNAP_DISTANCE = 18;
 
     // ============================================================
-    // SIDEBAR TOGGLE — triggered by clicking the character's mouth
+    // SIDEBAR TOGGLE
     // ============================================================
     function toggleSidebar() {
       appEl.classList.toggle('sidebar-hidden');
     }
 
-    // Show a floating hint bubble near the mouth once, on first load
     function showMouthHintOnce() {
       if (sessionStorage.getItem('mukbang_mouth_hint_shown')) return;
       sessionStorage.setItem('mukbang_mouth_hint_shown', '1');
@@ -1183,8 +1085,6 @@
     // ============================================================
     function saveCharacterPreset() {
       const preset = {
-        skin: document.getElementById('charSkinColor').value,
-        mouth: document.getElementById('charMouthColor').value,
         size: document.getElementById('charSize').value,
         x: layout.charX,
         y: layout.charY
@@ -1198,14 +1098,10 @@
       if (!raw) { flashMessage('No character preset saved yet.', true); return; }
       try {
         const p = JSON.parse(raw);
-        if (p.skin) document.getElementById('charSkinColor').value = p.skin;
-        if (p.mouth) document.getElementById('charMouthColor').value = p.mouth;
         if (p.size) document.getElementById('charSize').value = p.size;
         if (p.x !== undefined) layout.charX = p.x;
         if (p.y !== undefined) layout.charY = p.y;
 
-        characterEl.style.background = document.getElementById('charSkinColor').value;
-        mouthEl.style.background = document.getElementById('charMouthColor').value;
         characterEl.style.setProperty('--user-scale', document.getElementById('charSize').value);
         if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(document.getElementById('charSize').value).toFixed(2) + '×';
         applyLayout();
@@ -1218,10 +1114,7 @@
     function saveTrayPreset() {
       const preset = {
         w: layout.trayW, h: layout.trayH, tilt: layout.trayTilt,
-        x: layout.trayX, y: layout.trayY,
-        color1: document.getElementById('trayColor1').value,
-        color2: document.getElementById('trayColor2').value,
-        border: document.getElementById('trayBorderColor').value
+        x: layout.trayX, y: layout.trayY
       };
       localStorage.setItem('mukbang_tray_preset', JSON.stringify(preset));
       flashMessage('Tray preset saved!');
@@ -1237,14 +1130,9 @@
         if (p.tilt !== undefined) layout.trayTilt = p.tilt;
         if (p.x !== undefined) layout.trayX = p.x;
         if (p.y !== undefined) layout.trayY = p.y;
-        if (p.color1) document.getElementById('trayColor1').value = p.color1;
-        if (p.color2) document.getElementById('trayColor2').value = p.color2;
-        if (p.border) document.getElementById('trayBorderColor').value = p.border;
         applyLayout();
         clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
         refreshPositionUI();
-        trayEl.style.background = `linear-gradient(145deg, ${document.getElementById('trayColor1').value}, ${document.getElementById('trayColor2').value})`;
-        trayEl.style.borderColor = document.getElementById('trayBorderColor').value;
         const tiltSlider = document.getElementById('trayTilt');
         if (tiltSlider) tiltSlider.value = layout.trayTilt;
         flashMessage('Tray preset loaded!');
@@ -1279,15 +1167,12 @@
     // ============================================================
     // HAT POSITION HELPERS
     // ============================================================
-    const HAT_POSITIONS = {
-      left:   { left: '20%', top: '-90px' },
-      center: { left: '50%', top: '-140px' },
-      right:  { left: '80%', top: '-90px' }
-    };
-    function applyHatPositionToElement(el, position) {
-      const pos = HAT_POSITIONS[position] || HAT_POSITIONS.center;
-      el.style.left = pos.left;
-      el.style.top = pos.top;
+    const HAT_HORIZONTAL = { left: '20%', center: '50%', right: '80%' };
+    function applyHatPositionToElement(el, position, distance) {
+      const leftPct = HAT_HORIZONTAL[position] || HAT_HORIZONTAL.center;
+      const dist = (typeof distance === 'number' && !isNaN(distance)) ? distance : 120;
+      el.style.left = leftPct;
+      el.style.top = (-dist) + 'px';
     }
 
     // ============================================================
@@ -1346,49 +1231,72 @@
     // ============================================================
     // RANDOM EMOTIONS
     // ============================================================
-    const EMOTION_BUSY_CLASSES = ['eating', 'smiling', 'burping', 'sipping', 'laughing', 'blushing'];
-    function isCharacterFree() {
+    function canDoExpressiveEmotion() {
       if (isBusy) return false;
-      for (const c of EMOTION_BUSY_CLASSES) if (characterEl.classList.contains(c)) return false;
+      if (characterEl.classList.contains('eating')) return false;
+      if (characterEl.classList.contains('chewing')) return false;
+      if (characterEl.classList.contains('swallowing')) return false;
+      if (characterEl.classList.contains('sipping')) return false;
+      if (characterEl.classList.contains('burping')) return false;
+      if (characterEl.classList.contains('laughing')) return false;
+      if (characterEl.classList.contains('blushing')) return false;
+      if (characterEl.classList.contains('smiling')) return false;
+      if (mouthEl.classList.contains('mouth-open')) return false;
+      if (mouthEl.classList.contains('mouth-chew')) return false;
+      if (mouthEl.classList.contains('mouth-swallow')) return false;
+      if (mouthEl.classList.contains('mouth-wow')) return false;
+      if (mouthEl.classList.contains('mouth-sip-bubble')) return false;
+      if (mouthEl.classList.contains('mouth-burp')) return false;
+      if (mouthEl.classList.contains('mouth-laugh')) return false;
       return true;
     }
 
-    const EMOTIONS = [
-      { play: doBlinkOnce }, { play: doBlinkOnce }, { play: doBlinkOnce }, { play: doBlinkOnce },
-      { play: doSmileOnce }, { play: doLaughOnce }, { play: doBlushOnce }
-    ];
+    const BLINK_EMOTIONS = [{ play: doBlinkOnce }, { play: doBlinkOnce }, { play: doBlinkOnce }, { play: doBlinkOnce }];
+    const EXPRESSIVE_EMOTIONS = [{ play: doSmileOnce }, { play: doLaughOnce }, { play: doBlushOnce }];
+
     function shuffle(arr) {
       const a = arr.slice();
       for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
       return a;
     }
-    let emotionQueue = shuffle(EMOTIONS);
+
+    let blinkQueue = shuffle(BLINK_EMOTIONS);
+    let expressiveQueue = shuffle(EXPRESSIVE_EMOTIONS);
+
     function scheduleNextEmotion() {
       const delay = 900 + Math.random() * 2400;
       setTimeout(() => {
-        if (!isCharacterFree()) { scheduleNextEmotion(); return; }
-        if (emotionQueue.length === 0) emotionQueue = shuffle(EMOTIONS);
-        emotionQueue.shift().play();
+        if (blinkQueue.length === 0) blinkQueue = shuffle(BLINK_EMOTIONS);
+        blinkQueue.shift().play();
+
+        if (canDoExpressiveEmotion()) {
+          if (expressiveQueue.length === 0) expressiveQueue = shuffle(EXPRESSIVE_EMOTIONS);
+          if (Math.random() < 0.45) expressiveQueue.shift().play();
+        }
+
         scheduleNextEmotion();
       }, delay);
     }
+
     function doBlinkOnce() {
+      if (eyeLeft.classList.contains('blinking')) return;
       eyeLeft.classList.add('blinking'); eyeRight.classList.add('blinking');
       const doubleBlink = Math.random() < 0.3;
       setTimeout(() => {
         eyeLeft.classList.remove('blinking'); eyeRight.classList.remove('blinking');
         if (doubleBlink) setTimeout(() => {
-          if (!isCharacterFree()) return;
           eyeLeft.classList.add('blinking'); eyeRight.classList.add('blinking');
           setTimeout(() => { eyeLeft.classList.remove('blinking'); eyeRight.classList.remove('blinking'); }, 90);
         }, 130);
       }, 100);
     }
     function doSmileOnce() {
+      if (!canDoExpressiveEmotion()) return;
       characterEl.classList.add('smiling'); mouthEl.classList.add('mouth-wow');
       setTimeout(() => { characterEl.classList.remove('smiling'); mouthEl.classList.remove('mouth-wow'); }, 700 + Math.random() * 900);
     }
     function doLaughOnce() {
+      if (!canDoExpressiveEmotion()) return;
       characterEl.classList.add('laughing'); mouthEl.classList.add('mouth-laugh');
       const laughTexts = ['HA!', 'HEHE!', 'HAHA!', '😄', 'HOHO!', '😂'];
       const laughCount = 3 + Math.floor(Math.random() * 3);
@@ -1405,6 +1313,7 @@
       setTimeout(() => { characterEl.classList.remove('laughing'); mouthEl.classList.remove('mouth-laugh'); }, 1200 + Math.random() * 1400);
     }
     function doBlushOnce() {
+      if (!canDoExpressiveEmotion()) return;
       characterEl.classList.add('blushing');
       setTimeout(() => characterEl.classList.remove('blushing'), 1400 + Math.random() * 1000);
     }
@@ -1531,9 +1440,8 @@
         if (e.target.closest('.food-item')) return;
         if (e.target.closest('.drink-item')) return;
         if (e.target.closest('.photo-item')) return;
-        if (e.target.closest('.head-drop-indicator')) return;
         if (e.target.closest('.blush')) return;
-        if (e.target.closest('.mouth')) return; // mouth has its own handler
+        if (e.target.closest('.mouth')) return;
         if (isBusy) return;
         if (keyPrefix === 'tray' && trayLocked) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -1609,16 +1517,10 @@
     function rectsOverlap(a, b) {
       return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
     }
-    function getHeadZone() {
+    function isPointOverCharacterHead(clientX, clientY) {
       const charRect = characterWrapEl.getBoundingClientRect();
-      return {
-        left: charRect.left - 30, right: charRect.right + 30,
-        top: charRect.top - 100, bottom: charRect.top + charRect.height * 0.35 + 20
-      };
-    }
-    function isPointInHeadZone(clientX, clientY) {
-      const z = getHeadZone();
-      return clientX >= z.left && clientX <= z.right && clientY >= z.top && clientY <= z.bottom;
+      return clientX >= charRect.left - 20 && clientX <= charRect.right + 20 &&
+             clientY >= charRect.top - 100 && clientY <= charRect.top + charRect.height * 0.4 + 20;
     }
 
     // ============================================================
@@ -1674,6 +1576,21 @@
       });
       card.appendChild(row);
     }
+    function wireDistanceSlider(card, itemData, onDistanceChange) {
+      const row = document.createElement('div');
+      row.className = 'distance-row';
+      const initDist = (typeof itemData.distance === 'number') ? itemData.distance : 120;
+      row.innerHTML = `<label>Dist</label><input type="range" min="0" max="300" step="5" value="${initDist}"><span class="distance-value">${initDist}px</span>`;
+      const slider = row.querySelector('input[type="range"]');
+      const valueEl = row.querySelector('.distance-value');
+      slider.addEventListener('input', () => {
+        const val = parseInt(slider.value, 10);
+        itemData.distance = val;
+        valueEl.textContent = val + 'px';
+        if (onDistanceChange) onDistanceChange(val);
+      });
+      card.appendChild(row);
+    }
     function wirePositionRow(card, itemData, onPositionChange) {
       const row = document.createElement('div');
       row.className = 'position-row';
@@ -1710,13 +1627,13 @@
         return;
       }
       if (bg.url && bg.url.length > 0) {
-        playAreaEl.style.backgroundColor = bg.color || '#fbe9d2';
+        playAreaEl.style.backgroundColor = '#fbe9d2';
         playAreaEl.style.backgroundImage = `url("${bg.url}")`;
         playAreaEl.style.backgroundSize = 'cover';
         playAreaEl.style.backgroundPosition = 'center';
         playAreaEl.style.backgroundRepeat = 'no-repeat';
       } else {
-        playAreaEl.style.backgroundColor = bg.color || '#fbe9d2';
+        playAreaEl.style.backgroundColor = '#fbe9d2';
         playAreaEl.style.backgroundImage = 'none';
       }
     }
@@ -1738,27 +1655,17 @@
             <button class="icon-btn delete" title="Remove this background">✕</button>
           </div>
           <input class="url-input" type="text" value="${bg.url.startsWith('data:') ? '' : bg.url}" placeholder="${bg.url.startsWith('data:') ? '📁 local file' : 'https://image-url.jpg (optional)'}">
-          <div class="color-row">
-            <label>Color</label>
-            <input type="color" class="color-picker" value="${bg.color || '#fbe9d2'}">
-          </div>
-          <div class="background-tag">🖼️ BG — photo + color (photo wins if set)</div>
+          <div class="background-tag">🖼️ BG — click ＋ to apply</div>
         `;
         const previewWrap = card.querySelector('.preview-wrap');
         const preview = card.querySelector('.preview');
         const urlInput = card.querySelector('.url-input');
-        const colorPicker = card.querySelector('.color-picker');
         urlInput.addEventListener('input', () => {
           bg.url = urlInput.value;
           preview.src = urlInput.value || 'https://via.placeholder.com/90?text=?';
           if (bg.applied) applyBackground(bg);
         });
         wirePreviewUpload(previewWrap, bg, preview, urlInput, () => { if (bg.applied) applyBackground(bg); });
-        colorPicker.addEventListener('input', () => {
-          bg.color = colorPicker.value;
-          playAreaEl.style.backgroundImage = 'none';
-          playAreaEl.style.backgroundColor = bg.color;
-        });
         card.querySelector('.name-input').addEventListener('input', e => { bg.name = e.target.value; });
         card.querySelector('.icon-btn.add').addEventListener('click', () => {
           if (bg.applied) { bg.applied = false; applyBackground(null); }
@@ -1985,11 +1892,19 @@
             }
           });
         });
+        wireDistanceSlider(card, photo, (newDist) => {
+          photoItems.forEach(t => {
+            if (t.photoId === photo.id && t.attached) {
+              const el = characterEl.querySelector(`[data-uid="${t.uid}"]`);
+              if (el) applyHatPositionToElement(el, t.position || photo.position || 'center', newDist);
+            }
+          });
+        });
         wirePositionRow(card, photo, (newPos) => {
           photoItems.forEach(t => {
             if (t.photoId === photo.id && t.attached) {
               const el = characterEl.querySelector(`[data-uid="${t.uid}"]`);
-              if (el) applyHatPositionToElement(el, newPos);
+              if (el) applyHatPositionToElement(el, newPos, photo.distance || 120);
             }
           });
         });
@@ -2142,6 +2057,7 @@
         const itemSize = photo.size || 140;
         const angle = photo.angle || 0;
         const position = t.position || photo.position || 'center';
+        const distance = (typeof photo.distance === 'number') ? photo.distance : 120;
         if (t.attached) {
           const existing = characterEl.querySelector(`[data-uid="${t.uid}"]`);
           if (existing) {
@@ -2152,7 +2068,7 @@
               img.style.height = itemSize + 'px';
               img.style.transform = `rotate(${angle}deg)`;
             }
-            applyHatPositionToElement(existing, position);
+            applyHatPositionToElement(existing, position, distance);
           }
           return;
         }
@@ -2190,8 +2106,6 @@
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
       e.stopPropagation();
-      characterEl.classList.remove('smiling');
-      mouthEl.classList.remove('mouth-wow');
       const uidVal = item.dataset.uid;
       dragItemData = trayItems.find(t => t.uid === uidVal);
       dragItemKind = 'food';
@@ -2237,8 +2151,6 @@
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
       e.stopPropagation();
-      characterEl.classList.remove('smiling');
-      mouthEl.classList.remove('mouth-wow');
       const uidVal = item.dataset.uid;
       dragItemData = drinkItems.find(t => t.uid === uidVal);
       dragItemKind = 'drink';
@@ -2303,7 +2215,6 @@
       item.style.transition = 'none';
       item.style.pointerEvents = 'none';
       document.body.appendChild(item);
-      headDropIndicatorEl.classList.add('active');
       isDragging = true;
       dragEl = item;
       pointerId = e.pointerId;
@@ -2331,9 +2242,6 @@
       const mouthRect = mouthEl.getBoundingClientRect();
       const isOverMouth = rectsOverlap(dragRect, mouthRect);
       if (dragItemKind === 'photo') {
-        const overHead = isPointInHeadZone(e.clientX, e.clientY);
-        headDropIndicatorEl.classList.toggle('hovering', overHead);
-        headDropIndicatorEl.classList.add('active');
         mouthEl.classList.remove('hint');
         mouthEl.classList.remove('mouth-wow');
         mouthEl.classList.remove('mouth-sip-bubble');
@@ -2406,7 +2314,6 @@
       isDragging = false; pointerId = null;
       mouthEl.classList.remove('mouth-open');
       mouthEl.classList.remove('hint');
-      headDropIndicatorEl.classList.remove('active', 'hovering');
       resetEyeTracking();
       const dragRect = item.getBoundingClientRect();
       const mouthRect = mouthEl.getBoundingClientRect();
@@ -2414,7 +2321,7 @@
       if (kind === 'photo') {
         const dropX = dragRect.left + dragRect.width / 2;
         const dropY = dragRect.top + dragRect.height / 2;
-        returnPhotoToSpot(item, isPointInHeadZone(dropX, dropY));
+        returnPhotoToSpot(item, isPointOverCharacterHead(dropX, dropY));
         return;
       }
       if (kind === 'drink') {
@@ -2469,14 +2376,12 @@
     function returnPhotoToSpot(item, forceAttach) {
       item.classList.remove('dragging');
       const itemRect = item.getBoundingClientRect();
-      const charRect = characterWrapEl.getBoundingClientRect();
       const dropX = itemRect.left + itemRect.width / 2;
       const dropY = itemRect.top + itemRect.height / 2;
-      const onHead = (typeof forceAttach === 'boolean') ? forceAttach : (
-        dropX >= charRect.left - 20 && dropX <= charRect.right + 20 &&
-        dropY >= charRect.top - 60 && dropY <= charRect.top + charRect.height * 0.3 + 30
-      );
+      const onHead = (typeof forceAttach === 'boolean') ? forceAttach : isPointOverCharacterHead(dropX, dropY);
       if (onHead) {
+        const photo = photos.find(p => p.id === dragItemData.photoId);
+        const distance = (photo && typeof photo.distance === 'number') ? photo.distance : 120;
         dragItemData.attached = true;
         item.style.position = ''; item.style.left = ''; item.style.top = '';
         item.style.width = ''; item.style.height = ''; item.style.margin = '';
@@ -2485,7 +2390,7 @@
         item.classList.remove('dragging');
         item.classList.add('photo-attached');
         characterEl.appendChild(item);
-        applyHatPositionToElement(item, dragItemData.position || 'center');
+        applyHatPositionToElement(item, dragItemData.position || 'center', distance);
         return;
       }
       const playRect = playAreaEl.getBoundingClientRect();
@@ -2505,8 +2410,6 @@
     function eatFood(item, mouthRect) {
       item.dataset.eaten = 'true';
       isBusy = true;
-      characterEl.classList.remove('smiling');
-      mouthEl.classList.remove('mouth-wow');
       const wasChopsticked = chopstickBackEl.classList.contains('active');
       const mouthCenterX = mouthRect.left + mouthRect.width / 2;
       const mouthCenterY = mouthRect.top + mouthRect.height / 2;
@@ -2562,7 +2465,6 @@
       isBusy = true;
       characterEl.classList.remove('swallowing');
       mouthEl.classList.remove('mouth-swallow');
-      characterEl.classList.remove('smiling');
       const mouthCenterX = mouthRect.left + mouthRect.width / 2;
       const mouthCenterY = mouthRect.top + mouthRect.height / 2;
       const itemRect = item.getBoundingClientRect();
@@ -2670,9 +2572,6 @@
     // ============================================================
     // MOUTH CLICK → TOGGLE SIDEBAR
     // ============================================================
-    // We need to distinguish a "tap" from a "drag" on the mouth.
-    // The mouth isn't part of character-wrap drag (we exclude it),
-    // so a simple click/touchend works.
     let mouthPointerDownTime = 0;
     let mouthMoved = false;
 
@@ -2682,49 +2581,43 @@
     });
     mouthEl.addEventListener('pointermove', (e) => {
       if (Date.now() - mouthPointerDownTime < 500) {
-        // if moved significantly, mark as drag
         mouthMoved = true;
       }
     });
     mouthEl.addEventListener('pointerup', (e) => {
       if (mouthMoved) return;
-      if (Date.now() - mouthPointerDownTime > 600) return; // long press — ignore
+      if (Date.now() - mouthPointerDownTime > 600) return;
       e.preventDefault();
       e.stopPropagation();
       toggleSidebar();
     });
-    // also handle click as fallback
     mouthEl.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      // if pointerup already handled it, this could double-toggle
-      // Use a small debounce
       if (Date.now() - mouthPointerDownTime < 600) return;
       toggleSidebar();
     });
 
     // ============================================================
-    // ADD NEW ITEMS
+    // ADD NEW ITEMS — NEW ITEMS GO TO TOP OF LIST (unshift)
     // ============================================================
     addBackgroundBtn.addEventListener('click', () => {
-      backgrounds.push({ id: uid(), name: 'New BG', url: '', color: '#fbe9d2', applied: false });
+      backgrounds.unshift({ id: uid(), name: 'New BG', url: '', applied: false });
       buildBackgroundEditors();
     });
     addFoodBtn.addEventListener('click', () => {
-      foods.push({ id: uid(), name: 'New Food', url: 'https://via.placeholder.com/200?text=Food', size: 90, chopstick: false });
+      foods.unshift({ id: uid(), name: 'New Food', url: 'https://via.placeholder.com/200?text=Food', size: 90, chopstick: false });
       buildFoodEditors();
     });
     addDrinkBtn.addEventListener('click', () => {
-      drinks.push({ id: uid(), name: 'New Drink', url: 'https://via.placeholder.com/200?text=Drink', size: 90 });
+      drinks.unshift({ id: uid(), name: 'New Drink', url: 'https://via.placeholder.com/200?text=Drink', size: 90 });
       buildDrinkEditors();
     });
     addPhotoBtn.addEventListener('click', () => {
-      photos.push({ id: uid(), name: 'New Photo', url: 'https://via.placeholder.com/300?text=Photo', size: 140, angle: 0, position: 'center' });
+      photos.unshift({ id: uid(), name: 'New Photo', url: 'https://via.placeholder.com/300?text=Photo', size: 140, angle: 0, distance: 120, position: 'center' });
       buildPhotoEditors();
     });
 
-    document.getElementById('charSkinColor').addEventListener('input', e => { characterEl.style.background = e.target.value; });
-    document.getElementById('charMouthColor').addEventListener('input', e => { mouthEl.style.background = e.target.value; });
     document.getElementById('charSize').addEventListener('input', e => {
       characterEl.style.setProperty('--user-scale', e.target.value);
       if (charSizeValueEl) charSizeValueEl.textContent = parseFloat(e.target.value).toFixed(2) + '×';
@@ -2740,13 +2633,6 @@
       clampWrapperInside(trayWrapEl, 'trayX', 'trayY');
     });
     document.getElementById('trayTilt').addEventListener('input', e => applyTrayTilt(parseInt(e.target.value, 10)));
-    document.getElementById('trayColor1').addEventListener('input', e => {
-      trayEl.style.background = `linear-gradient(145deg, ${e.target.value}, ${document.getElementById('trayColor2').value})`;
-    });
-    document.getElementById('trayColor2').addEventListener('input', e => {
-      trayEl.style.background = `linear-gradient(145deg, ${document.getElementById('trayColor1').value}, ${e.target.value})`;
-    });
-    document.getElementById('trayBorderColor').addEventListener('input', e => { trayEl.style.borderColor = e.target.value; });
 
     function init() {
       buildBackgroundEditors();
