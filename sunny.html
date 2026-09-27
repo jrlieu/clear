@@ -49,6 +49,11 @@
       background: linear-gradient(180deg, #a0d4ff 0%, #c6e8ff 25%, #e2f3ff 55%, #b8e0b0 100%);
       overflow: hidden;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* ---------- SUN ---------- */
@@ -86,6 +91,7 @@
       user-select: none;
       -webkit-user-select: none;
       -webkit-user-drag: none;
+      -webkit-touch-callout: none;
     }
     .cloud:active { cursor: grabbing; }
     .cloud.dragging {
@@ -277,7 +283,6 @@
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
-    /* NOTE: no :hover recoloring — the door stays its normal color */
 
     .door {
       position: absolute;
@@ -355,12 +360,18 @@
     .window.left  { bottom: 50px; left: 26px; }
     .window.right { bottom: 50px; right: 26px; }
 
-    /* ---------- TREES ---------- */
+    /* ---------- TREES (clickable to refresh) ---------- */
     .tree {
       position: absolute;
       bottom: 20%;
       z-index: 4;
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .tree .trunk {
       position: absolute;
@@ -486,7 +497,7 @@
       box-shadow: 0 0 0 3px #ffb80055;
     }
 
-    /* ---------- SUBSCRIBE BUBBLE (inside character) ---------- */
+    /* ---------- SUBSCRIBE BUBBLE ---------- */
     .subscribe-bubble {
       position: absolute;
       bottom: calc(100% + 8px);
@@ -654,11 +665,12 @@
       <div class="roof"></div>
     </div>
 
-    <div class="tree tree1">
+    <!-- TREES — clicking either refreshes the page -->
+    <div class="tree tree1" id="tree1">
       <div class="leaves"></div>
       <div class="trunk"></div>
     </div>
-    <div class="tree tree2">
+    <div class="tree tree2" id="tree2">
       <div class="leaves"></div>
       <div class="trunk"></div>
     </div>
@@ -711,14 +723,19 @@
       const subscribeBubble = document.getElementById('subscribeBubble');
       const door = document.getElementById('door');
       const doorFrame = document.getElementById('doorFrame');
+      const tree1 = document.getElementById('tree1');
+      const tree2 = document.getElementById('tree2');
 
       // ============================================================
-      // PREVENT DOUBLE-TAP ZOOM / REFRESH ON IPAD
+      // PREVENT DOUBLE-TAP ZOOM ON iOS (but allow tree taps to work)
       // ============================================================
       let lastTouchEnd = 0;
       document.addEventListener('touchend', (e) => {
         const now = Date.now();
         if (now - lastTouchEnd <= 300) {
+          // Only suppress double-tap-zoom on non-tree targets
+          const t = e.target;
+          if (t && t.closest && t.closest('.tree')) return;
           e.preventDefault();
         }
         lastTouchEnd = now;
@@ -729,6 +746,47 @@
       document.addEventListener('gestureend',    e => e.preventDefault(), { passive: false });
       document.addEventListener('contextmenu',   e => e.preventDefault(), { passive: false });
       document.addEventListener('dragstart',     e => e.preventDefault(), { passive: false });
+
+      // ============================================================
+      // TREES → REFRESH THE PAGE
+      // ============================================================
+      function reloadPage() {
+        // location.reload() can sometimes be ignored on iOS if the page
+        // was loaded from bfcache; force a fresh navigation instead.
+        try {
+          if (window.location && typeof window.location.reload === 'function') {
+            window.location.reload(true);
+          } else {
+            window.location.href = window.location.href;
+          }
+        } catch (e) {
+          window.location.href = window.location.href;
+        }
+      }
+
+      [tree1, tree2].forEach(tree => {
+        let treePressed = false;
+        tree.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          treePressed = true;
+          e.stopPropagation();
+        });
+        tree.addEventListener('pointerup', (e) => {
+          if (!treePressed) return;
+          treePressed = false;
+          e.stopPropagation();
+          e.preventDefault();
+          reloadPage();
+        });
+        tree.addEventListener('pointercancel', () => { treePressed = false; });
+
+        // Fallback for browsers without pointer events
+        tree.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          reloadPage();
+        });
+      });
 
       // ============================================================
       // SPEECH — load once, save on blur / Enter only
@@ -963,8 +1021,7 @@
         }
       });
 
-      // Tap/click the door — pointer events fire immediately on iPad,
-      // so no double-tap delay and no page-refresh escalation.
+      // Tap/click the door
       let doorPressed = false;
       doorFrame.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -982,7 +1039,6 @@
         }
       });
       doorFrame.addEventListener('pointercancel', () => { doorPressed = false; });
-      // Fallback for environments that don't fire pointer events
       doorFrame.addEventListener('click', (e) => {
         e.stopPropagation();
         if (isEditing) return;
