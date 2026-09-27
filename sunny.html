@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cozy House · Happy Character</title>
+
+  <!-- Comic Neue — web equivalent of Comic Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #a8d8ff 0%, #c9e9ff 30%, #e6f7ff 60%, #b5e0b0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      max-width: 1400px;
+      max-height: 900px;
+      background: linear-gradient(180deg, #a0d4ff 0%, #c6e8ff 25%, #e2f3ff 55%, #b8e0b0 100%);
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ---------- SUN ---------- */
+    .sun {
+      position: absolute;
+      top: 40px;
+      right: 80px;
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle at 35% 35%, #fff9b0, #ffd93b 40%, #ffb800 75%, #f59e0b 100%);
+      border-radius: 50%;
+      box-shadow:
+        0 0 40px #ffe066,
+        0 0 80px #ffd93b88,
+        0 0 120px #ffb80044;
+      z-index: 1;
+      animation: sunPulse 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes sunPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 40px #ffe066, 0 0 80px #ffd93b88, 0 0 120px #ffb80044; }
+      50% { transform: scale(1.06); box-shadow: 0 0 55px #fff5b0, 0 0 100px #ffd93baa, 0 0 150px #ffb80066; }
+    }
+
+    /* ---------- CLOUDS ---------- */
+    .cloud {
+      position: absolute;
+      background: #fff;
+      border-radius: 50px;
+      opacity: 0.95;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.06));
+      z-index: 20;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-user-drag: none;
+    }
+    .cloud:active { cursor: grabbing; }
+    .cloud.dragging {
+      z-index: 9999;
+      animation-play-state: paused !important;
+    }
+    .cloud::before,
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .cloud::before {
+      width: 60%;
+      height: 120%;
+      top: -50%;
+      left: 10%;
+    }
+    .cloud::after {
+      width: 45%;
+      height: 100%;
+      top: -35%;
+      right: 12%;
+    }
+
+    .cloud1 {
+      width: 140px; height: 50px; top: 70px; left: 8%;
+      animation: drift 28s ease-in-out infinite;
+    }
+    .cloud2 {
+      width: 180px; height: 60px; top: 120px; left: 45%; opacity: 0.85;
+      animation: drift 36s ease-in-out infinite reverse;
+    }
+    .cloud3 {
+      width: 110px; height: 42px; top: 45px; left: 70%; opacity: 0.9;
+      animation: drift 22s ease-in-out infinite;
+    }
+    .cloud4 {
+      width: 150px; height: 52px; top: 140px; left: 55%; opacity: 0.8;
+      animation: drift 42s ease-in-out infinite reverse;
+    }
+    @keyframes drift {
+      0%   { transform: translateX(0); }
+      50%  { transform: translateX(40px); }
+      100% { transform: translateX(0); }
+    }
+
+    /* ---------- GROUND ---------- */
+    .ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 32%;
+      background: linear-gradient(180deg, #8ccf6e 0%, #6cb84a 40%, #4e9e35 100%);
+      z-index: 3;
+      border-radius: 60% 60% 0 0 / 18% 18% 0 0;
+      box-shadow: inset 0 8px 20px rgba(0,0,0,0.08);
+      pointer-events: none;
+    }
+    .ground::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        radial-gradient(circle at 20% 30%, #7ac95c 2px, transparent 2px),
+        radial-gradient(circle at 60% 60%, #7ac95c 2px, transparent 2px),
+        radial-gradient(circle at 80% 20%, #7ac95c 2px, transparent 2px),
+        radial-gradient(circle at 35% 75%, #7ac95c 2px, transparent 2px);
+      background-size: 60px 60px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* ---------- HOUSE ---------- */
+    .house {
+      position: absolute;
+      bottom: 22%;
+      left: 12%;
+      width: 260px;
+      height: 280px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .chimney {
+      position: absolute;
+      bottom: 150px;
+      right: 46px;
+      width: 34px;
+      height: 110px;
+      background: linear-gradient(180deg, #b85c38, #8b3a1e);
+      border-radius: 4px 4px 0 0;
+      z-index: 1;
+      box-shadow: inset -5px 0 0 rgba(0,0,0,0.2), inset 3px 0 0 rgba(255,255,255,0.1);
+    }
+    .chimney::after {
+      content: '';
+      position: absolute;
+      top: -12px;
+      left: -7px;
+      width: 48px;
+      height: 16px;
+      background: linear-gradient(180deg, #c26a44, #a04a28);
+      border-radius: 4px;
+      box-shadow: inset -3px 0 0 rgba(0,0,0,0.15);
+    }
+
+    .smoke {
+      position: absolute;
+      top: -22px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      background: rgba(255,255,255,0.75);
+      border-radius: 50%;
+      animation: smokeUp 3s ease-out infinite;
+      filter: blur(2px);
+      z-index: 2;
+    }
+    .smoke:nth-child(2) { animation-delay: 1s; }
+    .smoke:nth-child(3) { animation-delay: 2s; }
+    @keyframes smokeUp {
+      0%   { transform: translate(0, 0) scale(0.6); opacity: 0.7; }
+      100% { transform: translate(-25px, -90px) scale(2); opacity: 0; }
+    }
+
+    .house-body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 260px;
+      height: 160px;
+      background: linear-gradient(180deg, #f5deb3, #e8c88a);
+      border-radius: 6px 6px 10px 10px;
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.12);
+      border: 3px solid #c4a265;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .roof {
+      position: absolute;
+      bottom: 156px;
+      left: -14px;
+      width: 288px;
+      height: 140px;
+      background: linear-gradient(135deg, #c0392b, #8e2a1e);
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      filter: drop-shadow(0 6px 4px rgba(0,0,0,0.18));
+      z-index: 4;
+    }
+    .roof::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0 18px,
+        rgba(0,0,0,0.08) 18px 20px
+      );
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    .door-frame {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 64px;
+      height: 94px;
+      background: #3a2210;
+      border-radius: 32px 32px 2px 2px;
+      z-index: 3;
+      overflow: hidden;
+    }
+    .door {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #8b5a2b, #6b3f1a);
+      border-radius: 30px 30px 4px 4px;
+      border: 3px solid #5a3416;
+      box-shadow: inset 0 4px 0 rgba(255,255,255,0.15);
+      transform-origin: left center;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .door::after {
+      content: '';
+      position: absolute;
+      top: 46px;
+      right: 10px;
+      width: 8px;
+      height: 8px;
+      background: #ffd93b;
+      border-radius: 50%;
+      box-shadow: 0 0 4px #ffb800;
+    }
+    .door.open {
+      transform: perspective(200px) rotateY(-75deg);
+    }
+
+    .door-interior {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 90px;
+      background: radial-gradient(circle at 50% 80%, #2a1a0a, #0a0500);
+      border-radius: 30px 30px 2px 2px;
+      z-index: 2;
+    }
+
+    .window {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(180deg, #aee2ff, #7ec8f0);
+      border: 3px solid #c4a265;
+      border-radius: 6px;
+      box-shadow: inset 0 0 8px rgba(255,255,255,0.5);
+      z-index: 4;
+    }
+    .window::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #c4a265;
+      transform: translateY(-50%);
+    }
+    .window::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 3px;
+      height: 100%;
+      background: #c4a265;
+      transform: translateX(-50%);
+    }
+    .window.left  { bottom: 50px; left: 26px; }
+    .window.right { bottom: 50px; right: 26px; }
+
+    /* ---------- TREES ---------- */
+    .tree {
+      position: absolute;
+      bottom: 20%;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .tree .trunk {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 80px;
+      background: linear-gradient(90deg, #8b5a2b, #6b3f1a);
+      border-radius: 4px;
+    }
+    .tree .leaves {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle at 40% 40%, #6fbf4b, #3e8e2a);
+      border-radius: 50%;
+      box-shadow:
+        -30px 10px 0 -8px #4ea336,
+        30px 12px 0 -8px #5cb83f,
+        0 -20px 0 -14px #7ed45a;
+      transform-origin: 50% 100%;
+      animation: leafSway 3.2s ease-in-out infinite alternate;
+    }
+    @keyframes leafSway {
+      0%   { transform: translateX(-50%) rotate(-4deg) skewX(2deg); }
+      100% { transform: translateX(-50%) rotate(4deg) skewX(-2deg); }
+    }
+
+    .tree1 { left: 68%; width: 110px; height: 190px; }
+    .tree1 .leaves { animation-duration: 3.6s; }
+
+    .tree2 { left: 84%; width: 80px; height: 150px; bottom: 21%; }
+    .tree2 .leaves { width: 90px; height: 90px; bottom: 52px; animation-duration: 2.8s; animation-delay: -0.6s; }
+    .tree2 .trunk { height: 62px; width: 18px; }
+
+    .bush {
+      position: absolute;
+      bottom: 20%;
+      width: 70px;
+      height: 40px;
+      background: radial-gradient(circle at 40% 30%, #6fbf4b, #3e8e2a);
+      border-radius: 50% 50% 40% 40%;
+      z-index: 4;
+      transform-origin: 50% 100%;
+      animation: leafSway 4s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    .bush1 { left: 46%; }
+    .bush2 { left: 58%; width: 55px; height: 32px; animation-duration: 3s; animation-delay: -1s; }
+
+    /* ---------- SPEECH BUBBLE (mom's) ---------- */
+    .speech-wrap {
+      position: absolute;
+      bottom: 58%;
+      left: 30%;
+      z-index: 15;
+      opacity: 0;
+      transform: scale(0.6) translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+    .speech-wrap.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    .speech-bubble {
+      position: relative;
+      display: inline-block;
+      background: #fff;
+      border: 4px solid #6b4f32;
+      border-radius: 24px;
+      padding: 18px 24px;
+      box-shadow: 0 8px 0 #b48c5c, 0 16px 28px rgba(0,0,0,0.25);
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -22px;
+      left: 40px;
+      width: 0;
+      height: 0;
+      border: 12px solid transparent;
+      border-top-color: #6b4f32;
+      pointer-events: none;
+    }
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      left: 43px;
+      width: 0;
+      height: 0;
+      border: 9px solid transparent;
+      border-top-color: #fff;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .speech-text {
+      display: inline-block;
+      min-width: 160px;
+      max-width: 280px;
+      font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #3b2a1c;
+      text-align: center;
+      line-height: 1.3;
+      letter-spacing: 0.3px;
+      outline: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: text;
+    }
+    .speech-text:focus {
+      background: #fffbe6;
+      border-radius: 8px;
+      box-shadow: 0 0 0 3px #ffb80055;
+    }
+
+    /* ---------- SUBSCRIBE BUBBLE ---------- */
+    /* Lives INSIDE .character so it's anchored to the character automatically.
+       Uses scaleX(var(--flip)) to cancel the character's horizontal flip. */
+    .subscribe-bubble {
+      position: absolute;
+      bottom: calc(100% + 8px);   /* just above the character's top */
+      left: calc(100% - 20px);    /* slightly past the right edge */
+      background: #fff;
+      color: #3b2a1c;
+      border: 4px solid #6b4f32;
+      border-radius: 24px;
+      padding: 12px 20px;
+      font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      line-height: 1.2;
+      box-shadow: 0 8px 0 #b48c5c, 0 16px 28px rgba(0,0,0,0.25);
+      white-space: nowrap;
+      z-index: 20;
+
+      /* Counter-flip so text reads normally when character is flipped */
+      transform: scaleX(var(--flip, 1));
+
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+    /* Tail pointing down-left back at the character's head */
+    .subscribe-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -18px;
+      left: 20px;
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-top-color: #6b4f32;
+      pointer-events: none;
+    }
+    .subscribe-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -11px;
+      left: 23px;
+      width: 0;
+      height: 0;
+      border: 7px solid transparent;
+      border-top-color: #fff;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .subscribe-bubble.visible {
+      opacity: 1;
+      animation: subPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes subPulse {
+      0%, 100% { transform: scaleX(var(--flip, 1)) scale(1) translateY(0); }
+      50%      { transform: scaleX(var(--flip, 1)) scale(1.05) translateY(-3px); }
+    }
+
+    /* ---------- CHARACTER ---------- */
+    .character-wrap {
+      position: absolute;
+      bottom: 18%;
+      left: 50%;
+      z-index: 10;
+      pointer-events: none;
+      will-change: transform, left, opacity;
+    }
+
+    .character {
+      --base-scale: 0.75;
+      --user-scale: 1;
+      background: #ffdbb5;
+      border-radius: 180px 180px 120px 120px;
+      padding: 26px 46px 14px 46px;
+      box-shadow: 0 12px 0 #b48c5c, 0 22px 28px rgba(0, 0, 0, 0.32);
+      border: 5px solid #a77b4b;
+      position: relative;
+      transform-origin: center bottom;
+      transform: scale(calc(var(--base-scale) * var(--user-scale)));
+    }
+
+    .face { position: relative; display: flex; flex-direction: column; align-items: center; }
+    .eyes { display: flex; gap: 42px; margin-bottom: 10px; }
+
+    .eye {
+      width: 32px; height: 32px;
+      position: relative;
+      overflow: visible;
+    }
+    .eye::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #3b2a1c;
+      border-radius: 50%;
+      box-shadow: inset -5px -5px 0 #1f140e, 0 4px 0 #6b4f32;
+    }
+    .eye .pupil {
+      position: absolute; top: 6px; left: 6px;
+      width: 11px; height: 11px; background: white;
+      border-radius: 50%; box-shadow: 0 0 5px white;
+      z-index: 2;
+    }
+
+    .mouth {
+      width: 78px; height: 34px; background: #b13e3e;
+      border-radius: 0 0 48px 48px;
+      box-shadow: inset 0 -7px 0 #7e2a2a;
+      position: relative; overflow: hidden;
+      transform-origin: center top;
+      animation: happyMouth 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes happyMouth {
+      0%   { height: 34px; width: 78px; border-radius: 0 0 48px 48px; }
+      100% { height: 46px; width: 90px; border-radius: 0 0 58px 58px; background: #c94a4a; }
+    }
+    .mouth::before {
+      content: ''; position: absolute; bottom: 0; left: 50%;
+      transform: translateX(-50%); width: 60%; height: 40%;
+      background: #e86a6a; border-radius: 50% 50% 0 0;
+      opacity: 0.7;
+    }
+
+    .blush {
+      position: absolute; width: 40px; height: 40px;
+      border-radius: 50%;
+      background: radial-gradient(circle closest-side,
+        rgba(255, 140, 160, 0.85) 0%,
+        rgba(255, 140, 160, 0.55) 40%,
+        rgba(255, 140, 160, 0.18) 70%,
+        rgba(255, 140, 160, 0.04) 90%,
+        rgba(255, 140, 160, 0) 100%);
+      opacity: 1;
+      transform: scale(1.1);
+      pointer-events: none;
+      filter: blur(0.5px);
+    }
+    .blush.left  { left: 2px;  top: 40%; }
+    .blush.right { right: 2px; top: 40%; }
+  </style>
+</head>
+<body>
+  <div class="scene" id="scene">
+
+    <div class="sun"></div>
+
+    <div class="cloud cloud1" data-cloud="1"></div>
+    <div class="cloud cloud2" data-cloud="2"></div>
+    <div class="cloud cloud3" data-cloud="3"></div>
+    <div class="cloud cloud4" data-cloud="4"></div>
+
+    <div class="ground"></div>
+
+    <div class="house">
+      <div class="chimney">
+        <div class="smoke"></div>
+        <div class="smoke"></div>
+        <div class="smoke"></div>
+      </div>
+      <div class="house-body">
+        <div class="window left"></div>
+        <div class="window right"></div>
+        <div class="door-interior"></div>
+        <div class="door-frame">
+          <div class="door" id="door"></div>
+        </div>
+      </div>
+      <div class="roof"></div>
+    </div>
+
+    <div class="tree tree1">
+      <div class="leaves"></div>
+      <div class="trunk"></div>
+    </div>
+    <div class="tree tree2">
+      <div class="leaves"></div>
+      <div class="trunk"></div>
+    </div>
+
+    <div class="bush bush1"></div>
+    <div class="bush bush2"></div>
+
+    <!-- MOM'S SPEECH BUBBLE -->
+    <div class="speech-wrap" id="speechWrap">
+      <div class="speech-bubble">
+        <div
+          id="speechText"
+          class="speech-text"
+          contenteditable="false"
+          spellcheck="false"
+        >Baby, let's eat!</div>
+      </div>
+    </div>
+
+    <!-- CHARACTER -->
+    <div class="character-wrap" id="charWrap">
+      <div class="character" id="character">
+        <div class="face">
+          <div class="eyes">
+            <div class="eye">
+              <div class="pupil"></div>
+            </div>
+            <div class="eye">
+              <div class="pupil"></div>
+            </div>
+          </div>
+          <div class="mouth"></div>
+        </div>
+        <div class="blush left"></div>
+        <div class="blush right"></div>
+
+        <!-- SUBSCRIBE BUBBLE inside the character for natural anchoring -->
+        <div class="subscribe-bubble" id="subscribeBubble">subscribe</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    (function() {
+      const pupils = document.querySelectorAll('.eye .pupil');
+      const charWrap = document.getElementById('charWrap');
+      const scene = document.getElementById('scene');
+      const speechWrap = document.getElementById('speechWrap');
+      const speechText = document.getElementById('speechText');
+      const subscribeBubble = document.getElementById('subscribeBubble');
+      const door = document.getElementById('door');
+
+      // ============================================================
+      // SPEECH — load once, save on blur / Enter only
+      // ============================================================
+      const SPEECH_KEY = 'mukbang_speech_v4';
+      const DEFAULT_SPEECH = "Baby, let's eat!";
+      let isEditing = false;
+
+      (function loadSpeech() {
+        try {
+          const saved = localStorage.getItem(SPEECH_KEY);
+          if (saved && saved.trim().length > 0) {
+            speechText.textContent = saved;
+          }
+        } catch (e) {}
+      })();
+
+      function enterEdit() {
+        if (isEditing) return;
+        isEditing = true;
+        speechText.setAttribute('contenteditable', 'true');
+        speechText.focus();
+        try {
+          const range = document.createRange();
+          const sel = window.getSelection();
+          range.selectNodeContents(speechText);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (e) {}
+      }
+
+      function exitEditAndSave() {
+        if (!isEditing) return;
+        isEditing = false;
+        speechText.setAttribute('contenteditable', 'false');
+
+        let val = (speechText.textContent || '').replace(/\s+/g, ' ').trim();
+        if (val.length === 0) val = DEFAULT_SPEECH;
+        speechText.textContent = val;
+
+        try {
+          localStorage.setItem(SPEECH_KEY, val);
+          console.log('Saved speech:', val);
+        } catch (e) {
+          console.warn('Failed to save speech', e);
+        }
+      }
+
+      speechText.addEventListener('click', (e) => {
+        if (isEditing) return;
+        e.stopPropagation();
+        enterEdit();
+      });
+
+      speechText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          exitEditAndSave();
+          speechText.blur();
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          exitEditAndSave();
+          speechText.blur();
+        }
+      });
+
+      speechText.addEventListener('blur', () => {
+        exitEditAndSave();
+      });
+
+      // ============================================================
+      // CLOUDS — draggable AND drifting
+      // ============================================================
+      const CLOUD_KEY = 'mukbang_clouds_v2';
+      const clouds = document.querySelectorAll('.cloud');
+
+      (function loadClouds() {
+        let saved = null;
+        try {
+          const raw = localStorage.getItem(CLOUD_KEY);
+          if (raw) saved = JSON.parse(raw);
+        } catch (e) {}
+
+        clouds.forEach(cloud => {
+          const id = cloud.dataset.cloud;
+          if (saved && saved[id]) {
+            cloud.style.left = saved[id].left;
+            cloud.style.top = saved[id].top;
+          }
+        });
+      })();
+
+      function saveClouds() {
+        const data = {};
+        clouds.forEach(cloud => {
+          data[cloud.dataset.cloud] = {
+            left: cloud.style.left,
+            top: cloud.style.top
+          };
+        });
+        try { localStorage.setItem(CLOUD_KEY, JSON.stringify(data)); } catch (e) {}
+      }
+
+      clouds.forEach(cloud => {
+        let dragging = false;
+        let startX = 0, startY = 0;
+        let startLeft = 0, startTop = 0;
+        let pid = null;
+
+        cloud.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          dragging = true;
+          pid = e.pointerId;
+          cloud.classList.add('dragging');
+          cloud.setPointerCapture(e.pointerId);
+
+          const sceneRect = scene.getBoundingClientRect();
+          const cloudRect = cloud.getBoundingClientRect();
+
+          startLeft = parseFloat(cloud.style.left) || (cloudRect.left - sceneRect.left);
+          startTop  = parseFloat(cloud.style.top)  || (cloudRect.top  - sceneRect.top);
+
+          startX = e.clientX;
+          startY = e.clientY;
+
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+          window.addEventListener('pointercancel', onUp);
+        });
+
+        function onMove(e) {
+          if (!dragging || e.pointerId !== pid) return;
+          e.preventDefault();
+          const sceneRect = scene.getBoundingClientRect();
+          const cloudRect = cloud.getBoundingClientRect();
+          let nx = startLeft + (e.clientX - startX);
+          let ny = startTop  + (e.clientY - startY);
+          nx = Math.max(-cloudRect.width * 0.5,
+               Math.min(sceneRect.width - cloudRect.width * 0.5, nx));
+          ny = Math.max(-cloudRect.height * 0.5,
+               Math.min(sceneRect.height - cloudRect.height * 0.5, ny));
+          cloud.style.left = nx + 'px';
+          cloud.style.top = ny + 'px';
+        }
+
+        function onUp(e) {
+          if (!dragging || e.pointerId !== pid) return;
+          dragging = false;
+          pid = null;
+          cloud.classList.remove('dragging');
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          window.removeEventListener('pointercancel', onUp);
+          saveClouds();
+        }
+      });
+
+      // ============================================================
+      // CHARACTER MOVEMENT
+      // ============================================================
+      let charState = {
+        x: 0,
+        targetX: 0,
+        speed: 95,
+        bobbingPhase: 0,
+        running: false,
+        pauseTimer: 0,
+        facing: 1,
+        mode: 'wander',     // wander | walking-to-house | entering | done | exiting | bouncing | staying
+        enteringPhase: 0,
+        exitingPhase: 0,
+        bouncingPhase: 0,
+        stayPhase: 0
+      };
+
+      const startTime = performance.now();
+      let bubbleHideTimer = null;
+
+      function getBounds() {
+        const sw = scene.clientWidth;
+        return { minX: sw * 0.08, maxX: sw * 0.92 };
+      }
+
+      function getDoorSceneX() {
+        const sceneRect = scene.getBoundingClientRect();
+        const doorRect = document.querySelector('.door-frame').getBoundingClientRect();
+        return (doorRect.left - sceneRect.left) + doorRect.width / 2;
+      }
+
+      function initPosition() {
+        const b = getBounds();
+        charState.x = (b.minX + b.maxX) / 2;
+        pickNewCharTarget();
+        charState.pauseTimer = 0.4;
+      }
+
+      function pickNewCharTarget() {
+        const b = getBounds();
+        const currentNorm = (charState.x - b.minX) / (b.maxX - b.minX);
+        let targetNorm;
+        if (currentNorm < 0.5) targetNorm = 0.55 + Math.random() * 0.45;
+        else targetNorm = Math.random() * 0.45;
+        charState.targetX = b.minX + targetNorm * (b.maxX - b.minX);
+        charState.running = true;
+      }
+
+      // ============================================================
+      // X KEY → EXIT HOUSE, BOUNCE TO CENTER GRASS, STAY THERE
+      // ============================================================
+      function startExitSequence() {
+        if (charState.mode !== 'done') return;
+        charState.mode = 'exiting';
+        charState.exitingPhase = 0;
+        charWrap.style.display = '';
+        charWrap.style.opacity = '0';
+        charWrap.style.transform = 'translate(-50%, 0) scale(0.25)';
+        door.classList.add('open');
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'x' || e.key === 'X') {
+          if (isEditing) return;
+          if (charState.mode === 'done') {
+            startExitSequence();
+          }
+        }
+      });
+
+      // ============================================================
+      // BUBBLE HIDE TIMER
+      // ============================================================
+      function showBubbleTemporarily() {
+        speechWrap.classList.add('visible');
+        if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
+        bubbleHideTimer = setTimeout(() => {
+          speechWrap.classList.remove('visible');
+          bubbleHideTimer = null;
+        }, 3000);
+      }
+
+      let lastTime = performance.now();
+
+      function tick(now) {
+        const dt = Math.min(0.05, (now - lastTime) / 1000);
+        lastTime = now;
+        const elapsed = (now - startTime) / 1000;
+
+        // At 5s → walk to house
+        if (elapsed >= 5 && charState.mode === 'wander') {
+          charState.mode = 'walking-to-house';
+          showBubbleTemporarily();
+          charState.running = false;
+          charState.targetX = getDoorSceneX();
+          charState.pauseTimer = 0.8;
+        }
+
+        // ---------------- MOVEMENT PHASES ----------------
+        if (charState.mode === 'wander') {
+          if (charState.pauseTimer > 0) {
+            charState.pauseTimer -= dt;
+            charState.bobbingPhase += dt * 3;
+          } else if (charState.running) {
+            const dx = charState.targetX - charState.x;
+            const dist = Math.abs(dx);
+            if (dist < 4) {
+              charState.running = false;
+              charState.pauseTimer = 0.4 + Math.random() * 1.0;
+            } else {
+              const step = charState.speed * dt;
+              const dir = Math.sign(dx);
+              charState.x += dir * Math.min(step, dist);
+              charState.facing = dir;
+              charState.bobbingPhase += dt * 16;
+            }
+          }
+          if (!charState.running && charState.pauseTimer <= 0) pickNewCharTarget();
+        } else if (charState.mode === 'walking-to-house') {
+          if (charState.pauseTimer > 0) {
+            charState.pauseTimer -= dt;
+            charState.bobbingPhase += dt * 3;
+          } else {
+            const doorX = getDoorSceneX();
+            const dx = doorX - charState.x;
+            const dist = Math.abs(dx);
+            if (dist < 3) {
+              charState.mode = 'entering';
+              charState.enteringPhase = 0;
+              door.classList.add('open');
+            } else {
+              const step = charState.speed * dt;
+              const dir = Math.sign(dx);
+              charState.x += dir * Math.min(step, dist);
+              charState.facing = dir;
+              charState.bobbingPhase += dt * 16;
+            }
+          }
+        } else if (charState.mode === 'entering') {
+          charState.enteringPhase += dt / 1.6;
+          const t = Math.min(1, charState.enteringPhase);
+          const doorX = getDoorSceneX();
+          charState.x += (doorX - charState.x) * dt * 4;
+          const shrink = 1 - t * 0.75;
+          const sinkY = t * 22;
+          const fadeOpacity = 1 - Math.pow(t, 2);
+          charWrap.style.opacity = fadeOpacity;
+          charWrap.style.transform =
+            `translate(-50%, ${sinkY}px) scaleX(${charState.facing}) scale(${shrink})`;
+          if (t >= 1) {
+            charState.mode = 'done';
+            charWrap.style.opacity = '0';
+            charWrap.style.display = 'none';
+            setTimeout(() => door.classList.remove('open'), 350);
+          }
+        } else if (charState.mode === 'exiting') {
+          charState.exitingPhase += dt / 1.2;
+          const t = Math.min(1, charState.exitingPhase);
+          const doorX = getDoorSceneX();
+          charState.x += (doorX - charState.x) * dt * 4;
+          charWrap.style.left = charState.x + 'px';
+          const grow = 0.25 + t * 0.75;
+          const riseY = (1 - t) * 22;
+          charWrap.style.opacity = t;
+          charWrap.style.transform =
+            `translate(-50%, ${riseY}px) scaleX(1) scale(${grow})`;
+          if (t >= 1) {
+            charState.mode = 'bouncing';
+            charState.bouncingPhase = 0;
+            door.classList.remove('open');
+          }
+        } else if (charState.mode === 'bouncing') {
+          charState.bouncingPhase += dt;
+          const cycle = 0.65;
+          const cycleT = charState.bouncingPhase / cycle;
+          const bounceIndex = Math.floor(cycleT);
+          const localT = cycleT - bounceIndex;
+
+          if (bounceIndex >= 5) {
+            charState.mode = 'staying';
+            charState.stayPhase = 0;
+            charState.facing = 1; // face forward at the end
+            charWrap.style.left = '50%';
+            charWrap.style.transform = `translate(-50%, 0) scaleX(1) scale(1)`;
+            // Show subscribe bubble
+            subscribeBubble.classList.add('visible');
+          } else {
+            const doorX = getDoorSceneX();
+            const targetX = scene.clientWidth / 2;
+            const progress = (bounceIndex + localT) / 5;
+            const currentX = doorX + (targetX - doorX) * progress;
+            charWrap.style.left = currentX + 'px';
+
+            const scale = 1;
+            const bounceHeight = 45 * Math.sin(localT * Math.PI);
+            const tilt = Math.sin(localT * Math.PI * 2) * 5;
+
+            charState.facing = doorX < targetX ? 1 : -1;
+
+            charWrap.style.transform =
+              `translate(-50%, ${-bounceHeight}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(${scale})`;
+          }
+        } else if (charState.mode === 'staying') {
+          charState.stayPhase += dt;
+          const idleBob = Math.abs(Math.sin(charState.stayPhase * 2.5)) * 3;
+          const idleTilt = Math.sin(charState.stayPhase * 1.5) * 2;
+          charWrap.style.left = '50%';
+          charWrap.style.transform =
+            `translate(-50%, ${-idleBob}px) rotate(${idleTilt}deg) scaleX(${charState.facing}) scale(1)`;
+        }
+
+        // Counter-flip the subscribe bubble whenever the character is flipped.
+        // The bubble sits inside the flipped .character-wrap, so we invert
+        // its own X scale to keep the text readable.
+        const flipSign = (charState.facing === -1) ? -1 : 1;
+        subscribeBubble.style.setProperty('--flip', flipSign);
+
+        // Apply X for wandering/walking phases only
+        if (charState.mode === 'wander' ||
+            charState.mode === 'walking-to-house' ||
+            charState.mode === 'entering') {
+          const b = getBounds();
+          charState.x = Math.max(b.minX, Math.min(b.maxX, charState.x));
+          charWrap.style.left = charState.x + 'px';
+        }
+
+        // Running animation (only during wander / walk-to-house)
+        if (charState.mode === 'wander' || charState.mode === 'walking-to-house') {
+          const isMoving = charState.running || (charState.mode === 'walking-to-house' && charState.pauseTimer <= 0);
+          const bobAmp = isMoving ? 4 : 1.5;
+          const bobFreq = isMoving ? 1 : 0.5;
+          const bob = Math.abs(Math.sin(charState.bobbingPhase * bobFreq)) * bobAmp;
+          const squashX = isMoving ? 1 + Math.sin(charState.bobbingPhase * 2) * 0.05 : 1;
+          const squashY = isMoving ? 1 - Math.sin(charState.bobbingPhase * 2) * 0.05 : 1;
+          const tilt = isMoving ? Math.sin(charState.bobbingPhase) * 5 : Math.sin(charState.bobbingPhase * 0.5) * 1.5;
+          charWrap.style.transform =
+            `translate(-50%, ${-bob}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(${squashX}, ${squashY})`;
+        }
+
+        updateEyesFromPointer();
+
+        requestAnimationFrame(tick);
+      }
+
+      // ============================================================
+      // EYE TRACKING
+      // ============================================================
+      let pointerX = window.innerWidth / 2;
+      let pointerY = window.innerHeight / 2;
+      let hasPointer = false;
+
+      function updateEyesFromPointer() {
+        if (!hasPointer) {
+          pupils.forEach(p => { p.style.transform = ''; });
+          return;
+        }
+        const rect = charWrap.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = pointerX - cx;
+        const dy = pointerY - cy;
+        const dist = Math.hypot(dx, dy) || 1;
+        const maxOff = 5;
+        const offX = (dx / dist) * maxOff;
+        const offY = (dy / dist) * maxOff;
+        const flip = charState.facing;
+        pupils.forEach(p => {
+          p.style.transform = `translate(${offX * flip}px, ${offY}px)`;
+        });
+      }
+
+      window.addEventListener('mousemove', (e) => {
+        pointerX = e.clientX; pointerY = e.clientY; hasPointer = true;
+      });
+      window.addEventListener('mouseleave', () => { hasPointer = false; });
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length) {
+          pointerX = e.touches[0].clientX;
+          pointerY = e.touches[0].clientY;
+          hasPointer = true;
+        }
+      }, { passive: true });
+      window.addEventListener('touchend', () => { hasPointer = false; });
+
+      // ============================================================
+      // START
+      // ============================================================
+      requestAnimationFrame(() => {
+        initPosition();
+        lastTime = performance.now();
+        requestAnimationFrame(tick);
+      });
+
+      window.addEventListener('resize', () => {
+        const b = getBounds();
+        charState.x = Math.max(b.minX, Math.min(b.maxX, charState.x));
+        charState.targetX = Math.max(b.minX, Math.min(b.maxX, charState.targetX));
+      });
+    })();
+  </script>
+</body>
+</html>
