@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
   <title>Cozy House · Happy Character</title>
 
   <!-- Comic Neue — web equivalent of Comic Sans -->
@@ -18,6 +20,17 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
     body {
       min-height: 100vh;
       background: linear-gradient(180deg, #a8d8ff 0%, #c9e9ff 30%, #e6f7ff 60%, #b5e0b0 100%);
@@ -25,7 +38,6 @@
       align-items: center;
       justify-content: center;
       font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
-      overflow: hidden;
     }
 
     .scene {
@@ -154,7 +166,6 @@
     }
 
     /* ---------- HOUSE ---------- */
-    /* Note: house no longer has pointer-events: none, so the door can be tapped */
     .house {
       position: absolute;
       bottom: 22%;
@@ -256,15 +267,18 @@
       height: 94px;
       background: #3a2210;
       border-radius: 32px 32px 2px 2px;
-      z-index: 6;                /* above house-body */
+      z-index: 6;
       overflow: hidden;
-      pointer-events: auto;      /* tappable */
+      pointer-events: auto;
       cursor: pointer;
       touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    .door-frame:hover .door {
-      filter: brightness(1.15);
-    }
+    /* NOTE: no :hover recoloring — the door stays its normal color */
+
     .door {
       position: absolute;
       bottom: 0;
@@ -633,7 +647,7 @@
         <div class="window left"></div>
         <div class="window right"></div>
         <div class="door-interior"></div>
-        <div class="door-frame" id="doorFrame" title="Tap the door to call the character out">
+        <div class="door-frame" id="doorFrame">
           <div class="door" id="door"></div>
         </div>
       </div>
@@ -697,6 +711,24 @@
       const subscribeBubble = document.getElementById('subscribeBubble');
       const door = document.getElementById('door');
       const doorFrame = document.getElementById('doorFrame');
+
+      // ============================================================
+      // PREVENT DOUBLE-TAP ZOOM / REFRESH ON IPAD
+      // ============================================================
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, { passive: false });
+
+      document.addEventListener('gesturestart',  e => e.preventDefault(), { passive: false });
+      document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+      document.addEventListener('gestureend',    e => e.preventDefault(), { passive: false });
+      document.addEventListener('contextmenu',   e => e.preventDefault(), { passive: false });
+      document.addEventListener('dragstart',     e => e.preventDefault(), { passive: false });
 
       // ============================================================
       // SPEECH — load once, save on blur / Enter only
@@ -931,7 +963,26 @@
         }
       });
 
-      // Tap the door (works on iPad and desktop)
+      // Tap/click the door — pointer events fire immediately on iPad,
+      // so no double-tap delay and no page-refresh escalation.
+      let doorPressed = false;
+      doorFrame.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        doorPressed = true;
+        e.stopPropagation();
+      });
+      doorFrame.addEventListener('pointerup', (e) => {
+        if (!doorPressed) return;
+        doorPressed = false;
+        e.stopPropagation();
+        e.preventDefault();
+        if (isEditing) return;
+        if (charState.mode === 'done') {
+          startExitSequence();
+        }
+      });
+      doorFrame.addEventListener('pointercancel', () => { doorPressed = false; });
+      // Fallback for environments that don't fire pointer events
       doorFrame.addEventListener('click', (e) => {
         e.stopPropagation();
         if (isEditing) return;
