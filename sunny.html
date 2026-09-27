@@ -154,6 +154,7 @@
     }
 
     /* ---------- HOUSE ---------- */
+    /* Note: house no longer has pointer-events: none, so the door can be tapped */
     .house {
       position: absolute;
       bottom: 22%;
@@ -161,7 +162,6 @@
       width: 260px;
       height: 280px;
       z-index: 5;
-      pointer-events: none;
     }
 
     .chimney {
@@ -174,6 +174,7 @@
       border-radius: 4px 4px 0 0;
       z-index: 1;
       box-shadow: inset -5px 0 0 rgba(0,0,0,0.2), inset 3px 0 0 rgba(255,255,255,0.1);
+      pointer-events: none;
     }
     .chimney::after {
       content: '';
@@ -198,6 +199,7 @@
       animation: smokeUp 3s ease-out infinite;
       filter: blur(2px);
       z-index: 2;
+      pointer-events: none;
     }
     .smoke:nth-child(2) { animation-delay: 1s; }
     .smoke:nth-child(3) { animation-delay: 2s; }
@@ -218,6 +220,7 @@
       border: 3px solid #c4a265;
       z-index: 2;
       overflow: hidden;
+      pointer-events: none;
     }
 
     .roof {
@@ -230,6 +233,7 @@
       clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
       filter: drop-shadow(0 6px 4px rgba(0,0,0,0.18));
       z-index: 4;
+      pointer-events: none;
     }
     .roof::after {
       content: '';
@@ -252,8 +256,14 @@
       height: 94px;
       background: #3a2210;
       border-radius: 32px 32px 2px 2px;
-      z-index: 3;
+      z-index: 6;                /* above house-body */
       overflow: hidden;
+      pointer-events: auto;      /* tappable */
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .door-frame:hover .door {
+      filter: brightness(1.15);
     }
     .door {
       position: absolute;
@@ -267,6 +277,7 @@
       box-shadow: inset 0 4px 0 rgba(255,255,255,0.15);
       transform-origin: left center;
       transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
     }
     .door::after {
       content: '';
@@ -293,6 +304,7 @@
       background: radial-gradient(circle at 50% 80%, #2a1a0a, #0a0500);
       border-radius: 30px 30px 2px 2px;
       z-index: 2;
+      pointer-events: none;
     }
 
     .window {
@@ -304,6 +316,7 @@
       border-radius: 6px;
       box-shadow: inset 0 0 8px rgba(255,255,255,0.5);
       z-index: 4;
+      pointer-events: none;
     }
     .window::before {
       content: '';
@@ -459,13 +472,11 @@
       box-shadow: 0 0 0 3px #ffb80055;
     }
 
-    /* ---------- SUBSCRIBE BUBBLE ---------- */
-    /* Lives INSIDE .character so it's anchored to the character automatically.
-       Uses scaleX(var(--flip)) to cancel the character's horizontal flip. */
+    /* ---------- SUBSCRIBE BUBBLE (inside character) ---------- */
     .subscribe-bubble {
       position: absolute;
-      bottom: calc(100% + 8px);   /* just above the character's top */
-      left: calc(100% - 20px);    /* slightly past the right edge */
+      bottom: calc(100% + 8px);
+      left: calc(100% - 20px);
       background: #fff;
       color: #3b2a1c;
       border: 4px solid #6b4f32;
@@ -480,14 +491,11 @@
       white-space: nowrap;
       z-index: 20;
 
-      /* Counter-flip so text reads normally when character is flipped */
       transform: scaleX(var(--flip, 1));
-
       opacity: 0;
       transition: opacity 0.5s ease;
       pointer-events: none;
     }
-    /* Tail pointing down-left back at the character's head */
     .subscribe-bubble::after {
       content: '';
       position: absolute;
@@ -625,7 +633,7 @@
         <div class="window left"></div>
         <div class="window right"></div>
         <div class="door-interior"></div>
-        <div class="door-frame">
+        <div class="door-frame" id="doorFrame" title="Tap the door to call the character out">
           <div class="door" id="door"></div>
         </div>
       </div>
@@ -673,7 +681,6 @@
         <div class="blush left"></div>
         <div class="blush right"></div>
 
-        <!-- SUBSCRIBE BUBBLE inside the character for natural anchoring -->
         <div class="subscribe-bubble" id="subscribeBubble">subscribe</div>
       </div>
     </div>
@@ -689,6 +696,7 @@
       const speechText = document.getElementById('speechText');
       const subscribeBubble = document.getElementById('subscribeBubble');
       const door = document.getElementById('door');
+      const doorFrame = document.getElementById('doorFrame');
 
       // ============================================================
       // SPEECH — load once, save on blur / Enter only
@@ -862,7 +870,7 @@
         running: false,
         pauseTimer: 0,
         facing: 1,
-        mode: 'wander',     // wander | walking-to-house | entering | done | exiting | bouncing | staying
+        mode: 'wander',
         enteringPhase: 0,
         exitingPhase: 0,
         bouncingPhase: 0,
@@ -879,7 +887,7 @@
 
       function getDoorSceneX() {
         const sceneRect = scene.getBoundingClientRect();
-        const doorRect = document.querySelector('.door-frame').getBoundingClientRect();
+        const doorRect = doorFrame.getBoundingClientRect();
         return (doorRect.left - sceneRect.left) + doorRect.width / 2;
       }
 
@@ -901,7 +909,7 @@
       }
 
       // ============================================================
-      // X KEY → EXIT HOUSE, BOUNCE TO CENTER GRASS, STAY THERE
+      // EXIT SEQUENCE — triggered by X key OR door tap
       // ============================================================
       function startExitSequence() {
         if (charState.mode !== 'done') return;
@@ -913,12 +921,22 @@
         door.classList.add('open');
       }
 
+      // Keyboard: X key
       window.addEventListener('keydown', (e) => {
         if (e.key === 'x' || e.key === 'X') {
           if (isEditing) return;
           if (charState.mode === 'done') {
             startExitSequence();
           }
+        }
+      });
+
+      // Tap the door (works on iPad and desktop)
+      doorFrame.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isEditing) return;
+        if (charState.mode === 'done') {
+          startExitSequence();
         }
       });
 
@@ -1033,10 +1051,9 @@
           if (bounceIndex >= 5) {
             charState.mode = 'staying';
             charState.stayPhase = 0;
-            charState.facing = 1; // face forward at the end
+            charState.facing = 1;
             charWrap.style.left = '50%';
             charWrap.style.transform = `translate(-50%, 0) scaleX(1) scale(1)`;
-            // Show subscribe bubble
             subscribeBubble.classList.add('visible');
           } else {
             const doorX = getDoorSceneX();
@@ -1063,13 +1080,10 @@
             `translate(-50%, ${-idleBob}px) rotate(${idleTilt}deg) scaleX(${charState.facing}) scale(1)`;
         }
 
-        // Counter-flip the subscribe bubble whenever the character is flipped.
-        // The bubble sits inside the flipped .character-wrap, so we invert
-        // its own X scale to keep the text readable.
+        // Counter-flip subscribe bubble so text reads correctly
         const flipSign = (charState.facing === -1) ? -1 : 1;
         subscribeBubble.style.setProperty('--flip', flipSign);
 
-        // Apply X for wandering/walking phases only
         if (charState.mode === 'wander' ||
             charState.mode === 'walking-to-house' ||
             charState.mode === 'entering') {
@@ -1078,7 +1092,6 @@
           charWrap.style.left = charState.x + 'px';
         }
 
-        // Running animation (only during wander / walk-to-house)
         if (charState.mode === 'wander' || charState.mode === 'walking-to-house') {
           const isMoving = charState.running || (charState.mode === 'walking-to-house' && charState.pauseTimer <= 0);
           const bobAmp = isMoving ? 4 : 1.5;
