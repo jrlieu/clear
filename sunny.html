@@ -733,7 +733,6 @@
       document.addEventListener('touchend', (e) => {
         const now = Date.now();
         if (now - lastTouchEnd <= 300) {
-          // Only suppress double-tap-zoom on non-tree targets
           const t = e.target;
           if (t && t.closest && t.closest('.tree')) return;
           e.preventDefault();
@@ -751,8 +750,6 @@
       // TREES → REFRESH THE PAGE
       // ============================================================
       function reloadPage() {
-        // location.reload() can sometimes be ignored on iOS if the page
-        // was loaded from bfcache; force a fresh navigation instead.
         try {
           if (window.location && typeof window.location.reload === 'function') {
             window.location.reload(true);
@@ -780,7 +777,6 @@
         });
         tree.addEventListener('pointercancel', () => { treePressed = false; });
 
-        // Fallback for browsers without pointer events
         tree.addEventListener('click', (e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -790,10 +786,12 @@
 
       // ============================================================
       // SPEECH — load once, save on blur / Enter only
+      // The 3-second auto-hide is PAUSED while editing.
       // ============================================================
       const SPEECH_KEY = 'mukbang_speech_v4';
       const DEFAULT_SPEECH = "Baby, let's eat!";
       let isEditing = false;
+      let bubbleHideTimer = null;
 
       (function loadSpeech() {
         try {
@@ -804,9 +802,39 @@
         } catch (e) {}
       })();
 
+      // Show bubble for 3 seconds (or indefinitely if editing)
+      function showBubbleTemporarily() {
+        speechWrap.classList.add('visible');
+        startBubbleHideTimer();
+      }
+
+      function startBubbleHideTimer() {
+        if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
+        // Don't set a hide timer while the user is editing.
+        if (isEditing) return;
+        bubbleHideTimer = setTimeout(() => {
+          bubbleHideTimer = null;
+          // Re-check editing flag when the timer fires
+          if (isEditing) return;
+          speechWrap.classList.remove('visible');
+        }, 3000);
+      }
+
+      function pauseBubbleHideTimer() {
+        if (bubbleHideTimer) {
+          clearTimeout(bubbleHideTimer);
+          bubbleHideTimer = null;
+        }
+      }
+
       function enterEdit() {
         if (isEditing) return;
         isEditing = true;
+        pauseBubbleHideTimer(); // <-- freeze the auto-hide while editing
+
+        // Make sure the bubble is visible (in case the timer just fired)
+        speechWrap.classList.add('visible');
+
         speechText.setAttribute('contenteditable', 'true');
         speechText.focus();
         try {
@@ -834,6 +862,9 @@
         } catch (e) {
           console.warn('Failed to save speech', e);
         }
+
+        // Restart the 3-second countdown now that editing is done
+        startBubbleHideTimer();
       }
 
       speechText.addEventListener('click', (e) => {
@@ -968,7 +999,6 @@
       };
 
       const startTime = performance.now();
-      let bubbleHideTimer = null;
 
       function getBounds() {
         const sw = scene.clientWidth;
@@ -1011,7 +1041,6 @@
         door.classList.add('open');
       }
 
-      // Keyboard: X key
       window.addEventListener('keydown', (e) => {
         if (e.key === 'x' || e.key === 'X') {
           if (isEditing) return;
@@ -1021,7 +1050,6 @@
         }
       });
 
-      // Tap/click the door
       let doorPressed = false;
       doorFrame.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -1046,18 +1074,6 @@
           startExitSequence();
         }
       });
-
-      // ============================================================
-      // BUBBLE HIDE TIMER
-      // ============================================================
-      function showBubbleTemporarily() {
-        speechWrap.classList.add('visible');
-        if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
-        bubbleHideTimer = setTimeout(() => {
-          speechWrap.classList.remove('visible');
-          bubbleHideTimer = null;
-        }, 3000);
-      }
 
       let lastTime = performance.now();
 
@@ -1187,7 +1203,6 @@
             `translate(-50%, ${-idleBob}px) rotate(${idleTilt}deg) scaleX(${charState.facing}) scale(1)`;
         }
 
-        // Counter-flip subscribe bubble so text reads correctly
         const flipSign = (charState.facing === -1) ? -1 : 1;
         subscribeBubble.style.setProperty('--flip', flipSign);
 
