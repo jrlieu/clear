@@ -606,27 +606,13 @@
   const photoActionDelete = document.getElementById('photoActionDelete');
   const photoActionCancel = document.getElementById('photoActionCancel');
 
-  // ---- UPLOAD LISTS ----
-  // customFoodImages and customDrinkImages are the SAME array now (shared list),
-  // so ordering is unified across both upload buttons.
-  // Each entry: { img, kind: 'food' | 'drink' }
-  const customFoodImages = [];        // shared list — items with kind 'food'
-  const customDrinkImages = [];       // alias array (same underlying entries) — unused for gameplay
-  const sharedEatableList = [];       // THE canonical ordered list (foods + drinks)
-
-  // For the arranger, the modal will show sharedEatableList.
-  // Grass / rock / flower stay as separate arrays.
+  const sharedEatableList = [];
   const customGrassImages = [];
   const customRockImages = [];
   const customFlowerImages = [];
 
-  // We keep two modal entry points: Food button (opens shared list, showing only foods)
-  // and Drink button (opens shared list, showing only drinks).
-  // But since the user asked for the drink to be in the food arranger too, we make
-  // BOTH buttons open the SAME combined modal.
-
   function getList(kind) {
-    if (kind === 'eatable') return sharedEatableList;   // used by the arranger
+    if (kind === 'eatable') return sharedEatableList;
     if (kind === 'grass') return customGrassImages;
     if (kind === 'rock') return customRockImages;
     if (kind === 'flower') return customFlowerImages;
@@ -749,7 +735,6 @@
           const img = new Image();
           img.onload = () => {
             if (kind === 'food' || kind === 'drink') {
-              // Push into the SHARED list so ordering is preserved.
               sharedEatableList.push({ img, kind });
             } else if (kind === 'grass') {
               customGrassImages.push(img);
@@ -781,7 +766,6 @@
   attachUpload(rockUpload, rockUploadBtn, 'rock');
   attachUpload(flowerUpload, flowerUploadBtn, 'flower');
 
-  // -------- Drag-to-reorder --------
   let dragState = null;
 
   function beginDrag(e, kind, index, cell) {
@@ -947,7 +931,6 @@
     }
   });
 
-  // BOTH the food and drink counters open the SAME combined arranger.
   foodPhotoCount.addEventListener('click', (e) => {
     e.preventDefault(); e.stopPropagation(); openPhotoModal('eatable');
   });
@@ -1069,8 +1052,7 @@
     walkPhase: 0,
     grounded: true,
     landingSettle: 0,
-    pendingFood: null,
-    pendingFinalDrink: false
+    pendingFood: null
   };
 
   let foods = [];
@@ -1097,7 +1079,6 @@
 
   let sippingDrink = null;
 
-  // ---- Portal state ----
   let portal = null;
   let portalSuck = null;
   let portalStare = null;
@@ -1106,12 +1087,10 @@
   let showFinishReset = false;
   let finishResetTimer = 0;
 
-  // ---- Arrival ----
   let arrival = null;
 
-  // ---- FOOD PYRAMID ----
   let foodMountain = null;
-  let finalDrink = null;
+  let finalDrinkRef = null;   // reference to the "final drink" object inside foods[]
 
   let clouds = [];
   let hills = [];
@@ -1136,12 +1115,11 @@
     showFinishReset = false;
     finishResetTimer = 0;
     foodMountain = null;
-    finalDrink = null;
+    finalDrinkRef = null;
 
-    // ---- Stage 2: spaced-out items from the shared ordered list ----
-    // The list is exactly in the order shown in the arranger modal.
     if (sharedEatableList.length === 0) return;
 
+    // ---- Stage 2: spaced-out items from the shared ordered list ----
     let distance = 200 * ZOOM;
     let lastDistance = 0;
     sharedEatableList.forEach((item, i) => {
@@ -1158,11 +1136,12 @@
         eaten: false,
         triggered: false,
         bobPhase: Math.random() * Math.PI * 2,
-        eatSquash: 1
+        eatSquash: 1,
+        isFinalDrink: false
       });
     });
 
-    // ============ Stage 3: PYRAMID (from food-only entries in shared list) ============
+    // ============ Stage 3: PYRAMID (food-only entries) ============
     const foodOnly = sharedEatableList.filter(e => e.kind === 'food');
     if (foodOnly.length > 0) {
       const totalItems = foodOnly.length;
@@ -1218,33 +1197,39 @@
       };
     }
 
-    // ---- Stage 4: Final drink (from drink entries in shared list) ----
+    // ---- Stage 4: Final drink ----
+    // Add one extra drink AFTER the pyramid as a regular road entry, marked as
+    // isFinalDrink so we can gate its consumption behind pyramid completion.
     const drinkOnly = sharedEatableList.filter(e => e.kind === 'drink');
     if (drinkOnly.length > 0) {
       const pick = drinkOnly[Math.floor(Math.random() * drinkOnly.length)];
       const mountainEnd = foodMountain
         ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing + 60 * ZOOM
         : lastDistance + 60 * ZOOM;
-      finalDrink = {
-        worldDistance: mountainEnd + 200 * ZOOM,
-        image: pick.img,
-        radius: FOOD_RADIUS,
+
+      const finalDrinkWorldDistance = mountainEnd + 200 * ZOOM;
+      const finalDrinkObj = {
+        worldDistance: finalDrinkWorldDistance,
+        gap: 200 * ZOOM,
         y: GROUND_Y - FOOD_RADIUS,
+        radius: FOOD_RADIUS,
+        isDrink: true,
+        image: pick.img,
+        eaten: false,
         triggered: false,
-        bobPhase: Math.random() * Math.PI * 2
+        bobPhase: Math.random() * Math.PI * 2,
+        eatSquash: 1,
+        isFinalDrink: true
       };
+      foods.push(finalDrinkObj);
+      finalDrinkRef = finalDrinkObj;
+      lastDistance = finalDrinkWorldDistance;
     }
 
     // ---- Stage 5: Portal ----
-    const lastStageDistance = finalDrink
-      ? finalDrink.worldDistance
-      : (foodMountain
-          ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing
-          : lastDistance);
-
     const portalGap = (200 + Math.random() * 150) * ZOOM;
     portal = {
-      worldDistance: lastStageDistance + portalGap,
+      worldDistance: lastDistance + portalGap,
       swingPhase: 0,
       openProgress: 0,
       radius: 55 * ZOOM,
@@ -1340,7 +1325,6 @@
     char.grounded = true;
     char.landingSettle = 0;
     char.pendingFood = null;
-    char.pendingFinalDrink = false;
 
     char.walkDuration = 1.0 + Math.random() * 1.5;
     char.nextJumpAt = char.walkDuration;
@@ -1376,7 +1360,6 @@
     char.grounded = false;
     char.landingSettle = 0;
     char.pendingFood = null;
-    char.pendingFinalDrink = false;
     char.squash = 0.7;
     char.squashVel = 0;
 
@@ -1501,26 +1484,6 @@
     char.squashVel = 0.05;
   }
 
-  function triggerFinalDrink() {
-    if (!finalDrink || finalDrink.triggered) return;
-    sippingDrink = {
-      food: finalDrink,
-      worldDistance: finalDrink.worldDistance,
-      originalY: finalDrink.y,
-      timer: 0,
-      phase: 'fizz',
-      image: finalDrink.image,
-      burpBubbles: []
-    };
-    finalDrink.triggered = true;
-    foodEaten++;
-
-    char.state = 'drinking';
-    char.grounded = true;
-    char.squash = 0.92;
-    char.squashVel = 0.05;
-  }
-
   function startPortalStare() {
     if (!portal || portal.activated || portalStare || portalSuck) return;
     portalStare = {
@@ -1568,6 +1531,19 @@
       }
     }
     return null;
+  }
+
+  // Returns the pyramid base screen-left position (where pyramid trigger zone begins)
+  function pyramidLeftWorldX() {
+    if (!foodMountain) return Infinity;
+    const widest = foodMountain.rowCounts[0];
+    // The leftmost slot is the start of the widest row (row 0, col 0).
+    return foodMountain.baseWorldDistance;
+  }
+  function pyramidRightWorldX() {
+    if (!foodMountain) return -Infinity;
+    const widest = foodMountain.rowCounts[0];
+    return foodMountain.baseWorldDistance + (widest - 1) * foodMountain.colSpacing;
   }
 
   function update() {
@@ -1863,30 +1839,43 @@
       return;
     }
 
-    // ---- Stage 2: individual spaced items on the road ----
-    const nextFood = foods.find(f => !f.triggered);
+    // ============================================================
+    // Consumption logic — SEQUENCED STAGES
+    //
+    // We pick the next thing to eat based on what stage we're in:
+    //   1) any remaining non-final spaced item on the road
+    //   2) the pyramid (once all spaced items are consumed)
+    //   3) the final drink (once pyramid is cleared)
+    //   4) the portal
+    //
+    // This prevents the character from walking past the pyramid to
+    // reach the final drink that sits beyond it.
+    // ============================================================
 
-    if (nextFood && hasTouchedFood(nextFood)) {
+    // Stage 1: next spaced road item that is NOT the final drink.
+    const nextSpacedNonFinal = foods.find(f => !f.triggered && !f.isFinalDrink);
+
+    if (nextSpacedNonFinal && hasTouchedFood(nextSpacedNonFinal)) {
       if (char.state === 'jumping') {
-        char.pendingFood = nextFood;
+        char.pendingFood = nextSpacedNonFinal;
       } else {
-        triggerConsume(nextFood);
+        triggerConsume(nextSpacedNonFinal);
         return;
       }
     }
 
-    // ---- Stage 3: food pyramid (eat items TOP row first) ----
-    if (!nextFood && foodMountain && !foodMountain.triggered) {
-      const widest = foodMountain.rowCounts[0];
-      const pyramidLeft = foodMountain.baseWorldDistance;
-      const pyramidRight = foodMountain.baseWorldDistance + (widest - 1) * foodMountain.colSpacing;
-      const pyramidLeftScreen = char.screenX + (pyramidLeft - worldOffset);
-      const pyramidRightScreen = char.screenX + (pyramidRight - worldOffset);
+    // Stage 2: pyramid — runs only when no more non-final spaced items remain.
+    const spacedDone = !foods.some(f => !f.triggered && !f.isFinalDrink);
+    if (spacedDone && foodMountain && !foodMountain.triggered) {
+      const pyrLeft = pyramidLeftWorldX();
+      const pyrRight = pyramidRightWorldX();
+      const pyrLeftScreen = char.screenX + (pyrLeft - worldOffset);
+      const pyrRightScreen = char.screenX + (pyrRight - worldOffset);
 
       const charRightEdge = char.screenX + char.radius;
       const charLeftEdge = char.screenX - char.radius;
 
-      if (charRightEdge >= pyramidLeftScreen - 10 * ZOOM && charLeftEdge <= pyramidRightScreen + 10 * ZOOM) {
+      if (charRightEdge >= pyrLeftScreen - 10 * ZOOM && charLeftEdge <= pyrRightScreen + 10 * ZOOM) {
         const mi = nextMountainItem();
         if (mi) {
           triggerMountainConsume(mi);
@@ -1897,38 +1886,22 @@
       }
     }
 
-    // ---- Stage 4: final drink ----
-    if (!nextFood && foodMountain && foodMountain.triggered && finalDrink && !finalDrink.triggered) {
-      const fdScreenX = char.screenX + (finalDrink.worldDistance - worldOffset);
-      const fdLeftEdge = fdScreenX - finalDrink.radius;
-      const charRightEdge = char.screenX + char.radius;
-      if (fdLeftEdge <= charRightEdge - 1) {
+    // Stage 3: final drink — runs only after the pyramid is fully cleared.
+    const pyramidDone = !foodMountain || foodMountain.triggered;
+    if (spacedDone && pyramidDone && finalDrinkRef && !finalDrinkRef.triggered) {
+      if (hasTouchedFood(finalDrinkRef)) {
         if (char.state === 'jumping') {
-          char.pendingFinalDrink = true;
+          char.pendingFood = finalDrinkRef;
         } else {
-          triggerFinalDrink();
+          triggerConsume(finalDrinkRef);
           return;
         }
       }
     }
 
-    if (char.state === 'walking' && char.pendingFinalDrink && finalDrink && !finalDrink.triggered) {
-      const fdScreenX = char.screenX + (finalDrink.worldDistance - worldOffset);
-      const fdLeftEdge = fdScreenX - finalDrink.radius;
-      const charRightEdge = char.screenX + char.radius;
-      if (fdLeftEdge <= charRightEdge - 1) {
-        char.pendingFinalDrink = false;
-        triggerFinalDrink();
-        return;
-      }
-    }
-
-    // ---- Stage 5: portal ----
-    const reachedFinalStage = (!nextFood) &&
-      (!foodMountain || foodMountain.triggered) &&
-      (!finalDrink || finalDrink.triggered);
-
-    if (reachedFinalStage && portal && !portal.activated && !portalStare && !portalSuck) {
+    // Stage 4: portal — runs only after EVERYTHING else is consumed.
+    const everythingDone = spacedDone && pyramidDone && (!finalDrinkRef || finalDrinkRef.triggered);
+    if (everythingDone && portal && !portal.activated && !portalStare && !portalSuck) {
       const portalScreenX = char.screenX + (portal.worldDistance - worldOffset);
       const portalLeftEdge = portalScreenX - portal.radius;
       const charRightEdge = char.screenX + char.radius;
@@ -1944,7 +1917,9 @@
       worldOffset += WALK_SPEED;
       char.walkPhase += 0.18;
 
-      if (nextFood) {
+      // Walk with the spacing logic based on next road item if any remains.
+      const nextRoad = foods.find(f => !f.triggered && !f.isFinalDrink);
+      if (nextRoad) {
         if (inWalkZone()) {
           char.nextJumpAt = 9999;
         } else {
@@ -1975,11 +1950,12 @@
 
         char.state = 'walking';
 
+        const nextRoad = foods.find(f => !f.triggered && !f.isFinalDrink);
         if (char.pendingFood) {
           char.landingSettle = 10;
-        } else if (nextFood && inWalkZone()) {
+        } else if (nextRoad && inWalkZone()) {
           char.nextJumpAt = 9999;
-        } else if (nextFood) {
+        } else if (nextRoad) {
           char.walkDuration = 0.7 + Math.random() * 1.8;
           char.nextJumpAt = char.walkDuration;
         } else {
@@ -2408,25 +2384,6 @@
 
       drawFoodAt(screenX, y + bob, FOOD_RADIUS, 1, 0, mi.image);
     }
-  }
-
-  function drawFinalDrink() {
-    if (!finalDrink || finalDrink.triggered) return;
-    const screenX = char.screenX + (finalDrink.worldDistance - worldOffset);
-    if (screenX < -150 || screenX > CANVAS_W + 150) return;
-
-    const bob = Math.sin(Date.now() * 0.005 + finalDrink.bobPhase) * 3 * ZOOM;
-
-    ctx.beginPath();
-    ctx.ellipse(screenX, GROUND_Y + 2, finalDrink.radius * 0.8, finalDrink.radius * 0.3, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#00000022';
-    ctx.fill();
-
-    if (sippingDrink && sippingDrink.food === finalDrink) {
-      if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') return;
-    }
-
-    drawFoodAt(screenX, finalDrink.y + bob, finalDrink.radius, 1, 0, finalDrink.image);
   }
 
   function drawCharacter() {
@@ -2954,7 +2911,6 @@
       ctx.globalAlpha = 1;
     }
 
-    // ---- Solid clouds (no transparency) ----
     let cloudColor = '#ffffff';
     if (type === 'cloudy') { cloudColor = '#e0e4e8'; }
     else if (type === 'rainy') { cloudColor = '#9aa8b2'; }
@@ -3031,7 +2987,6 @@
     drawCharacter();
     drawFoods();
     drawFoodMountain();
-    drawFinalDrink();
     drawFlyingFood();
     drawSippingDrink();
 
