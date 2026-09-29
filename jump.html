@@ -606,17 +606,27 @@
   const photoActionDelete = document.getElementById('photoActionDelete');
   const photoActionCancel = document.getElementById('photoActionCancel');
 
-  let globalUploadCounter = 0;
+  // ---- UPLOAD LISTS ----
+  // customFoodImages and customDrinkImages are the SAME array now (shared list),
+  // so ordering is unified across both upload buttons.
+  // Each entry: { img, kind: 'food' | 'drink' }
+  const customFoodImages = [];        // shared list — items with kind 'food'
+  const customDrinkImages = [];       // alias array (same underlying entries) — unused for gameplay
+  const sharedEatableList = [];       // THE canonical ordered list (foods + drinks)
 
-  const customFoodImages = [];
-  const customDrinkImages = [];
+  // For the arranger, the modal will show sharedEatableList.
+  // Grass / rock / flower stay as separate arrays.
   const customGrassImages = [];
   const customRockImages = [];
   const customFlowerImages = [];
 
+  // We keep two modal entry points: Food button (opens shared list, showing only foods)
+  // and Drink button (opens shared list, showing only drinks).
+  // But since the user asked for the drink to be in the food arranger too, we make
+  // BOTH buttons open the SAME combined modal.
+
   function getList(kind) {
-    if (kind === 'food') return customFoodImages;
-    if (kind === 'drink') return customDrinkImages;
+    if (kind === 'eatable') return sharedEatableList;   // used by the arranger
     if (kind === 'grass') return customGrassImages;
     if (kind === 'rock') return customRockImages;
     if (kind === 'flower') return customFlowerImages;
@@ -626,6 +636,11 @@
   function entryImg(entry) {
     if (entry && entry.img) return entry.img;
     return entry;
+  }
+
+  function entryKind(entry) {
+    if (entry && entry.kind) return entry.kind;
+    return 'food';
   }
 
   let pendingReplace = null;
@@ -645,12 +660,8 @@
       img.onload = () => {
         const list = getList(pendingReplace.kind);
         const old = list[pendingReplace.index];
-        if (pendingReplace.kind === 'food' || pendingReplace.kind === 'drink') {
-          list[pendingReplace.index] = { img, order: old.order };
-        } else {
-          list[pendingReplace.index] = img;
-        }
-        if (pendingReplace.kind === 'food' || pendingReplace.kind === 'drink') rebuildFoods();
+        list[pendingReplace.index] = { img, kind: old.kind };
+        if (pendingReplace.kind === 'eatable') rebuildFoods();
         openPhotoModal(pendingReplace.kind);
         pendingReplace = null;
       };
@@ -667,11 +678,11 @@
     const img = entryImg(entry);
 
     photoActionPreview.src = img.src;
-    const prefix = kind === 'food' ? 'Food #'
-                 : kind === 'drink' ? 'Drink #'
-                 : kind === 'grass' ? 'Grass #'
-                 : kind === 'rock' ? 'Rock #'
-                 : 'Flower #';
+    const prefix = kind === 'eatable'
+      ? (entryKind(entry) === 'drink' ? 'Drink #' : 'Food #')
+      : kind === 'grass' ? 'Grass #'
+      : kind === 'rock' ? 'Rock #'
+      : 'Flower #';
     photoActionTitle.textContent = prefix + (index + 1);
     photoActionBackdrop.classList.add('open');
 
@@ -682,17 +693,11 @@
 
     photoActionDuplicate.onclick = () => {
       const original = list[index];
-      let copy;
-      if (kind === 'food' || kind === 'drink') {
-        const newOrder = globalUploadCounter++;
-        copy = { img: original.img, order: newOrder };
-      } else {
-        copy = original;
-      }
+      const copy = { img: original.img, kind: original.kind };
       list.splice(index + 1, 0, copy);
       updateBadges();
       photoActionBackdrop.classList.remove('open');
-      if (kind === 'food' || kind === 'drink') rebuildFoods();
+      if (kind === 'eatable') rebuildFoods();
       openPhotoModal(kind);
     };
 
@@ -700,7 +705,7 @@
       list.splice(index, 1);
       updateBadges();
       photoActionBackdrop.classList.remove('open');
-      if (kind === 'food' || kind === 'drink') rebuildFoods();
+      if (kind === 'eatable') rebuildFoods();
       openPhotoModal(kind);
     };
 
@@ -716,19 +721,21 @@
   });
 
   function updateBadges() {
-    foodPhotoCount.textContent = `(${customFoodImages.length})`;
-    drinkPhotoCount.textContent = `(${customDrinkImages.length})`;
+    const foodCount = sharedEatableList.filter(e => entryKind(e) === 'food').length;
+    const drinkCount = sharedEatableList.filter(e => entryKind(e) === 'drink').length;
+    foodPhotoCount.textContent = `(${foodCount})`;
+    drinkPhotoCount.textContent = `(${drinkCount})`;
     grassPhotoCount.textContent = `(${customGrassImages.length})`;
     rockPhotoCount.textContent = `(${customRockImages.length})`;
     flowerPhotoCount.textContent = `(${customFlowerImages.length})`;
-    if (customFoodImages.length === 0) foodUploadBtn.classList.remove('uploaded');
-    if (customDrinkImages.length === 0) drinkUploadBtn.classList.remove('uploaded');
+    if (foodCount === 0) foodUploadBtn.classList.remove('uploaded');
+    if (drinkCount === 0) drinkUploadBtn.classList.remove('uploaded');
     if (customGrassImages.length === 0) grassUploadBtn.classList.remove('uploaded');
     if (customRockImages.length === 0) rockUploadBtn.classList.remove('uploaded');
     if (customFlowerImages.length === 0) flowerUploadBtn.classList.remove('uploaded');
   }
 
-  function attachUpload(inputEl, list, btnEl, kind) {
+  function attachUpload(inputEl, btnEl, kind) {
     inputEl.addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
@@ -742,10 +749,14 @@
           const img = new Image();
           img.onload = () => {
             if (kind === 'food' || kind === 'drink') {
-              const order = globalUploadCounter++;
-              list.push({ img, order });
-            } else {
-              list.push(img);
+              // Push into the SHARED list so ordering is preserved.
+              sharedEatableList.push({ img, kind });
+            } else if (kind === 'grass') {
+              customGrassImages.push(img);
+            } else if (kind === 'rock') {
+              customRockImages.push(img);
+            } else if (kind === 'flower') {
+              customFlowerImages.push(img);
             }
 
             loadedCount++;
@@ -764,11 +775,11 @@
     });
   }
 
-  attachUpload(foodUpload, customFoodImages, foodUploadBtn, 'food');
-  attachUpload(drinkUpload, customDrinkImages, drinkUploadBtn, 'drink');
-  attachUpload(grassUpload, customGrassImages, grassUploadBtn, 'grass');
-  attachUpload(rockUpload, customRockImages, rockUploadBtn, 'rock');
-  attachUpload(flowerUpload, customFlowerImages, flowerUploadBtn, 'flower');
+  attachUpload(foodUpload, foodUploadBtn, 'food');
+  attachUpload(drinkUpload, drinkUploadBtn, 'drink');
+  attachUpload(grassUpload, grassUploadBtn, 'grass');
+  attachUpload(rockUpload, rockUploadBtn, 'rock');
+  attachUpload(flowerUpload, flowerUploadBtn, 'flower');
 
   // -------- Drag-to-reorder --------
   let dragState = null;
@@ -865,7 +876,7 @@
     const [item] = list.splice(fromIndex, 1);
     list.splice(toIndex, 0, item);
 
-    if (kind === 'food' || kind === 'drink') rebuildFoods();
+    if (kind === 'eatable') rebuildFoods();
     openPhotoModal(kind);
   }
 
@@ -875,8 +886,7 @@
 
   function openPhotoModal(kind) {
     const images = getList(kind);
-    const title = kind === 'food' ? '🍎 Food Photos'
-                : kind === 'drink' ? '🥤 Drink Photos'
+    const title = kind === 'eatable' ? '🍎🥤 Food & Drink Photos'
                 : kind === 'grass' ? '🌿 Grass Photos'
                 : kind === 'rock' ? '🪨 Rock Photos'
                 : '🌸 Flower Photos';
@@ -902,11 +912,16 @@
 
         const label = document.createElement('div');
         label.className = 'label';
-        const prefix = kind === 'food' ? 'Food #'
-                     : kind === 'drink' ? 'Drink #'
-                     : kind === 'grass' ? 'Grass #'
-                     : kind === 'rock' ? 'Rock #'
-                     : 'Flower #';
+        let prefix;
+        if (kind === 'eatable') {
+          prefix = entryKind(entry) === 'drink' ? '🥤 Drink #' : '🍎 Food #';
+        } else if (kind === 'grass') {
+          prefix = 'Grass #';
+        } else if (kind === 'rock') {
+          prefix = 'Rock #';
+        } else {
+          prefix = 'Flower #';
+        }
         label.textContent = prefix + (idx + 1);
         cell.appendChild(label);
 
@@ -932,11 +947,12 @@
     }
   });
 
+  // BOTH the food and drink counters open the SAME combined arranger.
   foodPhotoCount.addEventListener('click', (e) => {
-    e.preventDefault(); e.stopPropagation(); openPhotoModal('food');
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('eatable');
   });
   drinkPhotoCount.addEventListener('click', (e) => {
-    e.preventDefault(); e.stopPropagation(); openPhotoModal('drink');
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('eatable');
   });
   grassPhotoCount.addEventListener('click', (e) => {
     e.preventDefault(); e.stopPropagation(); openPhotoModal('grass');
@@ -1093,7 +1109,7 @@
   // ---- Arrival ----
   let arrival = null;
 
-  // ---- FOOD PYRAMID (proper pyramid with all excess at the bottom) ----
+  // ---- FOOD PYRAMID ----
   let foodMountain = null;
   let finalDrink = null;
 
@@ -1122,20 +1138,14 @@
     foodMountain = null;
     finalDrink = null;
 
-    const combined = [];
-    customFoodImages.forEach((entry) => {
-      combined.push({ entry, kind: 'food' });
-    });
-    customDrinkImages.forEach((entry) => {
-      combined.push({ entry, kind: 'drink' });
-    });
+    // ---- Stage 2: spaced-out items from the shared ordered list ----
+    // The list is exactly in the order shown in the arranger modal.
+    if (sharedEatableList.length === 0) return;
 
-    if (combined.length === 0) return;
-
-    let distance = 400 * ZOOM;
+    let distance = 200 * ZOOM;
     let lastDistance = 0;
-    combined.forEach((item, i) => {
-      const gap = (i === 0) ? 400 * ZOOM : randomGap();
+    sharedEatableList.forEach((item, i) => {
+      const gap = (i === 0) ? 200 * ZOOM : randomGap();
       distance += gap;
       lastDistance = distance;
       foods.push({
@@ -1144,7 +1154,7 @@
         y: GROUND_Y - FOOD_RADIUS,
         radius: FOOD_RADIUS + (i % 3 === 0 ? 3 * ZOOM : 0),
         isDrink: item.kind === 'drink',
-        image: item.entry.img,
+        image: item.img,
         eaten: false,
         triggered: false,
         bobPhase: Math.random() * Math.PI * 2,
@@ -1152,25 +1162,16 @@
       });
     });
 
-    // ============ PYRAMID ============
-    // A proper pyramid: bottom row is the WIDEST and holds ALL excess foods.
-    // Rows above taper: each higher row has exactly 1 fewer item than the one
-    // below, ending with 1 item at the top.
-    //
-    //   ...        ← top (1)
-    //   ... ...    ← 2
-    //   ... ... .. ← bottom (widest, all excess)
-    //
-    const foodOnly = customFoodImages.slice();
+    // ============ Stage 3: PYRAMID (from food-only entries in shared list) ============
+    const foodOnly = sharedEatableList.filter(e => e.kind === 'food');
     if (foodOnly.length > 0) {
       const totalItems = foodOnly.length;
 
-      // Find the smallest N such that N*(N+1)/2 >= totalItems.
       let rows = 1;
       while ((rows * (rows + 1)) / 2 < totalItems) rows++;
 
       const strictTotal = (rows * (rows + 1)) / 2;
-      const excess = totalItems - strictTotal; // 0 or positive
+      const excess = totalItems - strictTotal;
       const bottomCount = rows + excess;
 
       const rowCounts = [];
@@ -1200,7 +1201,7 @@
         }
       }
 
-      const baseWorldDistance = lastDistance + 500 * ZOOM;
+      const baseWorldDistance = lastDistance + 250 * ZOOM;
       const rowSpacing = 26 * ZOOM;
       const colSpacing = 40 * ZOOM;
       const bottomRowY = GROUND_Y - FOOD_RADIUS;
@@ -1217,14 +1218,15 @@
       };
     }
 
-    // ---- Final drink ----
-    if (customDrinkImages.length > 0) {
-      const pick = customDrinkImages[Math.floor(Math.random() * customDrinkImages.length)];
+    // ---- Stage 4: Final drink (from drink entries in shared list) ----
+    const drinkOnly = sharedEatableList.filter(e => e.kind === 'drink');
+    if (drinkOnly.length > 0) {
+      const pick = drinkOnly[Math.floor(Math.random() * drinkOnly.length)];
       const mountainEnd = foodMountain
-        ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing + 100 * ZOOM
-        : lastDistance + 100 * ZOOM;
+        ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing + 60 * ZOOM
+        : lastDistance + 60 * ZOOM;
       finalDrink = {
-        worldDistance: mountainEnd + 400 * ZOOM,
+        worldDistance: mountainEnd + 200 * ZOOM,
         image: pick.img,
         radius: FOOD_RADIUS,
         y: GROUND_Y - FOOD_RADIUS,
@@ -1233,14 +1235,14 @@
       };
     }
 
-    // ---- Portal ----
+    // ---- Stage 5: Portal ----
     const lastStageDistance = finalDrink
       ? finalDrink.worldDistance
       : (foodMountain
           ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing
           : lastDistance);
 
-    const portalGap = (400 + Math.random() * 500) * ZOOM;
+    const portalGap = (200 + Math.random() * 150) * ZOOM;
     portal = {
       worldDistance: lastStageDistance + portalGap,
       swingPhase: 0,
@@ -1460,8 +1462,6 @@
     }
   }
 
-  // Calculate the world X of a pyramid item, taking the row width into account
-  // so the pyramid is centered.
   function mountainItemWorldX(mi) {
     const { baseWorldDistance, colSpacing, rowCounts } = foodMountain;
     const colsInRow = mi.colsInRow;
@@ -1556,8 +1556,7 @@
     char.vy = 0;
   }
 
-  // Order: TOP row first (left → right), then the row below, etc.
-  // (row 0 is the bottom / widest, so we iterate from the last row backwards)
+  // TOP row first (left → right), then the row below, etc.
   function nextMountainItem() {
     if (!foodMountain) return null;
     const lastRow = foodMountain.rows - 1;
@@ -1864,7 +1863,7 @@
       return;
     }
 
-    // ---- Stage 1: individual spaced food items on the road ----
+    // ---- Stage 2: individual spaced items on the road ----
     const nextFood = foods.find(f => !f.triggered);
 
     if (nextFood && hasTouchedFood(nextFood)) {
@@ -1876,7 +1875,7 @@
       }
     }
 
-    // ---- Stage 2: food pyramid (eat items TOP row first) ----
+    // ---- Stage 3: food pyramid (eat items TOP row first) ----
     if (!nextFood && foodMountain && !foodMountain.triggered) {
       const widest = foodMountain.rowCounts[0];
       const pyramidLeft = foodMountain.baseWorldDistance;
@@ -1898,7 +1897,7 @@
       }
     }
 
-    // ---- Stage 3: final drink ----
+    // ---- Stage 4: final drink ----
     if (!nextFood && foodMountain && foodMountain.triggered && finalDrink && !finalDrink.triggered) {
       const fdScreenX = char.screenX + (finalDrink.worldDistance - worldOffset);
       const fdLeftEdge = fdScreenX - finalDrink.radius;
@@ -1924,7 +1923,7 @@
       }
     }
 
-    // ---- Stage 4: portal ----
+    // ---- Stage 5: portal ----
     const reachedFinalStage = (!nextFood) &&
       (!foodMountain || foodMountain.triggered) &&
       (!finalDrink || finalDrink.triggered);
@@ -3178,7 +3177,7 @@
       ctx.shadowBlur = 20;
 
       let msg = '▶️  Press Start to Play';
-      if (customFoodImages.length === 0 && customDrinkImages.length === 0) {
+      if (sharedEatableList.length === 0) {
         msg = '🍎  Upload a Food Photo to Begin';
       }
       ctx.fillText(msg, CANVAS_W / 2, CANVAS_H / 2);
@@ -3277,7 +3276,7 @@
   pauseBtn.addEventListener('click', () => {
     if (showFinishReset) return;
     if (gameState === 'idle') {
-      if (customFoodImages.length === 0 && customDrinkImages.length === 0) return;
+      if (sharedEatableList.length === 0) return;
       gameState = 'running';
       pauseBtn.classList.remove('paused');
       pauseBtn.textContent = '⏸️ Pause';
