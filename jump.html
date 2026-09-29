@@ -486,6 +486,11 @@
     <input type="file" id="foodUpload" accept="image/*">
   </label>
 
+  <label class="upload-btn" id="drinkUploadBtn">
+    🥤 Drink <span class="count-badge" id="drinkPhotoCount">(0)</span>
+    <input type="file" id="drinkUpload" accept="image/*">
+  </label>
+
   <label class="upload-btn" id="grassUploadBtn">
     🌿 Grass <span class="count-badge" id="grassPhotoCount">(0)</span>
     <input type="file" id="grassUpload" accept="image/*">
@@ -539,14 +544,17 @@
   const weatherToggleLabel = document.getElementById('weatherToggleLabel');
   const weatherMenu = document.getElementById('weatherMenu');
   const foodUpload = document.getElementById('foodUpload');
+  const drinkUpload = document.getElementById('drinkUpload');
   const grassUpload = document.getElementById('grassUpload');
   const rockUpload = document.getElementById('rockUpload');
   const flowerUpload = document.getElementById('flowerUpload');
   const foodUploadBtn = document.getElementById('foodUploadBtn');
+  const drinkUploadBtn = document.getElementById('drinkUploadBtn');
   const grassUploadBtn = document.getElementById('grassUploadBtn');
   const rockUploadBtn = document.getElementById('rockUploadBtn');
   const flowerUploadBtn = document.getElementById('flowerUploadBtn');
   const foodPhotoCount = document.getElementById('foodPhotoCount');
+  const drinkPhotoCount = document.getElementById('drinkPhotoCount');
   const grassPhotoCount = document.getElementById('grassPhotoCount');
   const rockPhotoCount = document.getElementById('rockPhotoCount');
   const flowerPhotoCount = document.getElementById('flowerPhotoCount');
@@ -562,17 +570,26 @@
   const photoActionDelete = document.getElementById('photoActionDelete');
   const photoActionCancel = document.getElementById('photoActionCancel');
 
+  let globalUploadCounter = 0;
+
   const customFoodImages = [];
+  const customDrinkImages = [];
   const customGrassImages = [];
   const customRockImages = [];
   const customFlowerImages = [];
 
   function getList(kind) {
     if (kind === 'food') return customFoodImages;
+    if (kind === 'drink') return customDrinkImages;
     if (kind === 'grass') return customGrassImages;
     if (kind === 'rock') return customRockImages;
     if (kind === 'flower') return customFlowerImages;
     return [];
+  }
+
+  function entryImg(entry) {
+    if (entry && entry.img) return entry.img;
+    return entry;
   }
 
   let pendingReplace = null;
@@ -591,8 +608,13 @@
       const img = new Image();
       img.onload = () => {
         const list = getList(pendingReplace.kind);
-        list[pendingReplace.index] = img;
-        if (pendingReplace.kind === 'food') rebuildFoods();
+        const old = list[pendingReplace.index];
+        if (pendingReplace.kind === 'food' || pendingReplace.kind === 'drink') {
+          list[pendingReplace.index] = { img, order: old.order };
+        } else {
+          list[pendingReplace.index] = img;
+        }
+        if (pendingReplace.kind === 'food' || pendingReplace.kind === 'drink') rebuildFoods();
         openPhotoModal(pendingReplace.kind);
         pendingReplace = null;
       };
@@ -604,11 +626,13 @@
 
   function openPhotoAction(kind, index) {
     const list = getList(kind);
-    const img = list[index];
-    if (!img) return;
+    const entry = list[index];
+    if (!entry) return;
+    const img = entryImg(entry);
 
     photoActionPreview.src = img.src;
     const prefix = kind === 'food' ? 'Food #'
+                 : kind === 'drink' ? 'Drink #'
                  : kind === 'grass' ? 'Grass #'
                  : kind === 'rock' ? 'Rock #'
                  : 'Flower #';
@@ -624,7 +648,7 @@
       list.splice(index, 1);
       updateBadges();
       photoActionBackdrop.classList.remove('open');
-      if (kind === 'food') rebuildFoods();
+      if (kind === 'food' || kind === 'drink') rebuildFoods();
       openPhotoModal(kind);
     };
 
@@ -641,10 +665,12 @@
 
   function updateBadges() {
     foodPhotoCount.textContent = `(${customFoodImages.length})`;
+    drinkPhotoCount.textContent = `(${customDrinkImages.length})`;
     grassPhotoCount.textContent = `(${customGrassImages.length})`;
     rockPhotoCount.textContent = `(${customRockImages.length})`;
     flowerPhotoCount.textContent = `(${customFlowerImages.length})`;
     if (customFoodImages.length === 0) foodUploadBtn.classList.remove('uploaded');
+    if (customDrinkImages.length === 0) drinkUploadBtn.classList.remove('uploaded');
     if (customGrassImages.length === 0) grassUploadBtn.classList.remove('uploaded');
     if (customRockImages.length === 0) rockUploadBtn.classList.remove('uploaded');
     if (customFlowerImages.length === 0) flowerUploadBtn.classList.remove('uploaded');
@@ -658,10 +684,15 @@
       reader.onload = (evt) => {
         const img = new Image();
         img.onload = () => {
-          list.push(img);
+          if (kind === 'food' || kind === 'drink') {
+            const order = globalUploadCounter++;
+            list.push({ img, order });
+          } else {
+            list.push(img);
+          }
           updateBadges();
           btnEl.classList.add('uploaded');
-          if (kind === 'food') rebuildFoods();
+          if (kind === 'food' || kind === 'drink') rebuildFoods();
         };
         img.src = evt.target.result;
       };
@@ -671,6 +702,7 @@
   }
 
   attachUpload(foodUpload, customFoodImages, foodUploadBtn, 'food');
+  attachUpload(drinkUpload, customDrinkImages, drinkUploadBtn, 'drink');
   attachUpload(grassUpload, customGrassImages, grassUploadBtn, 'grass');
   attachUpload(rockUpload, customRockImages, rockUploadBtn, 'rock');
   attachUpload(flowerUpload, customFlowerImages, flowerUploadBtn, 'flower');
@@ -678,6 +710,7 @@
   function openPhotoModal(kind) {
     const images = getList(kind);
     const title = kind === 'food' ? '🍎 Food Photos'
+                : kind === 'drink' ? '🥤 Drink Photos'
                 : kind === 'grass' ? '🌿 Grass Photos'
                 : kind === 'rock' ? '🪨 Rock Photos'
                 : '🌸 Flower Photos';
@@ -691,17 +724,18 @@
       empty.textContent = 'No photos uploaded yet.';
       photoGrid.appendChild(empty);
     } else {
-      images.forEach((img, idx) => {
+      images.forEach((entry, idx) => {
         const cell = document.createElement('div');
         cell.className = 'photo-cell';
 
         const preview = document.createElement('img');
-        preview.src = img.src;
+        preview.src = entryImg(entry).src;
         cell.appendChild(preview);
 
         const label = document.createElement('div');
         label.className = 'label';
         const prefix = kind === 'food' ? 'Food #'
+                     : kind === 'drink' ? 'Drink #'
                      : kind === 'grass' ? 'Grass #'
                      : kind === 'rock' ? 'Rock #'
                      : 'Flower #';
@@ -730,6 +764,9 @@
 
   foodPhotoCount.addEventListener('click', (e) => {
     e.preventDefault(); e.stopPropagation(); openPhotoModal('food');
+  });
+  drinkPhotoCount.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('drink');
   });
   grassPhotoCount.addEventListener('click', (e) => {
     e.preventDefault(); e.stopPropagation(); openPhotoModal('grass');
@@ -764,32 +801,41 @@
   let CANVAS_H = window.innerHeight;
   let GROUND_Y = CANVAS_H * 0.80;
 
-  const ZOOM = 1.7;
+  const ZOOM = 2.2;
   const SKY_SHIFT = 30;
 
-  // ✅ Foot-ground line is recomputed on every resize.
   let FOOT_GROUND = GROUND_Y + 2;
-
-  // ✅ Character foot vertical offset from center (constant)
   const FOOT_OFFSET = 37 * ZOOM;
   const CHAR_FOOT_SINK = 4;
 
-  // ✅ The one function that keeps the character planted on the road
-  //    no matter what size the window is.
+  const JUMP_APEX_FRACTION = 0.60;
+  const JUMP_TIME_TO_PEAK  = 0.75;
+
+  let JUMP_VELOCITY = 0;
+  let JUMP_GRAVITY  = 0;
+
+  function recomputeJumpPhysics() {
+    const baseY     = FOOT_GROUND - FOOT_OFFSET + CHAR_FOOT_SINK;
+    const screenBot = CANVAS_H;
+    const apexY     = screenBot - CANVAS_H * JUMP_APEX_FRACTION;
+    const rise      = baseY - apexY;
+    const safeRise  = Math.max(rise, CANVAS_H * 0.25);
+    const dt        = 1 / 60;
+    const steps     = JUMP_TIME_TO_PEAK / dt;
+    JUMP_GRAVITY  = (2 * safeRise) / (steps * steps);
+    JUMP_VELOCITY = -(2 * safeRise) / steps;
+  }
+
   function resizeCanvas() {
     CANVAS_W = window.innerWidth;
     CANVAS_H = window.innerHeight;
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
     GROUND_Y = CANVAS_H * 0.80;
-
-    // Recompute foot-ground line for the new GROUND_Y
     FOOT_GROUND = GROUND_Y + 2;
 
     const newBaseY = FOOT_GROUND - FOOT_OFFSET + CHAR_FOOT_SINK;
 
-    // If the character is grounded, snap them to the new ground line.
-    // If they're mid-jump, preserve their height above ground.
     if (char.grounded) {
       char.baseY = newBaseY;
       char.y = newBaseY;
@@ -801,6 +847,7 @@
     }
 
     char.maxX = CANVAS_W * 0.50;
+    recomputeJumpPhysics();
   }
   window.addEventListener('resize', resizeCanvas);
 
@@ -828,6 +875,8 @@
     walkDuration: 0,
     eatingTimer: 0,
     EAT_DURATION: 50,
+    DRINK_FIZZ_DURATION: 120,
+    DRINK_BURP_DURATION: 60,
     facingFront: 0,
     facingTarget: 0,
     walkPhase: 0,
@@ -849,14 +898,14 @@
 
   let foodEaten = 0;
   let gameActive = true;
-  let reachedEnd = false;
 
   const WALK_SPEED = 1.4;
   const JUMP_SPEED = 3.2;
-  const GRAVITY = 0.55 * ZOOM;
 
   let flyingFood = null;
   const FLY_DURATION = 24;
+
+  let sippingDrink = null;
 
   let clouds = [];
   let hills = [];
@@ -873,9 +922,21 @@
 
   function buildFoods() {
     foods = [];
-    if (customFoodImages.length === 0) return;
+
+    const combined = [];
+    customFoodImages.forEach((entry) => {
+      combined.push({ entry, kind: 'food', uploadOrder: entry.order });
+    });
+    customDrinkImages.forEach((entry) => {
+      combined.push({ entry, kind: 'drink', uploadOrder: entry.order });
+    });
+
+    if (combined.length === 0) return;
+
+    combined.sort((a, b) => a.uploadOrder - b.uploadOrder);
+
     let distance = 400 * ZOOM;
-    for (let i = 0; i < customFoodImages.length; i++) {
+    combined.forEach((item, i) => {
       const gap = (i === 0) ? 400 * ZOOM : randomGap();
       distance += gap;
       foods.push({
@@ -883,13 +944,14 @@
         gap: gap,
         y: GROUND_Y - FOOD_RADIUS,
         radius: FOOD_RADIUS + (i % 3 === 0 ? 3 * ZOOM : 0),
-        type: i % 4,
-        imageIndex: i,
+        isDrink: item.kind === 'drink',
+        image: item.entry.img,
         eaten: false,
+        triggered: false,
         bobPhase: Math.random() * Math.PI * 2,
         eatSquash: 1
       });
-    }
+    });
   }
 
   function buildItemType(list, count, minSize, maxSize, yOffsetRange) {
@@ -920,19 +982,17 @@
     if (gameState === 'idle') {
       foodEaten = 0;
       foodCountSpan.textContent = '0';
-      reachedEnd = false;
     }
   }
 
   function resetGame() {
-    // resizeCanvas() will correctly place the character on the road
     resizeCanvas();
 
     foodEaten = 0;
     gameActive = true;
-    reachedEnd = false;
     worldOffset = 0;
     flyingFood = null;
+    sippingDrink = null;
     gameState = 'idle';
     pauseBtn.classList.remove('paused');
     pauseBtn.textContent = '▶️ Start';
@@ -941,7 +1001,6 @@
     foodCounterEl.style.transform = 'scale(1)';
 
     char.screenX = CANVAS_W * 0.30;
-    // baseY & y already set correctly by resizeCanvas()
     char.vy = 0;
     char.squash = 1;
     char.squashVel = 0;
@@ -968,7 +1027,7 @@
   }
 
   function inWalkZone() {
-    const nextFood = foods.find(f => !f.eaten);
+    const nextFood = foods.find(f => !f.triggered);
     if (!nextFood) return false;
     const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
     const standoffScreenX = char.screenX + EAT_STANDOFF;
@@ -979,7 +1038,7 @@
 
   function getMouthPos() {
     return {
-      x: char.screenX + char.facingFront * 10,
+      x: char.screenX,
       y: char.y + 10 * ZOOM * (char.squash)
     };
   }
@@ -992,7 +1051,6 @@
 
     if (gameState !== 'running') return;
     if (isDragging) return;
-    if (reachedEnd) return;
 
     char.squashVel += (1 - char.squash) * 0.25;
     char.squashVel *= 0.75;
@@ -1002,14 +1060,57 @@
       if (f.eatSquash < 1) f.eatSquash += 0.05;
     }
 
-    char.facingTarget = (char.state === 'eating') ? 1 : 0;
-    const facingSpeed = (char.state === 'eating') ? 0.10 : 0.14;
-    char.facingFront += (char.facingTarget - char.facingFront) * facingSpeed;
+    char.facingTarget = 0;
+    char.facingFront += (char.facingTarget - char.facingFront) * 0.14;
 
     if (flyingFood) {
       flyingFood.t += 1 / FLY_DURATION;
       if (flyingFood.t >= 1) {
         flyingFood = null;
+      }
+    }
+
+    if (sippingDrink) {
+      sippingDrink.timer++;
+
+      if (sippingDrink.phase === 'fizz') {
+        if (sippingDrink.timer >= char.DRINK_FIZZ_DURATION) {
+          sippingDrink.phase = 'return';
+          sippingDrink.timer = 0;
+        }
+      } else if (sippingDrink.phase === 'return') {
+        const returnProgress = Math.min(1, sippingDrink.timer / 40);
+        if (returnProgress >= 1) {
+          sippingDrink.phase = 'burp';
+          sippingDrink.timer = 0;
+          sippingDrink.burpBubbles = [];
+          for (let i = 0; i < 12; i++) {
+            sippingDrink.burpBubbles.push({
+              x: 0,
+              y: 0,
+              vx: (Math.random() - 0.5) * 3,
+              vy: -1.5 - Math.random() * 2.5,
+              r: 3 + Math.random() * 5,
+              life: 1
+            });
+          }
+        }
+      } else if (sippingDrink.phase === 'burp') {
+        for (const b of sippingDrink.burpBubbles) {
+          b.x += b.vx;
+          b.y += b.vy;
+          b.vy += 0.08;
+          b.life -= 0.02;
+        }
+        sippingDrink.burpBubbles = sippingDrink.burpBubbles.filter(b => b.life > 0);
+
+        if (sippingDrink.timer >= char.DRINK_BURP_DURATION) {
+          sippingDrink = null;
+          char.state = 'walking';
+          char.grounded = true;
+          char.walkDuration = 0.8 + Math.random() * 1.5;
+          char.nextJumpAt = char.walkDuration;
+        }
       }
     }
 
@@ -1036,19 +1137,28 @@
         char.nextJumpAt = char.walkDuration;
         char.squash = 0.9;
         char.squashVel = 0.06;
-
-        const remaining = foods.filter(f => !f.eaten);
-        if (remaining.length === 0) {
-          reachedEnd = true;
-          gameState = 'idle';
-          pauseBtn.textContent = '🏁 Done';
-          pauseBtn.classList.add('paused');
-        }
       }
       return;
     }
 
-    const nextFood = foods.find(f => !f.eaten);
+    if (char.state === 'drinking') {
+      char.y = char.baseY;
+      char.vy = 0;
+      char.grounded = true;
+
+      if (sippingDrink && sippingDrink.phase === 'fizz') {
+        const fizzWobble = Math.sin(Date.now() * 0.03) * 0.04;
+        char.squash = 0.96 + fizzWobble;
+      } else if (sippingDrink && sippingDrink.phase === 'burp') {
+        const burpWobble = Math.sin(Date.now() * 0.06) * 0.08;
+        char.squash = 0.94 + burpWobble;
+      }
+
+      updateScenery(0.15);
+      return;
+    }
+
+    const nextFood = foods.find(f => !f.triggered);
 
     if (nextFood) {
       const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
@@ -1059,35 +1169,58 @@
       if (char.grounded && char.state === 'walking' && remaining <= EAT_TRIGGER) {
         worldOffset += remaining;
 
-        const startX = char.screenX + EAT_STANDOFF;
-        const startY = nextFood.y;
+        if (nextFood.isDrink) {
+          sippingDrink = {
+            food: nextFood,
+            worldDistance: nextFood.worldDistance,
+            originalY: nextFood.y,
+            timer: 0,
+            phase: 'fizz',
+            image: nextFood.image,
+            burpBubbles: []
+          };
+          nextFood.triggered = true;
+          foodEaten++;
+          foodCountSpan.textContent = foodEaten;
 
-        flyingFood = {
-          startX: startX,
-          startY: startY,
-          t: 0,
-          radius: nextFood.radius,
-          type: nextFood.type,
-          imageIndex: nextFood.imageIndex,
-          rotation: 0,
-          spin: (Math.random() - 0.5) * 0.4
-        };
+          foodCounterEl.style.transform = 'scale(1.15)';
+          setTimeout(() => { foodCounterEl.style.transform = 'scale(1)'; }, 150);
 
-        nextFood.eaten = true;
-        nextFood.eatSquash = 0.6;
-        foodEaten++;
-        foodCountSpan.textContent = foodEaten;
+          char.state = 'drinking';
+          char.grounded = true;
+          char.squash = 0.92;
+          char.squashVel = 0.05;
+        } else {
+          const startX = char.screenX + EAT_STANDOFF;
+          const startY = nextFood.y;
 
-        foodCounterEl.style.transform = 'scale(1.15)';
-        setTimeout(() => { foodCounterEl.style.transform = 'scale(1)'; }, 150);
+          flyingFood = {
+            startX: startX,
+            startY: startY,
+            t: 0,
+            radius: nextFood.radius,
+            image: nextFood.image,
+            rotation: 0,
+            spin: (Math.random() - 0.5) * 0.4
+          };
 
-        char.state = 'eating';
-        char.eatingTimer = 0;
-        char.vy = 0;
-        char.y = char.baseY;
-        char.grounded = true;
-        char.squash = 0.92;
-        char.squashVel = 0.05;
+          nextFood.triggered = true;
+          nextFood.eaten = true;
+          nextFood.eatSquash = 0.6;
+          foodEaten++;
+          foodCountSpan.textContent = foodEaten;
+
+          foodCounterEl.style.transform = 'scale(1.15)';
+          setTimeout(() => { foodCounterEl.style.transform = 'scale(1)'; }, 150);
+
+          char.state = 'eating';
+          char.eatingTimer = 0;
+          char.vy = 0;
+          char.y = char.baseY;
+          char.grounded = true;
+          char.squash = 0.92;
+          char.squashVel = 0.05;
+        }
         return;
       }
     }
@@ -1105,7 +1238,7 @@
         if (char.nextJumpAt <= 0) {
           char.state = 'jumping';
           char.grounded = false;
-          char.vy = char.jumpPower * (0.85 + Math.random() * 0.3);
+          char.vy = JUMP_VELOCITY;
           char.squash = 0.82;
           char.squashVel = 0.12;
         }
@@ -1113,7 +1246,7 @@
     } else if (char.state === 'jumping') {
       worldOffset += JUMP_SPEED;
 
-      char.vy += GRAVITY;
+      char.vy += JUMP_GRAVITY;
       char.y += char.vy;
 
       if (char.y >= char.baseY) {
@@ -1434,7 +1567,6 @@
     const cy = char.y;
     const squash = char.squash;
     const stretch = 1 / Math.max(0.7, squash);
-    const t = char.facingFront;
 
     const heightAboveGround = char.baseY - char.y;
     const heightFactor = Math.max(0.3, 1 - heightAboveGround / (200 * ZOOM));
@@ -1445,7 +1577,7 @@
     ctx.fill();
 
     let tilt = 0;
-    if (char.state === 'walking' && gameState === 'running' && !isDragging && !reachedEnd) {
+    if (char.state === 'walking' && gameState === 'running' && !isDragging) {
       tilt = Math.sin(char.walkPhase) * 0.08;
     }
 
@@ -1453,31 +1585,32 @@
     if (weather.type === 'windy') windTilt = -(0.05 + weather.gustStrength * 0.1) * weather.intensity;
     if (weather.type === 'stormy') windTilt = -(0.12 + weather.gustStrength * 0.15) * weather.intensity;
 
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(tilt + windTilt);
-    ctx.scale(squash * ZOOM, stretch * ZOOM);
-
-    ctx.fillStyle = '#ffc896';
-    ctx.beginPath();
-    ctx.arc(0, 0, 34, 0, Math.PI * 2);
-    ctx.fill();
-
-    const bellyX = (1 - t) * 8;
-    ctx.fillStyle = '#ffe0b9';
-    ctx.beginPath();
-    ctx.ellipse(bellyX, 10, 20, 17, 0, 0, Math.PI * 2);
-    ctx.fill();
+    let leanIn = 0;
+    if (char.state === 'eating' || char.state === 'drinking') {
+      leanIn = 0.06;
+    }
 
     let footStride = 0;
     let footY = 0;
-    if (char.state === 'walking' && gameState === 'running' && !isDragging && !reachedEnd) {
+    if (char.state === 'walking' && gameState === 'running' && !isDragging) {
       footStride = Math.sin(char.walkPhase) * 8;
       footY = Math.abs(Math.sin(char.walkPhase)) * -3;
     } else if (char.state === 'jumping') {
       footStride = 12;
       footY = -4;
     }
+
+    let armSwing = 0;
+    if (char.state === 'walking' && gameState === 'running' && !isDragging) {
+      armSwing = Math.sin(char.walkPhase) * 0.35;
+    } else if (char.state === 'jumping') {
+      armSwing = -0.5;
+    }
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(tilt + windTilt + leanIn);
+    ctx.scale(squash * ZOOM, stretch * ZOOM);
 
     ctx.fillStyle = '#ffb07c';
     ctx.beginPath();
@@ -1487,103 +1620,106 @@
     ctx.ellipse(16 - footStride * 0.5, 30 + footY, 10, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    const earLeftX = -20 - (1 - t) * 4;
-    const earRightX = 20 + (1 - t) * 4;
+    ctx.fillStyle = '#ffc896';
+    ctx.beginPath();
+    ctx.arc(0, 0, 34, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffe0b9';
+    ctx.beginPath();
+    ctx.ellipse(0, 10, 20, 17, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#e8a46e';
+    ctx.save();
+    ctx.translate(-30, 4);
+    ctx.rotate(-armSwing);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 9, 7, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     ctx.fillStyle = '#ffb07c';
     ctx.beginPath();
-    ctx.ellipse(earLeftX, -40, 14, 16, -0.3 - (1 - t) * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(earRightX, -40, 14, 16, 0.3 + (1 - t) * 0.3, 0, Math.PI * 2);
+    ctx.ellipse(-20, -40, 14, 16, -0.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ff9f7c';
     ctx.beginPath();
-    ctx.ellipse(earLeftX, -42, 7, 9, -0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(earRightX, -42, 7, 9, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(-20, -42, 7, 9, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    const eyeShiftX = (1 - t) * 10;
-    const eyeSpacing = 13 - (1 - t) * 6;
+    ctx.fillStyle = '#ffb07c';
+    ctx.beginPath();
+    ctx.ellipse(20, -40, 14, 16, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff9f7c';
+    ctx.beginPath();
+    ctx.ellipse(20, -42, 7, 9, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    const eyeSpacing = 13;
     const eyeY = -10;
     const eyeOffsetY = Math.sin(char.blink) * 2;
 
     ctx.fillStyle = '#2e1b0e';
     ctx.beginPath();
-    ctx.ellipse(eyeShiftX - eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(-eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(eyeShiftX + eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = 'white';
     ctx.beginPath();
-    ctx.arc(eyeShiftX - eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+    ctx.arc(-eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(eyeShiftX + eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+    ctx.arc(eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#ffa5a5b0';
     ctx.beginPath();
-    ctx.ellipse(eyeShiftX - eyeSpacing - 11, 2, 7, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(-eyeSpacing - 11, 2, 7, 5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(eyeShiftX + eyeSpacing + 11, 2, 7, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(eyeSpacing + 11, 2, 7, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.strokeStyle = '#6b3e1c';
     ctx.lineWidth = 2.8;
+
     if (char.state === 'eating') {
       const chewSize = 5 + Math.sin(char.eatingTimer * 0.4) * 2;
       ctx.fillStyle = '#6b3e1c';
       ctx.beginPath();
-      ctx.arc(eyeShiftX, 10, chewSize, 0, Math.PI * 2);
+      ctx.arc(0, 10, chewSize, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#ff8a8a';
       ctx.beginPath();
-      ctx.arc(eyeShiftX, 11, chewSize * 0.6, 0, Math.PI * 2);
+      ctx.arc(0, 11, chewSize * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (char.state === 'drinking') {
+      let burpSize = 0;
+      if (sippingDrink && sippingDrink.phase === 'burp') {
+        burpSize = 4 + Math.sin(Date.now() * 0.05) * 5;
+      }
+      const mouthSize = 6 + burpSize * 0.5;
+      ctx.fillStyle = '#6b3e1c';
+      ctx.beginPath();
+      ctx.arc(0, 10, mouthSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a8a';
+      ctx.beginPath();
+      ctx.arc(0, 11, mouthSize * 0.5, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.beginPath();
-      if (t > 0.5) {
-        ctx.arc(eyeShiftX, 6, 9, 0.15, Math.PI - 0.15);
-      } else {
-        ctx.arc(eyeShiftX + 2, 6, 7, 0.2, Math.PI - 0.3);
-      }
+      ctx.arc(0, 6, 9, 0.15, Math.PI - 0.15);
       ctx.stroke();
       ctx.fillStyle = '#ff8a8a';
       ctx.beginPath();
-      ctx.ellipse(eyeShiftX + 2, 13, 4, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 13, 4, 3, 0, 0, Math.PI * 2);
       ctx.fill();
-    }
-
-    if (t < 0.5) {
-      ctx.fillStyle = '#e89b6e';
-      ctx.beginPath();
-      ctx.ellipse(eyeShiftX + eyeSpacing + 6, 0, 4, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    let armSwing = 0;
-    if (char.state === 'walking' && gameState === 'running' && !isDragging && !reachedEnd) {
-      armSwing = Math.sin(char.walkPhase) * 0.35;
-    } else if (char.state === 'jumping') {
-      armSwing = -0.5;
-    }
-
-    if (t > 0.2) {
-      ctx.globalAlpha = t;
-      ctx.fillStyle = '#e8a46e';
-      ctx.save();
-      ctx.translate(-30, 4);
-      ctx.rotate(-armSwing);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 9, 7, -0.3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      ctx.globalAlpha = 1;
     }
 
     ctx.fillStyle = '#ffb07c';
@@ -1609,11 +1745,32 @@
         ctx.fill();
       }
     }
+
+    if (char.state === 'drinking' && sippingDrink) {
+      if (sippingDrink.phase === 'fizz') {
+        const tt = Date.now() * 0.015;
+        for (let i = 0; i < 6; i++) {
+          const a = tt + i * 1.05;
+          const px = cx + Math.cos(a) * (25 * ZOOM + Math.sin(tt * 3) * 12 * ZOOM);
+          const py = cy - 15 * ZOOM + Math.sin(a * 1.7) * 18 * ZOOM;
+          const alpha = 0.5 + Math.sin(tt * 4 + i * 1.2) * 0.4;
+          ctx.fillStyle = `rgba(180, 230, 255, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(px, py, (2.5 + Math.sin(tt * 2 + i) * 1.5) * ZOOM, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (sippingDrink.phase === 'burp' && sippingDrink.burpBubbles) {
+        for (const b of sippingDrink.burpBubbles) {
+          ctx.fillStyle = `rgba(200, 240, 255, ${b.life * 0.8})`;
+          ctx.beginPath();
+          ctx.arc(cx + b.x * ZOOM, cy - 10 * ZOOM + b.y * ZOOM, b.r * ZOOM * b.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
   }
 
-  function drawFoodAt(x, y, radius, type, scale, rotation, imageIndex) {
-    if (imageIndex === undefined || imageIndex >= customFoodImages.length) return;
-    const img = customFoodImages[imageIndex];
+  function drawFoodAt(x, y, radius, scale, rotation, img) {
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
     ctx.save();
@@ -1745,7 +1902,6 @@
     else if (type === 'stormy') { roadTop = '#4a4a4a'; roadBot = '#2a2a2a'; }
     else if (type === 'snowy') { roadTop = '#d0d8e0'; roadBot = '#a8b0b8'; }
 
-    // Road rect: from GROUND_Y + 6 to CANVAS_H
     const roadTopY = GROUND_Y + 6;
     const roadBotY = CANVAS_H;
     const roadMiddleY = (roadTopY + roadBotY) / 2;
@@ -1756,7 +1912,6 @@
     ctx.fillStyle = roadGrad;
     ctx.fillRect(0, roadTopY, CANVAS_W, CANVAS_H - GROUND_Y);
 
-    // ✅ Dashed line at the TRUE MIDDLE of the road
     ctx.strokeStyle = type === 'snowy' ? '#ffffff' : '#f5e6a3';
     ctx.lineWidth = 6 * ZOOM;
     ctx.setLineDash([40 * ZOOM, 35 * ZOOM]);
@@ -1768,7 +1923,6 @@
     ctx.setLineDash([]);
     ctx.lineDashOffset = 0;
 
-    // Top edge of the road
     ctx.strokeStyle = '#ffffff60';
     ctx.lineWidth = 3 * ZOOM;
     ctx.beginPath();
@@ -1793,7 +1947,11 @@
       ctx.fillStyle = '#00000022';
       ctx.fill();
 
-      drawFoodAt(screenX, f.y + bob, f.radius, f.type, f.eatSquash, 0, f.imageIndex);
+      if (sippingDrink && sippingDrink.food === f) {
+        if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') continue;
+      }
+
+      drawFoodAt(screenX, f.y + bob, f.radius, f.eatSquash, 0, f.image);
     }
 
     drawCharacter();
@@ -1831,7 +1989,74 @@
         }
       }
 
-      drawFoodAt(px, py, flyingFood.radius, flyingFood.type, scale, flyingFood.rotation, flyingFood.imageIndex);
+      drawFoodAt(px, py, flyingFood.radius, scale, flyingFood.rotation, flyingFood.image);
+    }
+
+    if (sippingDrink) {
+      const originalScreenX = char.screenX + (sippingDrink.worldDistance - worldOffset);
+      const mouth = getMouthPos();
+      const drink = sippingDrink.food;
+
+      let px, py, scale;
+
+      if (sippingDrink.phase === 'fizz') {
+        const hoverProgress = Math.min(1, sippingDrink.timer / 30);
+        const hoverEased = hoverProgress * hoverProgress * (3 - 2 * hoverProgress);
+        px = originalScreenX + (mouth.x - originalScreenX) * hoverEased;
+        py = drink.y + (mouth.y - drink.y) * hoverEased;
+        scale = 1 - hoverEased * 0.3;
+
+        const hoverBob = Math.sin(Date.now() * 0.02) * 2 * ZOOM;
+        py += hoverBob * hoverEased;
+
+        if (hoverEased > 0.1 && hoverEased < 0.95) {
+          for (let s = 0; s < 2; s++) {
+            const trailAmt = Math.max(0, hoverEased - 0.15 - s * 0.1);
+            const tx = originalScreenX + (mouth.x - originalScreenX) * trailAmt;
+            const ty = drink.y + (mouth.y - drink.y) * trailAmt;
+            ctx.fillStyle = `rgba(180, 220, 255, ${(1 - hoverEased) * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(tx, ty, 3 * (1 - trailAmt * 0.5), 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      } else if (sippingDrink.phase === 'return') {
+        const returnProgress = Math.min(1, sippingDrink.timer / 40);
+        const returnEased = returnProgress * returnProgress * (3 - 2 * returnProgress);
+        px = mouth.x + (originalScreenX - mouth.x) * returnEased;
+        py = mouth.y + (drink.y - mouth.y) * returnEased;
+        scale = 0.7 + returnEased * 0.3;
+
+        if (returnEased > 0.1 && returnEased < 0.9) {
+          ctx.fillStyle = `rgba(180, 220, 255, ${(1 - returnEased) * 0.4})`;
+          ctx.beginPath();
+          ctx.arc(px, py, 4 * ZOOM * (1 - returnEased * 0.5), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        px = mouth.x;
+        py = mouth.y;
+        scale = 1;
+      }
+
+      if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') {
+        drawFoodAt(px, py, drink.radius, scale, 0, sippingDrink.image);
+      }
+
+      if (sippingDrink.phase === 'fizz') {
+        const tt = Date.now() * 0.02;
+        for (let k = 0; k < 8; k++) {
+          const angle = tt * 0.8 + k * 0.785;
+          const radius = (18 + Math.sin(tt * 2 + k) * 8) * ZOOM;
+          const bx = px + Math.cos(angle) * radius;
+          const by = py + Math.sin(angle) * radius - 10 * ZOOM;
+          const alpha = 0.4 + Math.sin(tt * 3 + k) * 0.3;
+          ctx.fillStyle = `rgba(200, 240, 255, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(bx, by, (2 + Math.sin(tt + k) * 1.5) * ZOOM, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
     }
 
     if (type === 'rainy' || type === 'stormy') {
@@ -1954,7 +2179,7 @@
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     }
 
-    if (gameState === 'idle' && !reachedEnd) {
+    if (gameState === 'idle') {
       const pulse = 0.7 + Math.sin(Date.now() * 0.004) * 0.3;
       ctx.fillStyle = `rgba(0,0,0,${0.35 * pulse})`;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
@@ -1966,27 +2191,10 @@
       ctx.shadowBlur = 20;
 
       let msg = '▶️  Press Start to Play';
-      if (customFoodImages.length === 0) {
+      if (customFoodImages.length === 0 && customDrinkImages.length === 0) {
         msg = '🍎  Upload a Food Photo to Begin';
       }
       ctx.fillText(msg, CANVAS_W / 2, CANVAS_H / 2);
-      ctx.shadowBlur = 0;
-      ctx.textBaseline = 'alphabetic';
-    }
-
-    if (reachedEnd) {
-      ctx.fillStyle = 'rgba(255, 240, 200, 0.6)';
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-      ctx.font = `bold ${Math.max(36, Math.min(CANVAS_W, CANVAS_H) * 0.075)}px "Segoe UI", sans-serif`;
-      ctx.fillStyle = '#8b5a2b';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#fff';
-      ctx.shadowBlur = 20;
-      ctx.fillText('🎉 All Eaten!', CANVAS_W / 2, CANVAS_H / 2 - 30);
-      ctx.font = `bold ${Math.max(20, Math.min(CANVAS_W, CANVAS_H) * 0.04)}px "Segoe UI", sans-serif`;
-      ctx.fillStyle = '#6b3e1c';
-      ctx.fillText(`You ate ${foodEaten} fruits`, CANVAS_W / 2, CANVAS_H / 2 + 40);
       ctx.shadowBlur = 0;
       ctx.textBaseline = 'alphabetic';
     }
@@ -2080,9 +2288,8 @@
   });
 
   pauseBtn.addEventListener('click', () => {
-    if (reachedEnd) return;
     if (gameState === 'idle') {
-      if (customFoodImages.length === 0) return;
+      if (customFoodImages.length === 0 && customDrinkImages.length === 0) return;
       gameState = 'running';
       pauseBtn.classList.remove('paused');
       pauseBtn.textContent = '⏸️ Pause';
