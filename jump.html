@@ -1053,7 +1053,8 @@
     walkPhase: 0,
     grounded: true,
     landingSettle: 0,
-    pendingFood: null
+    pendingFood: null,
+    pendingFinalDrink: false
   };
 
   let foods = [];
@@ -1089,8 +1090,12 @@
   let showFinishReset = false;
   let finishResetTimer = 0;
 
-  // ---- Arrival (falling out of portal at game start) ----
+  // ---- Arrival ----
   let arrival = null;
+
+  // ---- FOOD PYRAMID (proper pyramid with all excess at the bottom) ----
+  let foodMountain = null;
+  let finalDrink = null;
 
   let clouds = [];
   let hills = [];
@@ -1114,6 +1119,8 @@
     portalFlash = 0;
     showFinishReset = false;
     finishResetTimer = 0;
+    foodMountain = null;
+    finalDrink = null;
 
     const combined = [];
     customFoodImages.forEach((entry) => {
@@ -1145,9 +1152,97 @@
       });
     });
 
+    // ============ PYRAMID ============
+    // A proper pyramid: bottom row is the WIDEST and holds ALL excess foods.
+    // Rows above taper: each higher row has exactly 1 fewer item than the one
+    // below, ending with 1 item at the top.
+    //
+    //   ...        ← top (1)
+    //   ... ...    ← 2
+    //   ... ... .. ← bottom (widest, all excess)
+    //
+    const foodOnly = customFoodImages.slice();
+    if (foodOnly.length > 0) {
+      const totalItems = foodOnly.length;
+
+      // Find the smallest N such that N*(N+1)/2 >= totalItems.
+      let rows = 1;
+      while ((rows * (rows + 1)) / 2 < totalItems) rows++;
+
+      const strictTotal = (rows * (rows + 1)) / 2;
+      const excess = totalItems - strictTotal; // 0 or positive
+      const bottomCount = rows + excess;
+
+      const rowCounts = [];
+      for (let r = 0; r < rows; r++) {
+        if (r === 0) {
+          rowCounts.push(bottomCount);
+        } else {
+          rowCounts.push(rows - r);
+        }
+      }
+
+      const items = [];
+      let imgIdx = 0;
+      for (let r = 0; r < rowCounts.length; r++) {
+        const colsInRow = rowCounts[r];
+        for (let c = 0; c < colsInRow; c++) {
+          const src = foodOnly[imgIdx % foodOnly.length];
+          imgIdx++;
+          items.push({
+            row: r,
+            col: c,
+            colsInRow,
+            image: src.img,
+            eaten: false,
+            bobPhase: Math.random() * Math.PI * 2
+          });
+        }
+      }
+
+      const baseWorldDistance = lastDistance + 500 * ZOOM;
+      const rowSpacing = 26 * ZOOM;
+      const colSpacing = 40 * ZOOM;
+      const bottomRowY = GROUND_Y - FOOD_RADIUS;
+
+      foodMountain = {
+        baseWorldDistance,
+        rows: rowCounts.length,
+        rowCounts,
+        rowSpacing,
+        colSpacing,
+        bottomRowY,
+        items,
+        triggered: false
+      };
+    }
+
+    // ---- Final drink ----
+    if (customDrinkImages.length > 0) {
+      const pick = customDrinkImages[Math.floor(Math.random() * customDrinkImages.length)];
+      const mountainEnd = foodMountain
+        ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing + 100 * ZOOM
+        : lastDistance + 100 * ZOOM;
+      finalDrink = {
+        worldDistance: mountainEnd + 400 * ZOOM,
+        image: pick.img,
+        radius: FOOD_RADIUS,
+        y: GROUND_Y - FOOD_RADIUS,
+        triggered: false,
+        bobPhase: Math.random() * Math.PI * 2
+      };
+    }
+
+    // ---- Portal ----
+    const lastStageDistance = finalDrink
+      ? finalDrink.worldDistance
+      : (foodMountain
+          ? foodMountain.baseWorldDistance + foodMountain.rowCounts[0] * foodMountain.colSpacing
+          : lastDistance);
+
     const portalGap = (400 + Math.random() * 500) * ZOOM;
     portal = {
-      worldDistance: lastDistance + portalGap,
+      worldDistance: lastStageDistance + portalGap,
       swingPhase: 0,
       openProgress: 0,
       radius: 55 * ZOOM,
@@ -1243,6 +1338,7 @@
     char.grounded = true;
     char.landingSettle = 0;
     char.pendingFood = null;
+    char.pendingFinalDrink = false;
 
     char.walkDuration = 1.0 + Math.random() * 1.5;
     char.nextJumpAt = char.walkDuration;
@@ -1278,6 +1374,7 @@
     char.grounded = false;
     char.landingSettle = 0;
     char.pendingFood = null;
+    char.pendingFinalDrink = false;
     char.squash = 0.7;
     char.squashVel = 0;
 
@@ -1363,6 +1460,67 @@
     }
   }
 
+  // Calculate the world X of a pyramid item, taking the row width into account
+  // so the pyramid is centered.
+  function mountainItemWorldX(mi) {
+    const { baseWorldDistance, colSpacing, rowCounts } = foodMountain;
+    const colsInRow = mi.colsInRow;
+    const widest = rowCounts[0];
+    const rowStartOffset = (widest - colsInRow) * 0.5;
+    return baseWorldDistance + (rowStartOffset + mi.col) * colSpacing;
+  }
+
+  function mountainItemY(mi) {
+    return foodMountain.bottomRowY - mi.row * foodMountain.rowSpacing;
+  }
+
+  function triggerMountainConsume(mi) {
+    const worldX = mountainItemWorldX(mi);
+    const screenX = char.screenX + (worldX - worldOffset);
+    const y = mountainItemY(mi);
+
+    mi.eaten = true;
+    foodEaten++;
+
+    flyingFood = {
+      startX: screenX,
+      startY: y,
+      t: 0,
+      radius: FOOD_RADIUS,
+      image: mi.image,
+      rotation: 0,
+      spin: (Math.random() - 0.5) * 0.4
+    };
+
+    char.state = 'eating';
+    char.eatingTimer = 0;
+    char.vy = 0;
+    char.y = char.baseY;
+    char.grounded = true;
+    char.squash = 0.92;
+    char.squashVel = 0.05;
+  }
+
+  function triggerFinalDrink() {
+    if (!finalDrink || finalDrink.triggered) return;
+    sippingDrink = {
+      food: finalDrink,
+      worldDistance: finalDrink.worldDistance,
+      originalY: finalDrink.y,
+      timer: 0,
+      phase: 'fizz',
+      image: finalDrink.image,
+      burpBubbles: []
+    };
+    finalDrink.triggered = true;
+    foodEaten++;
+
+    char.state = 'drinking';
+    char.grounded = true;
+    char.squash = 0.92;
+    char.squashVel = 0.05;
+  }
+
   function startPortalStare() {
     if (!portal || portal.activated || portalStare || portalSuck) return;
     portalStare = {
@@ -1396,6 +1554,21 @@
     char.state = 'sucked';
     char.grounded = false;
     char.vy = 0;
+  }
+
+  // Order: TOP row first (left → right), then the row below, etc.
+  // (row 0 is the bottom / widest, so we iterate from the last row backwards)
+  function nextMountainItem() {
+    if (!foodMountain) return null;
+    const lastRow = foodMountain.rows - 1;
+    for (let r = lastRow; r >= 0; r--) {
+      const colsInRow = foodMountain.rowCounts[r];
+      for (let c = 0; c < colsInRow; c++) {
+        const it = foodMountain.items.find(x => x.row === r && x.col === c && !x.eaten);
+        if (it) return it;
+      }
+    }
+    return null;
   }
 
   function update() {
@@ -1522,7 +1695,7 @@
       }
     }
 
-    // ---- Arrival animation ----
+    // ---- Arrival ----
     if (arrival) {
       arrival.timer++;
       arrival.portalFadeIn = Math.min(1, arrival.timer / 20);
@@ -1691,6 +1864,7 @@
       return;
     }
 
+    // ---- Stage 1: individual spaced food items on the road ----
     const nextFood = foods.find(f => !f.triggered);
 
     if (nextFood && hasTouchedFood(nextFood)) {
@@ -1702,7 +1876,60 @@
       }
     }
 
-    if (!nextFood && portal && !portal.activated && !portalStare && !portalSuck) {
+    // ---- Stage 2: food pyramid (eat items TOP row first) ----
+    if (!nextFood && foodMountain && !foodMountain.triggered) {
+      const widest = foodMountain.rowCounts[0];
+      const pyramidLeft = foodMountain.baseWorldDistance;
+      const pyramidRight = foodMountain.baseWorldDistance + (widest - 1) * foodMountain.colSpacing;
+      const pyramidLeftScreen = char.screenX + (pyramidLeft - worldOffset);
+      const pyramidRightScreen = char.screenX + (pyramidRight - worldOffset);
+
+      const charRightEdge = char.screenX + char.radius;
+      const charLeftEdge = char.screenX - char.radius;
+
+      if (charRightEdge >= pyramidLeftScreen - 10 * ZOOM && charLeftEdge <= pyramidRightScreen + 10 * ZOOM) {
+        const mi = nextMountainItem();
+        if (mi) {
+          triggerMountainConsume(mi);
+          return;
+        } else {
+          foodMountain.triggered = true;
+        }
+      }
+    }
+
+    // ---- Stage 3: final drink ----
+    if (!nextFood && foodMountain && foodMountain.triggered && finalDrink && !finalDrink.triggered) {
+      const fdScreenX = char.screenX + (finalDrink.worldDistance - worldOffset);
+      const fdLeftEdge = fdScreenX - finalDrink.radius;
+      const charRightEdge = char.screenX + char.radius;
+      if (fdLeftEdge <= charRightEdge - 1) {
+        if (char.state === 'jumping') {
+          char.pendingFinalDrink = true;
+        } else {
+          triggerFinalDrink();
+          return;
+        }
+      }
+    }
+
+    if (char.state === 'walking' && char.pendingFinalDrink && finalDrink && !finalDrink.triggered) {
+      const fdScreenX = char.screenX + (finalDrink.worldDistance - worldOffset);
+      const fdLeftEdge = fdScreenX - finalDrink.radius;
+      const charRightEdge = char.screenX + char.radius;
+      if (fdLeftEdge <= charRightEdge - 1) {
+        char.pendingFinalDrink = false;
+        triggerFinalDrink();
+        return;
+      }
+    }
+
+    // ---- Stage 4: portal ----
+    const reachedFinalStage = (!nextFood) &&
+      (!foodMountain || foodMountain.triggered) &&
+      (!finalDrink || finalDrink.triggered);
+
+    if (reachedFinalStage && portal && !portal.activated && !portalStare && !portalSuck) {
       const portalScreenX = char.screenX + (portal.worldDistance - worldOffset);
       const portalLeftEdge = portalScreenX - portal.radius;
       const charRightEdge = char.screenX + char.radius;
@@ -2160,6 +2387,49 @@
     }
   }
 
+  function drawFoodMountain() {
+    if (!foodMountain) return;
+
+    const { bottomRowY, rowSpacing } = foodMountain;
+
+    for (const mi of foodMountain.items) {
+      if (mi.eaten) continue;
+
+      const worldX = mountainItemWorldX(mi);
+      const screenX = char.screenX + (worldX - worldOffset);
+      if (screenX < -150 || screenX > CANVAS_W + 150) continue;
+
+      const y = bottomRowY - mi.row * rowSpacing;
+      const bob = Math.sin(Date.now() * 0.005 + mi.bobPhase) * 2 * ZOOM;
+
+      ctx.beginPath();
+      ctx.ellipse(screenX, GROUND_Y + 2, FOOD_RADIUS * 0.7, FOOD_RADIUS * 0.25, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#00000022';
+      ctx.fill();
+
+      drawFoodAt(screenX, y + bob, FOOD_RADIUS, 1, 0, mi.image);
+    }
+  }
+
+  function drawFinalDrink() {
+    if (!finalDrink || finalDrink.triggered) return;
+    const screenX = char.screenX + (finalDrink.worldDistance - worldOffset);
+    if (screenX < -150 || screenX > CANVAS_W + 150) return;
+
+    const bob = Math.sin(Date.now() * 0.005 + finalDrink.bobPhase) * 3 * ZOOM;
+
+    ctx.beginPath();
+    ctx.ellipse(screenX, GROUND_Y + 2, finalDrink.radius * 0.8, finalDrink.radius * 0.3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#00000022';
+    ctx.fill();
+
+    if (sippingDrink && sippingDrink.food === finalDrink) {
+      if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') return;
+    }
+
+    drawFoodAt(screenX, finalDrink.y + bob, finalDrink.radius, 1, 0, finalDrink.image);
+  }
+
   function drawCharacter() {
     const cx = char.screenX;
     const cy = char.y;
@@ -2313,8 +2583,6 @@
       ctx.arc(eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
       ctx.fill();
     }
-
-    // (Blush moved below to render in front of both arms)
 
     ctx.strokeStyle = '#6b3e1c';
     ctx.lineWidth = 2.8;
@@ -2687,20 +2955,18 @@
       ctx.globalAlpha = 1;
     }
 
-    let cloudColor = '#ffffffd0';
-    let cloudAlpha = 1;
-    if (type === 'cloudy') { cloudColor = '#e0e4e8'; cloudAlpha = 0.8 + i * 0.2; }
-    else if (type === 'rainy') { cloudColor = '#9aa8b2'; cloudAlpha = 0.85; }
-    else if (type === 'stormy') { cloudColor = '#4a545e'; cloudAlpha = 0.9; }
-    else if (type === 'snowy') { cloudColor = '#f0f5fa'; cloudAlpha = 0.9; }
-    else if (type === 'foggy') { cloudColor = '#d8dde2'; cloudAlpha = 0.7; }
+    // ---- Solid clouds (no transparency) ----
+    let cloudColor = '#ffffff';
+    if (type === 'cloudy') { cloudColor = '#e0e4e8'; }
+    else if (type === 'rainy') { cloudColor = '#9aa8b2'; }
+    else if (type === 'stormy') { cloudColor = '#4a545e'; }
+    else if (type === 'snowy') { cloudColor = '#f0f5fa'; }
+    else if (type === 'foggy') { cloudColor = '#d8dde2'; }
 
     ctx.fillStyle = cloudColor;
-    ctx.globalAlpha = cloudAlpha;
     for (const c of clouds) {
       drawCloud(c.worldX, c.y, c.scale * ZOOM);
     }
-    ctx.globalAlpha = 1;
 
     let hillColor = '#a8d88c';
     if (type === 'rainy' || type === 'stormy') hillColor = '#6a8a5e';
@@ -2765,6 +3031,8 @@
 
     drawCharacter();
     drawFoods();
+    drawFoodMountain();
+    drawFinalDrink();
     drawFlyingFood();
     drawSippingDrink();
 
