@@ -972,6 +972,11 @@
 
   const ZOOM = 2.2;
   const SKY_SHIFT = 30;
+  // Vertical band for clouds — kept low so a 16:9 crop won't cut them off.
+  const CLOUD_TOP_MIN = 130;
+  const CLOUD_TOP_RANGE = 90;
+  // Sun vertical position — also lowered to survive the top crop.
+  const SUN_Y_FRACTION = 0.32;
 
   let FOOT_GROUND = GROUND_Y + 2;
   const FOOT_OFFSET = 37 * ZOOM;
@@ -1835,8 +1840,6 @@
 
     const spacedDone = !foods.some(f => !f.triggered && !f.isFinalDrink);
     if (spacedDone && foodMountain && !foodMountain.triggered) {
-      // Trigger zone is ONLY at the far-left edge of the pyramid — the character
-      // eats standing beside the leftmost column, not in the middle.
       const pyrLeft = pyramidLeftWorldX();
       const pyrLeftScreen = char.screenX + (pyrLeft - worldOffset);
       const charRightEdge = char.screenX + char.radius;
@@ -2030,14 +2033,17 @@
 
   function initScenery() {
     clouds = [];
-    const CLOUD_COUNT = 8;
-    const SPREAD = CANVAS_W * 3;
+    const CLOUD_COUNT = 7;
+    // Spread across a moderately wide band so clouds sit comfortably apart
+    // but don't disappear off-screen for ages.
+    const SPREAD = CANVAS_W * 3.5;
     const baseSpacing = SPREAD / CLOUD_COUNT;
     for (let i = 0; i < CLOUD_COUNT; i++) {
-      const jitter = (Math.random() - 0.5) * baseSpacing * 0.5;
+      // Random spacing so it doesn't look perfectly uniform.
+      const jitter = (Math.random() - 0.5) * baseSpacing * 0.4;
       clouds.push({
         worldX: i * baseSpacing + jitter,
-        y: 60 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.45),
+        y: CLOUD_TOP_MIN + Math.random() * CLOUD_TOP_RANGE,
         scale: 0.55 + Math.random() * 0.7,
         speed: 0.10 + Math.random() * 0.10
       });
@@ -2126,13 +2132,17 @@
     for (const c of clouds) {
       c.worldX -= effectiveSpeed * c.speed;
       if (c.worldX < -300 * c.scale) {
-        let maxX = -Infinity;
+        // Place the wrapped cloud past the rightmost cloud with a tight,
+        // randomized gap of 50–200 px so they stay close but never overlap.
+        let maxRight = -Infinity;
         for (const other of clouds) {
-          if (other !== c && other.worldX > maxX) maxX = other.worldX;
+          if (other === c) continue;
+          const otherRight = other.worldX + 130 * ZOOM * other.scale;
+          if (otherRight > maxRight) maxRight = otherRight;
         }
-        const minGap = 220 * ZOOM;
-        c.worldX = Math.max(CANVAS_W + 200, maxX + minGap) + Math.random() * 200;
-        c.y = 60 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.45);
+        const gap = 50 + Math.random() * 150;   // 50–200 px
+        c.worldX = Math.max(CANVAS_W + 100, maxRight + gap);
+        c.y = CLOUD_TOP_MIN + Math.random() * CLOUD_TOP_RANGE;
         c.scale = 0.55 + Math.random() * 0.7;
         c.speed = 0.10 + Math.random() * 0.10;
       }
@@ -2860,7 +2870,7 @@
 
     if (sunAlpha > 0.02) {
       const sunX = CANVAS_W * 0.85;
-      const sunY = CANVAS_H * 0.13 + SKY_SHIFT;
+      const sunY = CANVAS_H * SUN_Y_FRACTION;
       const sunR = Math.min(CANVAS_W, CANVAS_H) * 0.09;
       ctx.globalAlpha = sunAlpha;
       ctx.fillStyle = '#fff7b0';
