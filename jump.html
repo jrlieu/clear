@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍬 Bouncy Muncher · Weather Edition</title>
+<style>
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #b7e2fa;
+    font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background: #b7e2fa;
+    cursor: grab;
+    touch-action: none;
+  }
+  canvas.dragging { cursor: grabbing; }
+
+  .top-bar {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    pointer-events: none;
+  }
+  .top-bar > * { pointer-events: auto; }
+
+  .weather-panel { position: relative; flex-shrink: 0; }
+
+  .weather-toggle {
+    background: rgba(255, 245, 225, 0.95);
+    backdrop-filter: blur(8px);
+    border: none;
+    border-radius: 16px;
+    padding: 11px 16px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #5e3a1c;
+    cursor: pointer;
+    box-shadow: inset 0 -3px 0 #dbbd9b, 0 5px 0 #9e7b5b, 0 8px 18px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 1px 1px 0 #ffe6c0;
+    transition: 0.08s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .weather-toggle:active {
+    transform: translateY(3px);
+    box-shadow: inset 0 -2px 0 #dbbd9b, 0 2px 0 #9e7b5b;
+  }
+  .weather-toggle .chev {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+  .weather-toggle.open .chev { transform: rotate(180deg); }
+  .weather-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: rgba(255, 245, 225, 0.98);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    padding: 12px;
+    box-shadow: inset 0 -3px 0 #dbbd9b, 0 5px 0 #9e7b5b, 0 12px 24px rgba(0,0,0,0.2);
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 230px;
+    z-index: 25;
+  }
+  .weather-menu.open { display: flex; }
+  .weather-btn {
+    background: #fff2d7;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #5e3a1c;
+    cursor: pointer;
+    box-shadow: inset 0 -3px 0 #e6c7a2, 0 3px 0 #9e7b5b;
+    transition: 0.08s;
+    font-family: inherit;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 1px 1px 0 #fff0d8;
+  }
+  .weather-btn:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 -2px 0 #e6c7a2, 0 1px 0 #9e7b5b;
+  }
+  .weather-btn.active {
+    background: #ffd88a;
+    box-shadow: inset 0 -3px 0 #e0a94c, 0 3px 0 #b46f3f;
+    color: #4a2b10;
+  }
+  .intensity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 8px 6px 2px;
+    border-top: 1px solid #e8cfa8;
+  }
+  .intensity-row label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b5a2b;
+    font-weight: 800;
+  }
+  .intensity-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: #ffd8a8;
+    box-shadow: inset 0 2px 3px rgba(0,0,0,0.15);
+    outline: none;
+    cursor: pointer;
+  }
+  .intensity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffb882;
+    box-shadow: 0 3px 0 #b46f3f, 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    border: 2px solid #fff2d7;
+  }
+  .intensity-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffb882;
+    box-shadow: 0 3px 0 #b46f3f, 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    border: 2px solid #fff2d7;
+  }
+  .intensity-value {
+    font-size: 0.75rem;
+    min-width: 34px;
+    text-align: right;
+    color: #6b3e1c;
+    font-weight: 800;
+  }
+
+  .upload-btn {
+    background: rgba(255, 245, 225, 0.95);
+    backdrop-filter: blur(8px);
+    border: none;
+    border-radius: 16px;
+    padding: 11px 14px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #5e3a1c;
+    cursor: pointer;
+    box-shadow: inset 0 -3px 0 #dbbd9b, 0 5px 0 #9e7b5b, 0 8px 18px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-shadow: 1px 1px 0 #ffe6c0;
+    transition: 0.08s;
+    font-family: inherit;
+    text-align: left;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .upload-btn:active {
+    transform: translateY(3px);
+    box-shadow: inset 0 -2px 0 #dbbd9b, 0 2px 0 #9e7b5b;
+  }
+  .upload-btn.uploaded {
+    background: #d4f0a8;
+    color: #3a5a1c;
+  }
+  .upload-btn input[type="file"] {
+    display: none;
+  }
+  .count-badge {
+    background: #ffeac1;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    color: #6b3e1c;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .count-badge:hover {
+    background: #ffd88a;
+  }
+
+  .top-bar-spacer {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .food-counter {
+    background: #ffeac1;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #5e3a1c;
+    box-shadow: inset 0 -4px 0 #e6c7a2, 0 5px 0 #9e7b5b, 0 8px 16px rgba(0,0,0,0.15);
+    text-shadow: 1px 1px 0 #ffdbb5;
+    pointer-events: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pause-btn {
+    background: #a8d8f0;
+    border: none;
+    border-radius: 40px;
+    padding: 11px 20px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1f3a4f;
+    box-shadow: 0 5px 0 #6a9ab8, 0 6px 18px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: 0.07s;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 0 #d4ecf8;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pause-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #6a9ab8;
+  }
+  .pause-btn.paused {
+    background: #ffd88a;
+    color: #4a2b10;
+    box-shadow: 0 5px 0 #b46f3f, 0 6px 18px rgba(0,0,0,0.25);
+  }
+  .reset-btn {
+    background: #ffb882;
+    border: none;
+    border-radius: 40px;
+    padding: 11px 20px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #4f321b;
+    box-shadow: 0 5px 0 #b46f3f, 0 6px 18px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: 0.07s;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 0 #ffd9b0;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .reset-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #b46f3f;
+  }
+
+  .photo-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    z-index: 30;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .photo-modal-backdrop.open { display: flex; }
+  .photo-modal {
+    background: #fff5e1;
+    border-radius: 28px;
+    padding: 20px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  }
+  .photo-modal h2 {
+    font-size: 1.2rem;
+    color: #5e3a1c;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .photo-modal .close-x {
+    background: #ffb882;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #4f321b;
+    box-shadow: 0 3px 0 #b46f3f;
+  }
+  .photo-modal .close-x:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #b46f3f;
+  }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+  }
+  .photo-cell {
+    position: relative;
+    background: #ffeac1;
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: inset 0 -3px 0 #e6c7a2;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.1s;
+  }
+  .photo-cell:hover {
+    background: #ffd88a;
+  }
+  .photo-cell img {
+    width: 100%;
+    height: 90px;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 10px;
+    display: block;
+    pointer-events: none;
+  }
+  .photo-cell .label {
+    font-size: 0.7rem;
+    color: #8b5a2b;
+    font-weight: 800;
+    margin-top: 4px;
+    pointer-events: none;
+  }
+  .photo-empty {
+    color: #8b5a2b;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  .photo-action-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 40;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .photo-action-backdrop.open { display: flex; }
+  .photo-action {
+    background: #fff5e1;
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+  }
+  .photo-action img {
+    width: 100%;
+    height: 160px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .photo-action h3 {
+    color: #5e3a1c;
+    font-size: 1rem;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+  .photo-action-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  .photo-action-btns button {
+    flex: 1;
+    border: none;
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    transition: 0.08s;
+  }
+  .replace-btn {
+    background: #a8d8f0;
+    color: #1f3a4f;
+    box-shadow: 0 5px 0 #6a9ab8;
+    text-shadow: 1px 1px 0 #d4ecf8;
+  }
+  .replace-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #6a9ab8;
+  }
+  .delete-btn {
+    background: #ff8a8a;
+    color: #4a1010;
+    box-shadow: 0 5px 0 #b03030;
+    text-shadow: 1px 1px 0 #ffd4d4;
+  }
+  .delete-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #b03030;
+  }
+  .cancel-btn {
+    background: #ffd88a;
+    color: #4a2b10;
+    box-shadow: 0 5px 0 #b46f3f;
+    margin-top: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 16px;
+    padding: 12px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .cancel-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #b46f3f;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div class="top-bar">
+  <div class="weather-panel">
+    <button class="weather-toggle" id="weatherToggle">
+      <span id="weatherToggleLabel">☀️ Sunny</span>
+      <span class="chev">▼</span>
+    </button>
+    <div class="weather-menu" id="weatherMenu">
+      <button class="weather-btn active" data-weather="sunny">☀️ Sunny</button>
+      <button class="weather-btn" data-weather="cloudy">☁️ Cloudy</button>
+      <button class="weather-btn" data-weather="rainy">🌧️ Rainy</button>
+      <button class="weather-btn" data-weather="windy">💨 Windy</button>
+      <button class="weather-btn" data-weather="stormy">⛈️ Stormy</button>
+      <button class="weather-btn" data-weather="snowy">❄️ Snowy</button>
+      <button class="weather-btn" data-weather="foggy">🌫️ Foggy</button>
+      <div class="intensity-row">
+        <label>Intensity</label>
+        <input type="range" min="0" max="100" value="50" class="intensity-slider" id="intensitySlider">
+        <span class="intensity-value" id="intensityValue">50%</span>
+      </div>
+    </div>
+  </div>
+
+  <label class="upload-btn" id="foodUploadBtn">
+    🍎 Food <span class="count-badge" id="foodPhotoCount">(0)</span>
+    <input type="file" id="foodUpload" accept="image/*">
+  </label>
+
+  <label class="upload-btn" id="grassUploadBtn">
+    🌿 Grass <span class="count-badge" id="grassPhotoCount">(0)</span>
+    <input type="file" id="grassUpload" accept="image/*">
+  </label>
+
+  <label class="upload-btn" id="rockUploadBtn">
+    🪨 Rock <span class="count-badge" id="rockPhotoCount">(0)</span>
+    <input type="file" id="rockUpload" accept="image/*">
+  </label>
+
+  <label class="upload-btn" id="flowerUploadBtn">
+    🌸 Flower <span class="count-badge" id="flowerPhotoCount">(0)</span>
+    <input type="file" id="flowerUpload" accept="image/*">
+  </label>
+
+  <div class="top-bar-spacer"></div>
+
+  <div class="food-counter" id="foodCounterEl">🍎 <span id="foodCount">0</span></div>
+  <button class="pause-btn" id="pauseBtn">▶️ Start</button>
+  <button class="reset-btn" id="resetBtn">🔄 Play Again</button>
+</div>
+
+<div class="photo-modal-backdrop" id="photoModalBackdrop">
+  <div class="photo-modal">
+    <h2 id="photoModalTitle">Uploaded Photos <button class="close-x" id="photoModalClose">✕</button></h2>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+</div>
+
+<div class="photo-action-backdrop" id="photoActionBackdrop">
+  <div class="photo-action">
+    <img id="photoActionPreview" src="" alt="">
+    <h3 id="photoActionTitle">Photo</h3>
+    <div class="photo-action-btns">
+      <button class="replace-btn" id="photoActionReplace">🔄 REPLACE</button>
+      <button class="delete-btn" id="photoActionDelete">🗑️ DELETE</button>
+    </div>
+    <button class="cancel-btn" id="photoActionCancel">Cancel</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const foodCountSpan = document.getElementById('foodCount');
+  const foodCounterEl = document.getElementById('foodCounterEl');
+  const intensitySlider = document.getElementById('intensitySlider');
+  const intensityValue = document.getElementById('intensityValue');
+  const weatherToggle = document.getElementById('weatherToggle');
+  const weatherToggleLabel = document.getElementById('weatherToggleLabel');
+  const weatherMenu = document.getElementById('weatherMenu');
+  const foodUpload = document.getElementById('foodUpload');
+  const grassUpload = document.getElementById('grassUpload');
+  const rockUpload = document.getElementById('rockUpload');
+  const flowerUpload = document.getElementById('flowerUpload');
+  const foodUploadBtn = document.getElementById('foodUploadBtn');
+  const grassUploadBtn = document.getElementById('grassUploadBtn');
+  const rockUploadBtn = document.getElementById('rockUploadBtn');
+  const flowerUploadBtn = document.getElementById('flowerUploadBtn');
+  const foodPhotoCount = document.getElementById('foodPhotoCount');
+  const grassPhotoCount = document.getElementById('grassPhotoCount');
+  const rockPhotoCount = document.getElementById('rockPhotoCount');
+  const flowerPhotoCount = document.getElementById('flowerPhotoCount');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const photoModalBackdrop = document.getElementById('photoModalBackdrop');
+  const photoModalTitle = document.getElementById('photoModalTitle');
+  const photoModalClose = document.getElementById('photoModalClose');
+  const photoGrid = document.getElementById('photoGrid');
+  const photoActionBackdrop = document.getElementById('photoActionBackdrop');
+  const photoActionPreview = document.getElementById('photoActionPreview');
+  const photoActionTitle = document.getElementById('photoActionTitle');
+  const photoActionReplace = document.getElementById('photoActionReplace');
+  const photoActionDelete = document.getElementById('photoActionDelete');
+  const photoActionCancel = document.getElementById('photoActionCancel');
+
+  const customFoodImages = [];
+  const customGrassImages = [];
+  const customRockImages = [];
+  const customFlowerImages = [];
+
+  function getList(kind) {
+    if (kind === 'food') return customFoodImages;
+    if (kind === 'grass') return customGrassImages;
+    if (kind === 'rock') return customRockImages;
+    if (kind === 'flower') return customFlowerImages;
+    return [];
+  }
+
+  let pendingReplace = null;
+
+  const replaceInput = document.createElement('input');
+  replaceInput.type = 'file';
+  replaceInput.accept = 'image/*';
+  replaceInput.style.display = 'none';
+  document.body.appendChild(replaceInput);
+
+  replaceInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file || !pendingReplace) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        const list = getList(pendingReplace.kind);
+        list[pendingReplace.index] = img;
+        if (pendingReplace.kind === 'food') rebuildFoods();
+        openPhotoModal(pendingReplace.kind);
+        pendingReplace = null;
+      };
+      img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+    replaceInput.value = '';
+  });
+
+  function openPhotoAction(kind, index) {
+    const list = getList(kind);
+    const img = list[index];
+    if (!img) return;
+
+    photoActionPreview.src = img.src;
+    const prefix = kind === 'food' ? 'Food #'
+                 : kind === 'grass' ? 'Grass #'
+                 : kind === 'rock' ? 'Rock #'
+                 : 'Flower #';
+    photoActionTitle.textContent = prefix + (index + 1);
+    photoActionBackdrop.classList.add('open');
+
+    photoActionReplace.onclick = () => {
+      pendingReplace = { kind, index };
+      replaceInput.click();
+    };
+
+    photoActionDelete.onclick = () => {
+      list.splice(index, 1);
+      updateBadges();
+      photoActionBackdrop.classList.remove('open');
+      if (kind === 'food') rebuildFoods();
+      openPhotoModal(kind);
+    };
+
+    photoActionCancel.onclick = () => {
+      photoActionBackdrop.classList.remove('open');
+    };
+  }
+
+  photoActionBackdrop.addEventListener('click', (e) => {
+    if (e.target === photoActionBackdrop) {
+      photoActionBackdrop.classList.remove('open');
+    }
+  });
+
+  function updateBadges() {
+    foodPhotoCount.textContent = `(${customFoodImages.length})`;
+    grassPhotoCount.textContent = `(${customGrassImages.length})`;
+    rockPhotoCount.textContent = `(${customRockImages.length})`;
+    flowerPhotoCount.textContent = `(${customFlowerImages.length})`;
+    if (customFoodImages.length === 0) foodUploadBtn.classList.remove('uploaded');
+    if (customGrassImages.length === 0) grassUploadBtn.classList.remove('uploaded');
+    if (customRockImages.length === 0) rockUploadBtn.classList.remove('uploaded');
+    if (customFlowerImages.length === 0) flowerUploadBtn.classList.remove('uploaded');
+  }
+
+  function attachUpload(inputEl, list, btnEl, kind) {
+    inputEl.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const img = new Image();
+        img.onload = () => {
+          list.push(img);
+          updateBadges();
+          btnEl.classList.add('uploaded');
+          if (kind === 'food') rebuildFoods();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+      inputEl.value = '';
+    });
+  }
+
+  attachUpload(foodUpload, customFoodImages, foodUploadBtn, 'food');
+  attachUpload(grassUpload, customGrassImages, grassUploadBtn, 'grass');
+  attachUpload(rockUpload, customRockImages, rockUploadBtn, 'rock');
+  attachUpload(flowerUpload, customFlowerImages, flowerUploadBtn, 'flower');
+
+  function openPhotoModal(kind) {
+    const images = getList(kind);
+    const title = kind === 'food' ? '🍎 Food Photos'
+                : kind === 'grass' ? '🌿 Grass Photos'
+                : kind === 'rock' ? '🪨 Rock Photos'
+                : '🌸 Flower Photos';
+
+    photoModalTitle.firstChild.nodeValue = title + ' ';
+    photoGrid.innerHTML = '';
+
+    if (images.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'photo-empty';
+      empty.textContent = 'No photos uploaded yet.';
+      photoGrid.appendChild(empty);
+    } else {
+      images.forEach((img, idx) => {
+        const cell = document.createElement('div');
+        cell.className = 'photo-cell';
+
+        const preview = document.createElement('img');
+        preview.src = img.src;
+        cell.appendChild(preview);
+
+        const label = document.createElement('div');
+        label.className = 'label';
+        const prefix = kind === 'food' ? 'Food #'
+                     : kind === 'grass' ? 'Grass #'
+                     : kind === 'rock' ? 'Rock #'
+                     : 'Flower #';
+        label.textContent = prefix + (idx + 1);
+        cell.appendChild(label);
+
+        cell.addEventListener('click', () => {
+          openPhotoAction(kind, idx);
+        });
+
+        photoGrid.appendChild(cell);
+      });
+    }
+
+    photoModalBackdrop.classList.add('open');
+  }
+
+  photoModalClose.addEventListener('click', () => {
+    photoModalBackdrop.classList.remove('open');
+  });
+  photoModalBackdrop.addEventListener('click', (e) => {
+    if (e.target === photoModalBackdrop) {
+      photoModalBackdrop.classList.remove('open');
+    }
+  });
+
+  foodPhotoCount.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('food');
+  });
+  grassPhotoCount.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('grass');
+  });
+  rockPhotoCount.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('rock');
+  });
+  flowerPhotoCount.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation(); openPhotoModal('flower');
+  });
+
+  const weather = {
+    type: 'sunny',
+    intensity: 0.5,
+    windTime: 0,
+    gustTimer: 0,
+    gustStrength: 0,
+    gustActive: false
+  };
+
+  const weatherLabels = {
+    sunny: '☀️ Sunny',
+    cloudy: '☁️ Cloudy',
+    rainy: '🌧️ Rainy',
+    windy: '💨 Windy',
+    stormy: '⛈️ Stormy',
+    snowy: '❄️ Snowy',
+    foggy: '🌫️ Foggy'
+  };
+
+  let CANVAS_W = window.innerWidth;
+  let CANVAS_H = window.innerHeight;
+  let GROUND_Y = CANVAS_H * 0.80;
+
+  const ZOOM = 1.7;
+  const SKY_SHIFT = 30;
+
+  function resizeCanvas() {
+    CANVAS_W = window.innerWidth;
+    CANVAS_H = window.innerHeight;
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
+    GROUND_Y = CANVAS_H * 0.80;
+    char.baseY = FOOT_GROUND - FOOT_OFFSET;
+    char.y = char.baseY;
+    char.maxX = CANVAS_W * 0.50;
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  let worldOffset = 0;
+
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartWorldOffset = 0;
+  let dragMoved = false;
+
+  let gameState = 'idle';
+
+  const char = {
+    screenX: 0, y: 0, baseY: 0,
+    radius: 34 * ZOOM,
+    vy: 0,
+    jumpPower: -14 * ZOOM,
+    maxX: 0,
+    blink: 0,
+    squash: 1,
+    squashVel: 0,
+    state: 'walking',
+    stateTimer: 0,
+    nextJumpAt: 0,
+    walkDuration: 0,
+    eatingTimer: 0,
+    EAT_DURATION: 50,
+    facingFront: 0,
+    facingTarget: 0,
+    walkPhase: 0,
+    grounded: true
+  };
+
+  let foods = [];
+  const FOOD_RADIUS = 18 * ZOOM;
+
+  const MIN_GAP = 50;
+  const MAX_GAP = 600;
+
+  function randomGap() {
+    return (MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP)) * ZOOM;
+  }
+
+  const EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
+  const WALK_ZONE_FRACTION = 0.20;
+  const FOOT_OFFSET = 37 * ZOOM;
+  const FOOT_GROUND = GROUND_Y + 2;
+  const CHAR_FOOT_SINK = 4;
+
+  let foodEaten = 0;
+  let gameActive = true;
+  let reachedEnd = false;
+
+  const WALK_SPEED = 1.4;
+  const JUMP_SPEED = 3.2;
+  const GRAVITY = 0.55 * ZOOM;
+
+  let flyingFood = null;
+  const FLY_DURATION = 24;
+
+  let clouds = [];
+  let hills = [];
+  let grassItems = [];
+  let rockItems = [];
+  let flowerItems = [];
+
+  let rainDrops = [];
+  let snowFlakes = [];
+  let windStreaks = [];
+  let windLeaves = [];
+  let fogBanks = [];
+  let lightningFlashes = [];
+
+  function buildFoods() {
+    foods = [];
+    if (customFoodImages.length === 0) return;
+    let distance = 400 * ZOOM;
+    for (let i = 0; i < customFoodImages.length; i++) {
+      const gap = (i === 0) ? 400 * ZOOM : randomGap();
+      distance += gap;
+      foods.push({
+        worldDistance: distance,
+        gap: gap,
+        y: GROUND_Y - FOOD_RADIUS,
+        radius: FOOD_RADIUS + (i % 3 === 0 ? 3 * ZOOM : 0),
+        type: i % 4,
+        imageIndex: i,
+        eaten: false,
+        bobPhase: Math.random() * Math.PI * 2,
+        eatSquash: 1
+      });
+    }
+  }
+
+  function buildItemType(list, count, minSize, maxSize, yOffsetRange) {
+    const items = [];
+    if (list.length === 0) return items;
+
+    const TOTAL_DISTANCE = 30000;
+    for (let i = 0; i < count; i++) {
+      const worldX = Math.random() * TOTAL_DISTANCE;
+      const imgIndex = Math.floor(Math.random() * list.length);
+      const size = (minSize + Math.random() * (maxSize - minSize)) * ZOOM;
+      const yOffset = (Math.random() - 0.5) * yOffsetRange;
+      const swayPhase = Math.random() * Math.PI * 2;
+
+      items.push({ worldX, imgIndex, size, yOffset, swayPhase });
+    }
+    return items;
+  }
+
+  function buildRoadsideItems() {
+    grassItems = buildItemType(customGrassImages, 100, 20, 38, 4);
+    rockItems  = buildItemType(customRockImages,   40, 14, 26, 2);
+    flowerItems = buildItemType(customFlowerImages, 60, 18, 30, 3);
+  }
+
+  function rebuildFoods() {
+    buildFoods();
+    if (gameState === 'idle') {
+      foodEaten = 0;
+      foodCountSpan.textContent = '0';
+      reachedEnd = false;
+    }
+  }
+
+  function resetGame() {
+    resizeCanvas();
+
+    foodEaten = 0;
+    gameActive = true;
+    reachedEnd = false;
+    worldOffset = 0;
+    flyingFood = null;
+    gameState = 'idle';
+    pauseBtn.classList.remove('paused');
+    pauseBtn.textContent = '▶️ Start';
+
+    foodCountSpan.textContent = '0';
+    foodCounterEl.style.transform = 'scale(1)';
+
+    char.screenX = CANVAS_W * 0.30;
+    char.baseY = FOOT_GROUND - FOOT_OFFSET + CHAR_FOOT_SINK;
+    char.y = char.baseY;
+    char.vy = 0;
+    char.squash = 1;
+    char.squashVel = 0;
+    char.state = 'walking';
+    char.stateTimer = 0;
+    char.eatingTimer = 0;
+    char.facingFront = 0;
+    char.facingTarget = 0;
+    char.walkPhase = 0;
+    char.grounded = true;
+
+    char.walkDuration = 1.0 + Math.random() * 1.5;
+    char.nextJumpAt = char.walkDuration;
+
+    initScenery();
+    buildFoods();
+    buildRoadsideItems();
+    initWeatherParticles();
+
+    weather.windTime = 0;
+    weather.gustTimer = 0;
+    weather.gustStrength = 0;
+    weather.gustActive = false;
+  }
+
+  function inWalkZone() {
+    const nextFood = foods.find(f => !f.eaten);
+    if (!nextFood) return false;
+    const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
+    const standoffScreenX = char.screenX + EAT_STANDOFF;
+    const remaining = foodScreenX - standoffScreenX;
+    const walkZoneWidth = nextFood.gap * WALK_ZONE_FRACTION;
+    return remaining <= walkZoneWidth;
+  }
+
+  function getMouthPos() {
+    return {
+      x: char.screenX + char.facingFront * 10,
+      y: char.y + 10 * ZOOM * (char.squash)
+    };
+  }
+
+  function update() {
+    const dt = 1 / 60;
+
+    char.blink = (char.blink + 0.025) % (Math.PI * 2);
+    updateWeatherParticles();
+
+    if (gameState !== 'running') return;
+    if (isDragging) return;
+    if (reachedEnd) return;
+
+    char.squashVel += (1 - char.squash) * 0.25;
+    char.squashVel *= 0.75;
+    char.squash += char.squashVel;
+
+    for (const f of foods) {
+      if (f.eatSquash < 1) f.eatSquash += 0.05;
+    }
+
+    char.facingTarget = (char.state === 'eating') ? 1 : 0;
+    const facingSpeed = (char.state === 'eating') ? 0.10 : 0.14;
+    char.facingFront += (char.facingTarget - char.facingFront) * facingSpeed;
+
+    if (flyingFood) {
+      flyingFood.t += 1 / FLY_DURATION;
+      if (flyingFood.t >= 1) {
+        flyingFood = null;
+      }
+    }
+
+    if (!gameActive) {
+      updateScenery(WALK_SPEED * 0.2);
+      return;
+    }
+
+    if (char.state === 'eating') {
+      char.eatingTimer++;
+      char.y = char.baseY;
+      char.vy = 0;
+      char.grounded = true;
+      const chewPulse = Math.sin(char.eatingTimer * 0.35) * 0.04;
+      char.squash = 0.94 + chewPulse;
+
+      updateScenery(0.15);
+
+      if (char.eatingTimer >= char.EAT_DURATION) {
+        char.eatingTimer = 0;
+        char.state = 'walking';
+        char.grounded = true;
+        char.walkDuration = 0.8 + Math.random() * 1.5;
+        char.nextJumpAt = char.walkDuration;
+        char.squash = 0.9;
+        char.squashVel = 0.06;
+
+        const remaining = foods.filter(f => !f.eaten);
+        if (remaining.length === 0) {
+          reachedEnd = true;
+          gameState = 'idle';
+          pauseBtn.textContent = '🏁 Done';
+          pauseBtn.classList.add('paused');
+        }
+      }
+      return;
+    }
+
+    const nextFood = foods.find(f => !f.eaten);
+
+    if (nextFood) {
+      const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
+      const standoffScreenX = char.screenX + EAT_STANDOFF;
+      const remaining = foodScreenX - standoffScreenX;
+      const EAT_TRIGGER = 2;
+
+      if (char.grounded && char.state === 'walking' && remaining <= EAT_TRIGGER) {
+        worldOffset += remaining;
+
+        const startX = char.screenX + EAT_STANDOFF;
+        const startY = nextFood.y;
+
+        flyingFood = {
+          startX: startX,
+          startY: startY,
+          t: 0,
+          radius: nextFood.radius,
+          type: nextFood.type,
+          imageIndex: nextFood.imageIndex,
+          rotation: 0,
+          spin: (Math.random() - 0.5) * 0.4
+        };
+
+        nextFood.eaten = true;
+        nextFood.eatSquash = 0.6;
+        foodEaten++;
+        foodCountSpan.textContent = foodEaten;
+
+        foodCounterEl.style.transform = 'scale(1.15)';
+        setTimeout(() => { foodCounterEl.style.transform = 'scale(1)'; }, 150);
+
+        char.state = 'eating';
+        char.eatingTimer = 0;
+        char.vy = 0;
+        char.y = char.baseY;
+        char.grounded = true;
+        char.squash = 0.92;
+        char.squashVel = 0.05;
+        return;
+      }
+    }
+
+    char.stateTimer += dt;
+
+    if (char.state === 'walking') {
+      worldOffset += WALK_SPEED;
+      char.walkPhase += 0.18;
+
+      if (inWalkZone()) {
+        char.nextJumpAt = 9999;
+      } else {
+        char.nextJumpAt -= dt;
+        if (char.nextJumpAt <= 0) {
+          char.state = 'jumping';
+          char.grounded = false;
+          char.vy = char.jumpPower * (0.85 + Math.random() * 0.3);
+          char.squash = 0.82;
+          char.squashVel = 0.12;
+        }
+      }
+    } else if (char.state === 'jumping') {
+      worldOffset += JUMP_SPEED;
+
+      char.vy += GRAVITY;
+      char.y += char.vy;
+
+      if (char.y >= char.baseY) {
+        char.y = char.baseY;
+        char.vy = 0;
+        char.grounded = true;
+        char.squash = 0.86;
+        char.squashVel = 0.08;
+
+        char.state = 'walking';
+        if (inWalkZone()) {
+          char.nextJumpAt = 9999;
+        } else {
+          char.walkDuration = 0.7 + Math.random() * 1.8;
+          char.nextJumpAt = char.walkDuration;
+        }
+      }
+    }
+
+    updateScenery(char.state === 'jumping' ? JUMP_SPEED : WALK_SPEED);
+  }
+
+  function updateWeatherParticles() {
+    const intensity = weather.intensity;
+    const type = weather.type;
+    const now = Date.now();
+
+    if (type === 'windy' || type === 'stormy') {
+      weather.gustTimer -= 1/60;
+      if (weather.gustTimer <= 0) {
+        weather.gustActive = !weather.gustActive || Math.random() < 0.5;
+        weather.gustTimer = 0.4 + Math.random() * 1.6;
+        weather.gustStrength = weather.gustActive ? (0.6 + Math.random() * 0.8) : 0.15;
+      }
+    } else {
+      weather.gustStrength = 0;
+    }
+
+    weather.windTime += 0.016;
+
+    if (type === 'rainy' || type === 'stormy') {
+      const windDrift = (type === 'stormy' ? -2.5 : -1.2) * (0.4 + intensity);
+      for (const d of rainDrops) {
+        d.y += d.speed * (0.5 + intensity * 0.8);
+        d.x += windDrift;
+        if (d.y > CANVAS_H) { d.y = -20; d.x = Math.random() * CANVAS_W; }
+        if (d.x < -30) d.x = CANVAS_W + 20;
+      }
+    }
+
+    if (type === 'snowy') {
+      for (const s of snowFlakes) {
+        s.swayPhase += s.swaySpeed;
+        s.y += s.speed * (0.4 + intensity * 0.9);
+        s.x += Math.sin(s.swayPhase) * 0.7 * (0.3 + intensity);
+        if (s.y > CANVAS_H) { s.y = -10; s.x = Math.random() * CANVAS_W; }
+        if (s.x < -10) s.x = CANVAS_W + 10;
+        if (s.x > CANVAS_W + 10) s.x = -10;
+      }
+    }
+
+    if (type === 'windy' || type === 'stormy') {
+      const baseMult = type === 'stormy' ? 2.5 : 1.8;
+      const gustMult = 1 + weather.gustStrength * 1.5;
+      const windMult = baseMult * (0.5 + intensity) * gustMult;
+
+      for (const w of windStreaks) {
+        w.x -= w.speed * windMult;
+        w.y += Math.sin(now * 0.002 + w.x * 0.01) * 0.3;
+        if (w.x < -w.len - 10) {
+          w.x = CANVAS_W + 40;
+          w.y = Math.random() * (GROUND_Y * 0.9);
+          w.len = 80 + Math.random() * 160;
+          w.thickness = 1.5 + Math.random() * 2.5;
+          w.opacity = 0.4 + Math.random() * 0.5;
+        }
+      }
+
+      for (const leaf of windLeaves) {
+        leaf.swayPhase += leaf.swaySpeed;
+        leaf.x -= leaf.speed * windMult;
+        leaf.y += Math.sin(leaf.swayPhase) * 1.5;
+        leaf.rotation += leaf.rotSpeed * (1 + weather.gustStrength);
+        if (leaf.x < -40) {
+          leaf.x = CANVAS_W + 30 + Math.random() * 100;
+          leaf.y = 60 + Math.random() * (GROUND_Y * 0.85);
+          leaf.speed = 6 + Math.random() * 8;
+        }
+      }
+    }
+
+    if (type === 'foggy') {
+      for (const p of fogBanks) {
+        p.wobblePhase += p.wobbleSpeed;
+        p.x -= p.speed * (0.4 + intensity * 0.8);
+        p.y += Math.sin(p.wobblePhase) * 0.15;
+        if (p.x < -p.w / 2 - 100) {
+          p.x = CANVAS_W + p.w / 2 + Math.random() * 200;
+          p.y = GROUND_Y * 0.15 + Math.random() * (GROUND_Y * 0.9);
+          p.w = 180 + Math.random() * 280;
+          p.h = 80 + Math.random() * 120;
+          p.opacity = 0.35 + Math.random() * 0.35;
+        }
+      }
+    }
+
+    if (type === 'stormy') {
+      if (Math.random() < 0.004 * (0.5 + intensity * 1.5)) {
+        lightningFlashes.push({
+          life: 12, maxLife: 12,
+          strength: 0.4 + Math.random() * 0.5
+        });
+      }
+      for (let i = lightningFlashes.length - 1; i >= 0; i--) {
+        lightningFlashes[i].life--;
+        if (lightningFlashes[i].life <= 0) lightningFlashes.splice(i, 1);
+      }
+    }
+  }
+
+  function initScenery() {
+    clouds = [];
+    for (let i = 0; i < 7; i++) {
+      clouds.push({
+        worldX: Math.random() * CANVAS_W * 2,
+        y: 40 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.35),
+        scale: 0.6 + Math.random() * 0.8,
+        speed: 0.15 + Math.random() * 0.2
+      });
+    }
+    hills = [];
+    for (let i = 0; i < 6; i++) {
+      hills.push({
+        worldX: i * 300 + Math.random() * 100,
+        width: 200 + Math.random() * 150,
+        height: 60 + Math.random() * 50,
+        speed: 0.4
+      });
+    }
+  }
+
+  function initWeatherParticles() {
+    rainDrops = [];
+    snowFlakes = [];
+    windStreaks = [];
+    windLeaves = [];
+    fogBanks = [];
+    lightningFlashes = [];
+
+    for (let i = 0; i < 200; i++) {
+      rainDrops.push({
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * CANVAS_H,
+        len: 8 + Math.random() * 14,
+        speed: 8 + Math.random() * 10
+      });
+    }
+    for (let i = 0; i < 120; i++) {
+      snowFlakes.push({
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * CANVAS_H,
+        r: 1.5 + Math.random() * 3,
+        speed: 0.5 + Math.random() * 1.2,
+        swayPhase: Math.random() * Math.PI * 2,
+        swaySpeed: 0.02 + Math.random() * 0.04
+      });
+    }
+    for (let i = 0; i < 40; i++) {
+      windStreaks.push({
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * (GROUND_Y * 0.9),
+        len: 80 + Math.random() * 160,
+        speed: 10 + Math.random() * 12,
+        thickness: 1.5 + Math.random() * 2.5,
+        opacity: 0.4 + Math.random() * 0.5
+      });
+    }
+    for (let i = 0; i < 30; i++) {
+      windLeaves.push({
+        x: Math.random() * CANVAS_W,
+        y: 60 + Math.random() * (GROUND_Y * 0.85),
+        size: 6 + Math.random() * 8,
+        speed: 6 + Math.random() * 8,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.4,
+        swayPhase: Math.random() * Math.PI * 2,
+        swaySpeed: 0.08 + Math.random() * 0.1,
+        color: ['#7ec850', '#a8d858', '#ffb84d', '#ff9f7c', '#e8c860'][Math.floor(Math.random() * 5)]
+      });
+    }
+    for (let i = 0; i < 14; i++) {
+      fogBanks.push({
+        x: Math.random() * (CANVAS_W + 400) - 200,
+        y: GROUND_Y * 0.15 + Math.random() * (GROUND_Y * 0.9),
+        w: 180 + Math.random() * 280,
+        h: 80 + Math.random() * 120,
+        speed: 0.3 + Math.random() * 0.6,
+        opacity: 0.35 + Math.random() * 0.35,
+        wobblePhase: Math.random() * Math.PI * 2,
+        wobbleSpeed: 0.008 + Math.random() * 0.012
+      });
+    }
+  }
+
+  function updateScenery(speed) {
+    let windBoost = 0;
+    if (weather.type === 'windy') windBoost = (0.6 + weather.gustStrength * 0.8) * weather.intensity;
+    if (weather.type === 'stormy') windBoost = (1.2 + weather.gustStrength * 1.2) * weather.intensity;
+
+    const effectiveSpeed = speed + windBoost;
+
+    for (const c of clouds) {
+      c.worldX -= effectiveSpeed * c.speed;
+      if (c.worldX < -300 * c.scale) {
+        c.worldX = CANVAS_W + 200 + Math.random() * 300;
+        c.y = 40 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.35);
+        c.scale = 0.6 + Math.random() * 0.8;
+      }
+    }
+    for (const h of hills) {
+      h.worldX -= effectiveSpeed * h.speed;
+      if (h.worldX + h.width < -100) {
+        const maxX = Math.max(...hills.map(x => x.worldX), CANVAS_W);
+        h.worldX = maxX + 200 + Math.random() * 300;
+        h.width = 200 + Math.random() * 150;
+        h.height = 60 + Math.random() * 50;
+      }
+    }
+    for (const r of grassItems) r.swayPhase += 0.08;
+    for (const r of rockItems) r.swayPhase += 0.08;
+    for (const r of flowerItems) r.swayPhase += 0.08;
+  }
+
+  function lerpColor(a, b, t) {
+    t = Math.max(0, Math.min(1, t));
+    const ah = a.replace('#',''), bh = b.replace('#','');
+    const ar = parseInt(ah.substr(0,2),16), ag = parseInt(ah.substr(2,2),16), ab = parseInt(ah.substr(4,2),16);
+    const br = parseInt(bh.substr(0,2),16), bg = parseInt(bh.substr(2,2),16), bb = parseInt(bh.substr(4,2),16);
+    const rr = Math.round(ar + (br - ar) * t);
+    const rg = Math.round(ag + (bg - ag) * t);
+    const rb = Math.round(ab + (bb - ab) * t);
+    return `rgb(${rr},${rg},${rb})`;
+  }
+
+  function getSkyColors() {
+    const i = weather.intensity;
+    const type = weather.type;
+    let top = '#9dd6f5', mid = '#c2e8fa', bot = '#e3f4fd';
+
+    if (type === 'cloudy') {
+      top = lerpColor('#9dd6f5', '#8a9db0', 0.3 + i * 0.5);
+      mid = lerpColor('#c2e8fa', '#b0bcc7', 0.3 + i * 0.5);
+      bot = lerpColor('#e3f4fd', '#cfd8de', 0.3 + i * 0.5);
+    } else if (type === 'rainy') {
+      top = lerpColor('#9dd6f5', '#5a6b7a', 0.4 + i * 0.5);
+      mid = lerpColor('#c2e8fa', '#7a8a96', 0.4 + i * 0.5);
+      bot = lerpColor('#e3f4fd', '#9aa8b2', 0.4 + i * 0.5);
+    } else if (type === 'stormy') {
+      top = lerpColor('#9dd6f5', '#2d3742', 0.5 + i * 0.5);
+      mid = lerpColor('#c2e8fa', '#4a545e', 0.5 + i * 0.5);
+      bot = lerpColor('#e3f4fd', '#5e6870', 0.5 + i * 0.5);
+    } else if (type === 'snowy') {
+      top = lerpColor('#9dd6f5', '#c5d8e8', 0.4 + i * 0.4);
+      mid = lerpColor('#c2e8fa', '#dde8f2', 0.4 + i * 0.4);
+      bot = lerpColor('#e3f4fd', '#f0f5fa', 0.4 + i * 0.4);
+    } else if (type === 'foggy') {
+      top = lerpColor('#9dd6f5', '#c0c8d0', 0.5 + i * 0.4);
+      mid = lerpColor('#c2e8fa', '#d0d6dc', 0.5 + i * 0.4);
+      bot = lerpColor('#e3f4fd', '#e0e4e8', 0.5 + i * 0.4);
+    } else if (type === 'windy') {
+      top = lerpColor('#9dd6f5', '#b0d4ec', 0.3 + i * 0.3);
+      mid = lerpColor('#c2e8fa', '#cfe8f5', 0.3 + i * 0.3);
+      bot = lerpColor('#e3f4fd', '#e8f5fd', 0.3 + i * 0.3);
+    }
+    return { top, mid, bot };
+  }
+
+  function drawCloud(sx, sy, s) {
+    const baseW = 130 * s;
+    const baseH = 30 * s;
+    const baseY = sy + 4 * s;
+    const r = baseH / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(sx - baseW/2 + r, baseY - baseH/2);
+    ctx.lineTo(sx + baseW/2 - r, baseY - baseH/2);
+    ctx.quadraticCurveTo(sx + baseW/2, baseY - baseH/2, sx + baseW/2, baseY);
+    ctx.quadraticCurveTo(sx + baseW/2, baseY + baseH/2, sx + baseW/2 - r, baseY + baseH/2);
+    ctx.lineTo(sx - baseW/2 + r, baseY + baseH/2);
+    ctx.quadraticCurveTo(sx - baseW/2, baseY + baseH/2, sx - baseW/2, baseY);
+    ctx.quadraticCurveTo(sx - baseW/2, baseY - baseH/2, sx - baseW/2 + r, baseY - baseH/2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(sx - 42 * s, sy - 4 * s, 26 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(sx - 8 * s, sy - 22 * s, 34 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(sx + 28 * s, sy - 16 * s, 30 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(sx + 56 * s, sy - 2 * s, 22 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(sx + 6 * s, sy - 40 * s, 16 * s, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawCharacter() {
+    const cx = char.screenX;
+    const cy = char.y;
+    const squash = char.squash;
+    const stretch = 1 / Math.max(0.7, squash);
+    const t = char.facingFront;
+
+    const heightAboveGround = char.baseY - char.y;
+    const heightFactor = Math.max(0.3, 1 - heightAboveGround / (200 * ZOOM));
+
+    ctx.beginPath();
+    ctx.ellipse(cx, GROUND_Y + 2, 40 * ZOOM * heightFactor, 10 * ZOOM * heightFactor, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,0,0,${0.18 * heightFactor})`;
+    ctx.fill();
+
+    let tilt = 0;
+    if (char.state === 'walking' && gameState === 'running' && !isDragging && !reachedEnd) {
+      tilt = Math.sin(char.walkPhase) * 0.08;
+    }
+
+    let windTilt = 0;
+    if (weather.type === 'windy') windTilt = -(0.05 + weather.gustStrength * 0.1) * weather.intensity;
+    if (weather.type === 'stormy') windTilt = -(0.12 + weather.gustStrength * 0.15) * weather.intensity;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(tilt + windTilt);
+    ctx.scale(squash * ZOOM, stretch * ZOOM);
+
+    ctx.fillStyle = '#ffc896';
+    ctx.beginPath();
+    ctx.arc(0, 0, 34, 0, Math.PI * 2);
+    ctx.fill();
+
+    const bellyX = (1 - t) * 8;
+    ctx.fillStyle = '#ffe0b9';
+    ctx.beginPath();
+    ctx.ellipse(bellyX, 10, 20, 17, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    let footStride = 0;
+    let footY = 0;
+    if (char.state === 'walking' && gameState === 'running' && !isDragging && !reachedEnd) {
+      footStride = Math.sin(char.walkPhase) * 8;
+      footY = Math.abs(Math.sin(char.walkPhase)) * -3;
+    } else if (char.state === 'jumping') {
+      footStride = 12;
+      footY = -4;
+    }
+
+    ctx.fillStyle = '#ffb07c';
+    ctx.beginPath();
+    ctx.ellipse(-16 + footStride * 0.5, 30 + footY, 10, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(16 - footStride * 0.5, 30 + footY, 10, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const earLeftX = -20 - (1 - t) * 4;
+    const earRightX = 20 + (1 - t) * 4;
+    ctx.fillStyle = '#ffb07c';
+    ctx.beginPath();
+    ctx.ellipse(earLeftX, -40, 14, 16, -0.3 - (1 - t) * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(earRightX, -40, 14, 16, 0.3 + (1 - t) * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff9f7c';
+    ctx.beginPath();
+    ctx.ellipse(earLeftX, -42, 7, 9, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(earRightX, -42, 7, 9, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    const eyeShiftX = (1 - t) * 10;
+    const eyeSpacing = 13 - (1 - t) * 6;
+    const eyeY = -10;
+    const eyeOffsetY = Math.sin(char.blink) * 2;
+
+    ctx.fillStyle = '#2e1b0e';
+    ctx.beginPath();
+    ctx.ellipse(eyeShiftX - eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(eyeShiftX + eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(eyeShiftX - eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(eyeShiftX + eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffa5a5b0';
+    ctx.beginPath();
+    ctx.ellipse(eyeShiftX - eyeSpacing - 11, 2, 7, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(eyeShiftX + eyeSpacing + 11, 2, 7, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#6b3e1c';
+    ctx.lineWidth = 2.8;
+    if (char.state === 'eating') {
+      const chewSize = 5 + Math.sin(char.eatingTimer * 0.4) * 2;
+      ctx.fillStyle = '#6b3e1c';
+      ctx.beginPath();
+      ctx.arc(eyeShiftX, 10, chewSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a8a';
+      ctx.beginPath();
+      ctx.arc(eyeShiftX, 11, chewSize * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      if (t > 0.5) {
+        ctx.arc(eyeShiftX, 6, 9, 0.15, Math.PI - 0.15);
+      } else {
+        ctx.arc(eyeShiftX + 2, 6, 7, 0.2, Math.PI - 0.3);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#ff8a8a';
+      ctx.beginPath();
+      ctx.ellipse(eyeShiftX + 2, 13, 4, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (t < 0.5) {
+      ctx.fillStyle = '#e89b6e';
+      ctx.beginPath();
+      ctx.ellipse(eyeShiftX + eyeSpacing + 6, 0, 4, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    let armSwing = 0;
+    if (char.state === 'walking' && gameState === 'running' && !isDragging && !reachedEnd) {
+      armSwing = Math.sin(char.walkPhase) * 0.35;
+    } else if (char.state === 'jumping') {
+      armSwing = -0.5;
+    }
+
+    if (t > 0.2) {
+      ctx.globalAlpha = t;
+      ctx.fillStyle = '#e8a46e';
+      ctx.save();
+      ctx.translate(-30, 4);
+      ctx.rotate(-armSwing);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 9, 7, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.fillStyle = '#ffb07c';
+    ctx.save();
+    ctx.translate(30, 4);
+    ctx.rotate(armSwing);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 9, 7, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+
+    if (char.state === 'eating') {
+      const tt = Date.now() * 0.01;
+      for (let i = 0; i < 3; i++) {
+        const a = tt + i * 2.1;
+        const px = cx + Math.cos(a) * (30 * ZOOM + Math.sin(tt * 2) * 10 * ZOOM);
+        const py = cy - 20 * ZOOM + Math.sin(a) * 15 * ZOOM;
+        ctx.fillStyle = `rgba(255, 220, 120, ${0.6 + Math.sin(tt * 3 + i) * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 3 * ZOOM, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function drawFoodAt(x, y, radius, type, scale, rotation, imageIndex) {
+    if (imageIndex === undefined || imageIndex >= customFoodImages.length) return;
+    const img = customFoodImages[imageIndex];
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+
+    ctx.save();
+    ctx.translate(x, y);
+    if (rotation) ctx.rotate(rotation);
+    ctx.scale(scale, scale);
+
+    const size = radius * 2.2;
+    try {
+      ctx.drawImage(img, -size/2, -size/2, size, size);
+    } catch (e) {}
+
+    ctx.restore();
+  }
+
+  function drawRoadsideType(items, imageList) {
+    if (imageList.length === 0) return;
+
+    const windSwayAmount =
+      (weather.type === 'windy' ? 0.3 + weather.gustStrength * 0.4 : 0) +
+      (weather.type === 'stormy' ? 0.5 + weather.gustStrength * 0.5 : 0);
+    const swayScale = windSwayAmount * weather.intensity;
+
+    for (const r of items) {
+      const sx = r.worldX - worldOffset;
+      if (sx < -120 || sx > CANVAS_W + 120) continue;
+
+      const img = imageList[r.imgIndex];
+      if (!img || !img.complete || img.naturalWidth === 0) continue;
+
+      const swayX = Math.sin(r.swayPhase) * swayScale * 14 * ZOOM;
+      const y = GROUND_Y + r.yOffset;
+
+      try {
+        ctx.drawImage(
+          img,
+          sx + swayX - r.size / 2,
+          y - r.size,
+          r.size,
+          r.size
+        );
+      } catch (e) {}
+    }
+  }
+
+  function draw() {
+    const i = weather.intensity;
+    const type = weather.type;
+    const sky = getSkyColors();
+
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    skyGrad.addColorStop(0, sky.top);
+    skyGrad.addColorStop(0.7, sky.mid);
+    skyGrad.addColorStop(1, sky.bot);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, CANVAS_W, GROUND_Y + 10);
+
+    let sunAlpha = 1;
+    if (type === 'cloudy') sunAlpha = 0.7 - i * 0.4;
+    else if (type === 'rainy') sunAlpha = 0.35 - i * 0.3;
+    else if (type === 'stormy') sunAlpha = 0.1 - i * 0.1;
+    else if (type === 'foggy') sunAlpha = 0.4 - i * 0.3;
+    else if (type === 'snowy') sunAlpha = 0.5 - i * 0.3;
+    sunAlpha = Math.max(0, sunAlpha);
+
+    if (sunAlpha > 0.02) {
+      const sunX = CANVAS_W * 0.85;
+      const sunY = CANVAS_H * 0.13 + SKY_SHIFT;
+      const sunR = Math.min(CANVAS_W, CANVAS_H) * 0.09;
+      ctx.globalAlpha = sunAlpha;
+      ctx.fillStyle = '#fff7b0';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, sunR * 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffe570';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffe57080';
+      ctx.lineWidth = 4;
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2 + Date.now() * 0.0003;
+        ctx.beginPath();
+        ctx.moveTo(sunX + Math.cos(a) * sunR * 1.5, sunY + Math.sin(a) * sunR * 1.5);
+        ctx.lineTo(sunX + Math.cos(a) * sunR * 2.0, sunY + Math.sin(a) * sunR * 2.0);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    let cloudColor = '#ffffffd0';
+    let cloudAlpha = 1;
+    if (type === 'cloudy') { cloudColor = '#e0e4e8'; cloudAlpha = 0.8 + i * 0.2; }
+    else if (type === 'rainy') { cloudColor = '#9aa8b2'; cloudAlpha = 0.85; }
+    else if (type === 'stormy') { cloudColor = '#4a545e'; cloudAlpha = 0.9; }
+    else if (type === 'snowy') { cloudColor = '#f0f5fa'; cloudAlpha = 0.9; }
+    else if (type === 'foggy') { cloudColor = '#d8dde2'; cloudAlpha = 0.7; }
+
+    ctx.fillStyle = cloudColor;
+    ctx.globalAlpha = cloudAlpha;
+    for (const c of clouds) {
+      drawCloud(c.worldX, c.y, c.scale * ZOOM);
+    }
+    ctx.globalAlpha = 1;
+
+    let hillColor = '#a8d88c';
+    if (type === 'rainy' || type === 'stormy') hillColor = '#6a8a5e';
+    else if (type === 'snowy') hillColor = '#dfe8f0';
+    else if (type === 'foggy') hillColor = '#a8bca0';
+    else if (type === 'cloudy') hillColor = '#98c880';
+    ctx.fillStyle = hillColor;
+    for (const h of hills) {
+      ctx.beginPath();
+      ctx.ellipse(h.worldX + h.width / 2, GROUND_Y + 10, h.width / 2, h.height, 0, Math.PI, 0);
+      ctx.fill();
+    }
+
+    if (customGrassImages.length === 0) {
+      let grassColor = '#7ec850';
+      if (type === 'rainy' || type === 'stormy') grassColor = '#4a8a3a';
+      else if (type === 'snowy') grassColor = '#e0e8f0';
+      else if (type === 'foggy') grassColor = '#88b078';
+      ctx.fillStyle = grassColor;
+      ctx.fillRect(0, GROUND_Y - 6, CANVAS_W, 12);
+    }
+
+    let roadTop = '#9b8a78', roadBot = '#7a6a58';
+    if (type === 'rainy') { roadTop = '#6a5a4a'; roadBot = '#4a3a2a'; }
+    else if (type === 'stormy') { roadTop = '#4a4a4a'; roadBot = '#2a2a2a'; }
+    else if (type === 'snowy') { roadTop = '#d0d8e0'; roadBot = '#a8b0b8'; }
+
+    // Road rect: from GROUND_Y + 6 to CANVAS_H
+    const roadTopY = GROUND_Y + 6;
+    const roadBotY = CANVAS_H;
+    const roadMiddleY = (roadTopY + roadBotY) / 2;
+
+    const roadGrad = ctx.createLinearGradient(0, GROUND_Y, 0, CANVAS_H);
+    roadGrad.addColorStop(0, roadTop);
+    roadGrad.addColorStop(1, roadBot);
+    ctx.fillStyle = roadGrad;
+    ctx.fillRect(0, roadTopY, CANVAS_W, CANVAS_H - GROUND_Y);
+
+    // ✅ Dashed line at the TRUE MIDDLE of the road
+    ctx.strokeStyle = type === 'snowy' ? '#ffffff' : '#f5e6a3';
+    ctx.lineWidth = 6 * ZOOM;
+    ctx.setLineDash([40 * ZOOM, 35 * ZOOM]);
+    ctx.lineDashOffset = worldOffset * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, roadMiddleY);
+    ctx.lineTo(CANVAS_W, roadMiddleY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+
+    // Top edge of the road
+    ctx.strokeStyle = '#ffffff60';
+    ctx.lineWidth = 3 * ZOOM;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y + 14);
+    ctx.lineTo(CANVAS_W, GROUND_Y + 14);
+    ctx.stroke();
+
+    drawRoadsideType(grassItems, customGrassImages);
+    drawRoadsideType(rockItems, customRockImages);
+    drawRoadsideType(flowerItems, customFlowerImages);
+
+    const now = Date.now();
+    for (const f of foods) {
+      if (f.eaten) continue;
+      const screenX = char.screenX + (f.worldDistance - worldOffset);
+      if (screenX < -150 || screenX > CANVAS_W + 150) continue;
+
+      const bob = Math.sin(now * 0.005 + f.bobPhase) * 3 * ZOOM;
+
+      ctx.beginPath();
+      ctx.ellipse(screenX, GROUND_Y + 2, f.radius * 0.8, f.radius * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#00000022';
+      ctx.fill();
+
+      drawFoodAt(screenX, f.y + bob, f.radius, f.type, f.eatSquash, 0, f.imageIndex);
+    }
+
+    drawCharacter();
+
+    if (flyingFood) {
+      const mouth = getMouthPos();
+      const t = flyingFood.t;
+      const eased = t < 0.5
+        ? 2 * t * t
+        : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+      const px = flyingFood.startX + (mouth.x - flyingFood.startX) * eased;
+      const baseY = flyingFood.startY + (mouth.y - flyingFood.startY) * eased;
+      const arcHeight = 40 * ZOOM;
+      const arc = Math.sin(t * Math.PI) * arcHeight;
+      const py = baseY - arc;
+
+      const scale = 1 - eased * 0.6;
+      flyingFood.rotation += flyingFood.spin;
+
+      if (t < 0.9) {
+        for (let s = 0; s < 2; s++) {
+          const trailT = Math.max(0, t - 0.05 - s * 0.05);
+          const trailEased = trailT < 0.5
+            ? 2 * trailT * trailT
+            : 1 - Math.pow(-2 * trailT + 2, 2) / 2;
+          const tx = flyingFood.startX + (mouth.x - flyingFood.startX) * trailEased;
+          const baseTY = flyingFood.startY + (mouth.y - flyingFood.startY) * trailEased;
+          const arcT = Math.sin(trailT * Math.PI) * arcHeight;
+          const ty = baseTY - arcT;
+          ctx.fillStyle = `rgba(255, 240, 180, ${(1 - t) * 0.6})`;
+          ctx.beginPath();
+          ctx.arc(tx, ty, 3 * (1 - trailT * 0.5), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      drawFoodAt(px, py, flyingFood.radius, flyingFood.type, scale, flyingFood.rotation, flyingFood.imageIndex);
+    }
+
+    if (type === 'rainy' || type === 'stormy') {
+      const dropCount = Math.floor(rainDrops.length * (0.3 + i * 0.7));
+      ctx.strokeStyle = type === 'stormy' ? '#b8c8d8' : '#a8c0d8';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.5 + i * 0.4;
+      for (let k = 0; k < dropCount; k++) {
+        const d = rainDrops[k];
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x + 1.5, d.y + d.len);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    if (type === 'snowy') {
+      const flakeCount = Math.floor(snowFlakes.length * (0.3 + i * 0.7));
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.7 + i * 0.3;
+      for (let k = 0; k < flakeCount; k++) {
+        const s = snowFlakes[k];
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    if (type === 'windy' || type === 'stormy') {
+      const streakCount = Math.floor(windStreaks.length * (0.4 + i * 0.6));
+      const gustMult = 1 + weather.gustStrength * 0.8;
+
+      for (let k = 0; k < streakCount; k++) {
+        const w = windStreaks[k];
+        const alpha = w.opacity * (0.5 + i * 0.6) * gustMult;
+        const grad = ctx.createLinearGradient(w.x, w.y, w.x + w.len, w.y);
+        grad.addColorStop(0, `rgba(255,255,255,0)`);
+        grad.addColorStop(0.3, `rgba(255,255,255,${alpha})`);
+        grad.addColorStop(1, `rgba(255,255,255,0)`);
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = w.thickness * (0.8 + weather.gustStrength * 0.4);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(w.x, w.y);
+        ctx.lineTo(w.x + w.len, w.y);
+        ctx.stroke();
+      }
+
+      const leafCount = Math.floor(windLeaves.length * (0.5 + i * 0.5));
+      for (let k = 0; k < leafCount; k++) {
+        const leaf = windLeaves[k];
+        ctx.save();
+        ctx.translate(leaf.x, leaf.y);
+        ctx.rotate(leaf.rotation);
+        ctx.fillStyle = leaf.color;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, leaf.size, leaf.size * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-leaf.size, 0);
+        ctx.lineTo(leaf.size, 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    if (type === 'foggy') {
+      const bankCount = fogBanks.length;
+      const baseOpacity = 0.4 + i * 0.4;
+
+      for (let k = 0; k < bankCount; k++) {
+        const p = fogBanks[k];
+        const wobble = Math.sin(p.wobblePhase) * 8;
+
+        const grad = ctx.createRadialGradient(
+          p.x + wobble, p.y, 0,
+          p.x + wobble, p.y, Math.max(p.w, p.h) * 0.6
+        );
+        const op = p.opacity * baseOpacity;
+        grad.addColorStop(0, `rgba(235, 240, 245, ${op})`);
+        grad.addColorStop(0.6, `rgba(235, 240, 245, ${op * 0.7})`);
+        grad.addColorStop(1, `rgba(235, 240, 245, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(p.x + wobble, p.y, p.w * 0.6, p.h * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const hazeGrad = ctx.createLinearGradient(0, GROUND_Y * 0.5, 0, GROUND_Y);
+      hazeGrad.addColorStop(0, `rgba(230, 235, 240, 0)`);
+      hazeGrad.addColorStop(1, `rgba(230, 235, 240, ${0.1 + i * 0.15})`);
+      ctx.fillStyle = hazeGrad;
+      ctx.fillRect(0, GROUND_Y * 0.5, CANVAS_W, GROUND_Y * 0.5);
+    }
+
+    if (type === 'stormy' && lightningFlashes.length > 0) {
+      for (const flash of lightningFlashes) {
+        const alpha = (flash.life / flash.maxLife) * flash.strength * (0.5 + i * 0.7);
+        ctx.fillStyle = `rgba(255, 255, 220, ${alpha})`;
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      }
+    }
+
+    if (type === 'stormy') {
+      ctx.fillStyle = `rgba(20, 25, 35, ${0.1 + i * 0.3})`;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    } else if (type === 'rainy') {
+      ctx.fillStyle = `rgba(30, 50, 70, ${0.05 + i * 0.12})`;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    } else if (type === 'cloudy') {
+      ctx.fillStyle = `rgba(180, 190, 200, ${i * 0.1})`;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    }
+
+    if (gameState === 'idle' && !reachedEnd) {
+      const pulse = 0.7 + Math.sin(Date.now() * 0.004) * 0.3;
+      ctx.fillStyle = `rgba(0,0,0,${0.35 * pulse})`;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.font = `bold ${Math.max(28, Math.min(CANVAS_W, CANVAS_H) * 0.06)}px "Segoe UI", sans-serif`;
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 20;
+
+      let msg = '▶️  Press Start to Play';
+      if (customFoodImages.length === 0) {
+        msg = '🍎  Upload a Food Photo to Begin';
+      }
+      ctx.fillText(msg, CANVAS_W / 2, CANVAS_H / 2);
+      ctx.shadowBlur = 0;
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    if (reachedEnd) {
+      ctx.fillStyle = 'rgba(255, 240, 200, 0.6)';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.font = `bold ${Math.max(36, Math.min(CANVAS_W, CANVAS_H) * 0.075)}px "Segoe UI", sans-serif`;
+      ctx.fillStyle = '#8b5a2b';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#fff';
+      ctx.shadowBlur = 20;
+      ctx.fillText('🎉 All Eaten!', CANVAS_W / 2, CANVAS_H / 2 - 30);
+      ctx.font = `bold ${Math.max(20, Math.min(CANVAS_W, CANVAS_H) * 0.04)}px "Segoe UI", sans-serif`;
+      ctx.fillStyle = '#6b3e1c';
+      ctx.fillText(`You ate ${foodEaten} fruits`, CANVAS_W / 2, CANVAS_H / 2 + 40);
+      ctx.shadowBlur = 0;
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    if (gameState === 'running' && isDragging) {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, CANVAS_H - 40, CANVAS_W, 40);
+      ctx.font = `bold 15px "Segoe UI", sans-serif`;
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText('✋ Dragging the road…', CANVAS_W / 2, CANVAS_H - 16);
+    }
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function getPointerX(e) {
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
+    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
+    return e.clientX;
+  }
+
+  function onPointerDown(e) {
+    if (e.target !== canvas) return;
+    isDragging = true;
+    dragMoved = false;
+    dragStartX = getPointerX(e);
+    dragStartWorldOffset = worldOffset;
+    canvas.classList.add('dragging');
+    e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const x = getPointerX(e);
+    const dx = x - dragStartX;
+    if (Math.abs(dx) > 3) dragMoved = true;
+    worldOffset = dragStartWorldOffset - dx;
+    if (worldOffset < 0) worldOffset = 0;
+    e.preventDefault();
+  }
+
+  function onPointerUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    canvas.classList.remove('dragging');
+    e.preventDefault();
+  }
+
+  canvas.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+
+  canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+  window.addEventListener('touchmove', onPointerMove, { passive: false });
+  window.addEventListener('touchend', onPointerUp, { passive: false });
+  window.addEventListener('touchcancel', onPointerUp, { passive: false });
+
+  weatherToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    weatherToggle.classList.toggle('open');
+    weatherMenu.classList.toggle('open');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!weatherMenu.contains(e.target) && !weatherToggle.contains(e.target)) {
+      weatherToggle.classList.remove('open');
+      weatherMenu.classList.remove('open');
+    }
+  });
+
+  weatherMenu.addEventListener('click', (e) => {
+    const btn = e.target.closest('.weather-btn');
+    if (!btn) return;
+    document.querySelectorAll('.weather-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    weather.type = btn.dataset.weather;
+    weatherToggleLabel.textContent = weatherLabels[weather.type];
+    weatherToggle.classList.remove('open');
+    weatherMenu.classList.remove('open');
+  });
+
+  intensitySlider.addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    weather.intensity = v / 100;
+    intensityValue.textContent = v + '%';
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    if (reachedEnd) return;
+    if (gameState === 'idle') {
+      if (customFoodImages.length === 0) return;
+      gameState = 'running';
+      pauseBtn.classList.remove('paused');
+      pauseBtn.textContent = '⏸️ Pause';
+    } else if (gameState === 'running') {
+      gameState = 'paused';
+      pauseBtn.classList.add('paused');
+      pauseBtn.textContent = '▶️ Resume';
+    } else if (gameState === 'paused') {
+      gameState = 'running';
+      pauseBtn.classList.remove('paused');
+      pauseBtn.textContent = '⏸️ Pause';
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') resetGame();
+    if (e.key === ' ') {
+      e.preventDefault();
+      pauseBtn.click();
+    }
+  });
+
+  resizeCanvas();
+  resetGame();
+  gameLoop();
+})();
+</script>
+</body>
+</html>
