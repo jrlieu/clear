@@ -1090,7 +1090,7 @@
   let arrival = null;
 
   let foodMountain = null;
-  let finalDrinkRef = null;   // reference to the "final drink" object inside foods[]
+  let finalDrinkRef = null;
 
   let clouds = [];
   let hills = [];
@@ -1119,7 +1119,6 @@
 
     if (sharedEatableList.length === 0) return;
 
-    // ---- Stage 2: spaced-out items from the shared ordered list ----
     let distance = 200 * ZOOM;
     let lastDistance = 0;
     sharedEatableList.forEach((item, i) => {
@@ -1141,7 +1140,6 @@
       });
     });
 
-    // ============ Stage 3: PYRAMID (food-only entries) ============
     const foodOnly = sharedEatableList.filter(e => e.kind === 'food');
     if (foodOnly.length > 0) {
       const totalItems = foodOnly.length;
@@ -1197,9 +1195,6 @@
       };
     }
 
-    // ---- Stage 4: Final drink ----
-    // Add one extra drink AFTER the pyramid as a regular road entry, marked as
-    // isFinalDrink so we can gate its consumption behind pyramid completion.
     const drinkOnly = sharedEatableList.filter(e => e.kind === 'drink');
     if (drinkOnly.length > 0) {
       const pick = drinkOnly[Math.floor(Math.random() * drinkOnly.length)];
@@ -1226,7 +1221,6 @@
       lastDistance = finalDrinkWorldDistance;
     }
 
-    // ---- Stage 5: Portal ----
     const portalGap = (200 + Math.random() * 150) * ZOOM;
     portal = {
       worldDistance: lastDistance + portalGap,
@@ -1519,7 +1513,6 @@
     char.vy = 0;
   }
 
-  // TOP row first (left → right), then the row below, etc.
   function nextMountainItem() {
     if (!foodMountain) return null;
     const lastRow = foodMountain.rows - 1;
@@ -1533,17 +1526,9 @@
     return null;
   }
 
-  // Returns the pyramid base screen-left position (where pyramid trigger zone begins)
   function pyramidLeftWorldX() {
     if (!foodMountain) return Infinity;
-    const widest = foodMountain.rowCounts[0];
-    // The leftmost slot is the start of the widest row (row 0, col 0).
     return foodMountain.baseWorldDistance;
-  }
-  function pyramidRightWorldX() {
-    if (!foodMountain) return -Infinity;
-    const widest = foodMountain.rowCounts[0];
-    return foodMountain.baseWorldDistance + (widest - 1) * foodMountain.colSpacing;
   }
 
   function update() {
@@ -1670,7 +1655,6 @@
       }
     }
 
-    // ---- Arrival ----
     if (arrival) {
       arrival.timer++;
       arrival.portalFadeIn = Math.min(1, arrival.timer / 20);
@@ -1715,7 +1699,6 @@
       return;
     }
 
-    // ---- Portal suction ----
     if (portalSuck) {
       portalSuck.timer++;
       const t = Math.min(1, portalSuck.timer / portalSuck.totalTime);
@@ -1839,20 +1822,6 @@
       return;
     }
 
-    // ============================================================
-    // Consumption logic — SEQUENCED STAGES
-    //
-    // We pick the next thing to eat based on what stage we're in:
-    //   1) any remaining non-final spaced item on the road
-    //   2) the pyramid (once all spaced items are consumed)
-    //   3) the final drink (once pyramid is cleared)
-    //   4) the portal
-    //
-    // This prevents the character from walking past the pyramid to
-    // reach the final drink that sits beyond it.
-    // ============================================================
-
-    // Stage 1: next spaced road item that is NOT the final drink.
     const nextSpacedNonFinal = foods.find(f => !f.triggered && !f.isFinalDrink);
 
     if (nextSpacedNonFinal && hasTouchedFood(nextSpacedNonFinal)) {
@@ -1864,18 +1833,15 @@
       }
     }
 
-    // Stage 2: pyramid — runs only when no more non-final spaced items remain.
     const spacedDone = !foods.some(f => !f.triggered && !f.isFinalDrink);
     if (spacedDone && foodMountain && !foodMountain.triggered) {
+      // Trigger zone is ONLY at the far-left edge of the pyramid — the character
+      // eats standing beside the leftmost column, not in the middle.
       const pyrLeft = pyramidLeftWorldX();
-      const pyrRight = pyramidRightWorldX();
       const pyrLeftScreen = char.screenX + (pyrLeft - worldOffset);
-      const pyrRightScreen = char.screenX + (pyrRight - worldOffset);
-
       const charRightEdge = char.screenX + char.radius;
-      const charLeftEdge = char.screenX - char.radius;
 
-      if (charRightEdge >= pyrLeftScreen - 10 * ZOOM && charLeftEdge <= pyrRightScreen + 10 * ZOOM) {
+      if (charRightEdge >= pyrLeftScreen - 4 * ZOOM) {
         const mi = nextMountainItem();
         if (mi) {
           triggerMountainConsume(mi);
@@ -1886,7 +1852,6 @@
       }
     }
 
-    // Stage 3: final drink — runs only after the pyramid is fully cleared.
     const pyramidDone = !foodMountain || foodMountain.triggered;
     if (spacedDone && pyramidDone && finalDrinkRef && !finalDrinkRef.triggered) {
       if (hasTouchedFood(finalDrinkRef)) {
@@ -1899,7 +1864,6 @@
       }
     }
 
-    // Stage 4: portal — runs only after EVERYTHING else is consumed.
     const everythingDone = spacedDone && pyramidDone && (!finalDrinkRef || finalDrinkRef.triggered);
     if (everythingDone && portal && !portal.activated && !portalStare && !portalSuck) {
       const portalScreenX = char.screenX + (portal.worldDistance - worldOffset);
@@ -1917,7 +1881,6 @@
       worldOffset += WALK_SPEED;
       char.walkPhase += 0.18;
 
-      // Walk with the spacing logic based on next road item if any remains.
       const nextRoad = foods.find(f => !f.triggered && !f.isFinalDrink);
       if (nextRoad) {
         if (inWalkZone()) {
@@ -2067,12 +2030,16 @@
 
   function initScenery() {
     clouds = [];
-    for (let i = 0; i < 7; i++) {
+    const CLOUD_COUNT = 8;
+    const SPREAD = CANVAS_W * 3;
+    const baseSpacing = SPREAD / CLOUD_COUNT;
+    for (let i = 0; i < CLOUD_COUNT; i++) {
+      const jitter = (Math.random() - 0.5) * baseSpacing * 0.5;
       clouds.push({
-        worldX: Math.random() * CANVAS_W * 2,
-        y: 40 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.35),
-        scale: 0.6 + Math.random() * 0.8,
-        speed: 0.15 + Math.random() * 0.2
+        worldX: i * baseSpacing + jitter,
+        y: 60 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.45),
+        scale: 0.55 + Math.random() * 0.7,
+        speed: 0.10 + Math.random() * 0.10
       });
     }
     hills = [];
@@ -2159,9 +2126,15 @@
     for (const c of clouds) {
       c.worldX -= effectiveSpeed * c.speed;
       if (c.worldX < -300 * c.scale) {
-        c.worldX = CANVAS_W + 200 + Math.random() * 300;
-        c.y = 40 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.35);
-        c.scale = 0.6 + Math.random() * 0.8;
+        let maxX = -Infinity;
+        for (const other of clouds) {
+          if (other !== c && other.worldX > maxX) maxX = other.worldX;
+        }
+        const minGap = 220 * ZOOM;
+        c.worldX = Math.max(CANVAS_W + 200, maxX + minGap) + Math.random() * 200;
+        c.y = 60 + SKY_SHIFT + Math.random() * (GROUND_Y * 0.45);
+        c.scale = 0.55 + Math.random() * 0.7;
+        c.speed = 0.10 + Math.random() * 0.10;
       }
     }
     for (const h of hills) {
@@ -2223,40 +2196,40 @@
   }
 
   function drawCloud(sx, sy, s) {
-    const baseW = 130 * s;
-    const baseH = 30 * s;
-    const baseY = sy + 4 * s;
-    const r = baseH / 2;
+    const bw = 130 * s;
+    const bh = 34 * s;
+    const baseY = sy + bh * 0.35;
 
     ctx.beginPath();
-    ctx.moveTo(sx - baseW/2 + r, baseY - baseH/2);
-    ctx.lineTo(sx + baseW/2 - r, baseY - baseH/2);
-    ctx.quadraticCurveTo(sx + baseW/2, baseY - baseH/2, sx + baseW/2, baseY);
-    ctx.quadraticCurveTo(sx + baseW/2, baseY + baseH/2, sx + baseW/2 - r, baseY + baseH/2);
-    ctx.lineTo(sx - baseW/2 + r, baseY + baseH/2);
-    ctx.quadraticCurveTo(sx - baseW/2, baseY + baseH/2, sx - baseW/2, baseY);
-    ctx.quadraticCurveTo(sx - baseW/2, baseY - baseH/2, sx - baseW/2 + r, baseY - baseH/2);
+    const r = bh * 0.5;
+    ctx.moveTo(sx - bw/2 + r, baseY - bh/2);
+    ctx.lineTo(sx + bw/2 - r, baseY - bh/2);
+    ctx.quadraticCurveTo(sx + bw/2, baseY - bh/2, sx + bw/2, baseY);
+    ctx.quadraticCurveTo(sx + bw/2, baseY + bh/2, sx + bw/2 - r, baseY + bh/2);
+    ctx.lineTo(sx - bw/2 + r, baseY + bh/2);
+    ctx.quadraticCurveTo(sx - bw/2, baseY + bh/2, sx - bw/2, baseY);
+    ctx.quadraticCurveTo(sx - bw/2, baseY - bh/2, sx - bw/2 + r, baseY - bh/2);
     ctx.closePath();
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(sx - 42 * s, sy - 4 * s, 26 * s, 0, Math.PI * 2);
+    ctx.arc(sx - bw * 0.28, baseY - bh * 0.35, bh * 1.05, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(sx - 8 * s, sy - 22 * s, 34 * s, 0, Math.PI * 2);
+    ctx.arc(sx - bw * 0.08, baseY - bh * 0.75, bh * 1.30, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(sx + 28 * s, sy - 16 * s, 30 * s, 0, Math.PI * 2);
+    ctx.arc(sx + bw * 0.14, baseY - bh * 0.55, bh * 1.15, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(sx + 56 * s, sy - 2 * s, 22 * s, 0, Math.PI * 2);
+    ctx.arc(sx + bw * 0.32, baseY - bh * 0.30, bh * 0.95, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(sx + 6 * s, sy - 40 * s, 16 * s, 0, Math.PI * 2);
+    ctx.arc(sx + bw * 0.02, baseY - bh * 1.10, bh * 0.65, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -2613,7 +2586,6 @@
     ctx.fill();
     ctx.restore();
 
-    // Blushes drawn last so they sit in front of both arms
     ctx.fillStyle = '#ffa5a5b0';
     ctx.beginPath();
     ctx.ellipse(-eyeSpacing - 11, 2, 7, 5, 0, 0, Math.PI * 2);
