@@ -170,7 +170,7 @@
     border: none;
     border-radius: 16px;
     padding: 11px 14px;
-    font-size: 0.82rem;
+    font-size: 1rem;
     font-weight: 800;
     color: #5e3a1c;
     cursor: pointer;
@@ -204,6 +204,7 @@
     color: #6b3e1c;
     cursor: pointer;
     pointer-events: auto;
+    font-weight: 800;
   }
   .count-badge:hover {
     background: #ffd88a;
@@ -214,19 +215,6 @@
     min-width: 0;
   }
 
-  .food-counter {
-    background: #ffeac1;
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: #5e3a1c;
-    box-shadow: inset 0 -4px 0 #e6c7a2, 0 5px 0 #9e7b5b, 0 8px 16px rgba(0,0,0,0.15);
-    text-shadow: 1px 1px 0 #ffdbb5;
-    pointer-events: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
   .pause-btn {
     background: #a8d8f0;
     border: none;
@@ -322,10 +310,19 @@
     transform: translateY(2px);
     box-shadow: 0 1px 0 #b46f3f;
   }
+  .photo-modal-hint {
+    font-size: 0.78rem;
+    color: #8b5a2b;
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 0.4px;
+  }
   .photo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 10px;
+    touch-action: none;
   }
   .photo-cell {
     position: relative;
@@ -334,11 +331,28 @@
     padding: 6px;
     box-shadow: inset 0 -3px 0 #e6c7a2;
     text-align: center;
-    cursor: pointer;
+    cursor: grab;
     transition: 0.1s;
+    touch-action: none;
   }
+  .photo-cell:active { cursor: grabbing; }
   .photo-cell:hover {
     background: #ffd88a;
+  }
+  .photo-cell.placeholder {
+    opacity: 0.25;
+  }
+  .photo-cell.drag-over-cell {
+    outline: 3px dashed #b46f3f;
+    outline-offset: -3px;
+  }
+  .photo-cell.dragging-cell {
+    opacity: 0.85;
+    transform: scale(1.06);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.35);
+    cursor: grabbing;
+    pointer-events: none;
+    z-index: 100;
   }
   .photo-cell img {
     width: 100%;
@@ -362,6 +376,18 @@
     font-weight: 700;
     padding: 20px 0;
     text-align: center;
+  }
+
+  .drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.1) rotate(-3deg);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    border-radius: 14px;
+    transition: none;
+    will-change: left, top;
   }
 
   .photo-action-backdrop {
@@ -401,19 +427,19 @@
   }
   .photo-action-btns {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
   }
   .photo-action-btns button {
     flex: 1;
     border: none;
-    border-radius: 16px;
-    padding: 14px;
-    font-size: 1rem;
+    border-radius: 14px;
+    padding: 12px 8px;
+    font-size: 0.85rem;
     font-weight: 800;
     cursor: pointer;
     font-family: inherit;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     transition: 0.08s;
   }
   .replace-btn {
@@ -425,6 +451,16 @@
   .replace-btn:active {
     transform: translateY(3px);
     box-shadow: 0 2px 0 #6a9ab8;
+  }
+  .duplicate-btn {
+    background: #c8e8a8;
+    color: #3a5a1c;
+    box-shadow: 0 5px 0 #6a9a3a;
+    text-shadow: 1px 1px 0 #e0f4c8;
+  }
+  .duplicate-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #6a9a3a;
   }
   .delete-btn {
     background: #ff8a8a;
@@ -482,33 +518,32 @@
   </div>
 
   <label class="upload-btn" id="foodUploadBtn">
-    🍎 Food <span class="count-badge" id="foodPhotoCount">(0)</span>
-    <input type="file" id="foodUpload" accept="image/*">
+    🍎<span class="count-badge" id="foodPhotoCount">(0)</span>
+    <input type="file" id="foodUpload" accept="image/*" multiple>
   </label>
 
   <label class="upload-btn" id="drinkUploadBtn">
-    🥤 Drink <span class="count-badge" id="drinkPhotoCount">(0)</span>
-    <input type="file" id="drinkUpload" accept="image/*">
+    🥤<span class="count-badge" id="drinkPhotoCount">(0)</span>
+    <input type="file" id="drinkUpload" accept="image/*" multiple>
   </label>
 
   <label class="upload-btn" id="grassUploadBtn">
-    🌿 Grass <span class="count-badge" id="grassPhotoCount">(0)</span>
-    <input type="file" id="grassUpload" accept="image/*">
+    🌿<span class="count-badge" id="grassPhotoCount">(0)</span>
+    <input type="file" id="grassUpload" accept="image/*" multiple>
   </label>
 
   <label class="upload-btn" id="rockUploadBtn">
-    🪨 Rock <span class="count-badge" id="rockPhotoCount">(0)</span>
-    <input type="file" id="rockUpload" accept="image/*">
+    🪨<span class="count-badge" id="rockPhotoCount">(0)</span>
+    <input type="file" id="rockUpload" accept="image/*" multiple>
   </label>
 
   <label class="upload-btn" id="flowerUploadBtn">
-    🌸 Flower <span class="count-badge" id="flowerPhotoCount">(0)</span>
-    <input type="file" id="flowerUpload" accept="image/*">
+    🌸<span class="count-badge" id="flowerPhotoCount">(0)</span>
+    <input type="file" id="flowerUpload" accept="image/*" multiple>
   </label>
 
   <div class="top-bar-spacer"></div>
 
-  <div class="food-counter" id="foodCounterEl">🍎 <span id="foodCount">0</span></div>
   <button class="pause-btn" id="pauseBtn">▶️ Start</button>
   <button class="reset-btn" id="resetBtn">🔄 Play Again</button>
 </div>
@@ -516,6 +551,7 @@
 <div class="photo-modal-backdrop" id="photoModalBackdrop">
   <div class="photo-modal">
     <h2 id="photoModalTitle">Uploaded Photos <button class="close-x" id="photoModalClose">✕</button></h2>
+    <div class="photo-modal-hint">✋ Press &amp; hold, then drag to reorder</div>
     <div class="photo-grid" id="photoGrid"></div>
   </div>
 </div>
@@ -525,8 +561,9 @@
     <img id="photoActionPreview" src="" alt="">
     <h3 id="photoActionTitle">Photo</h3>
     <div class="photo-action-btns">
-      <button class="replace-btn" id="photoActionReplace">🔄 REPLACE</button>
-      <button class="delete-btn" id="photoActionDelete">🗑️ DELETE</button>
+      <button class="replace-btn" id="photoActionReplace">🔄</button>
+      <button class="duplicate-btn" id="photoActionDuplicate">📋</button>
+      <button class="delete-btn" id="photoActionDelete">🗑️</button>
     </div>
     <button class="cancel-btn" id="photoActionCancel">Cancel</button>
   </div>
@@ -536,8 +573,6 @@
 (function() {
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const foodCountSpan = document.getElementById('foodCount');
-  const foodCounterEl = document.getElementById('foodCounterEl');
   const intensitySlider = document.getElementById('intensitySlider');
   const intensityValue = document.getElementById('intensityValue');
   const weatherToggle = document.getElementById('weatherToggle');
@@ -567,6 +602,7 @@
   const photoActionPreview = document.getElementById('photoActionPreview');
   const photoActionTitle = document.getElementById('photoActionTitle');
   const photoActionReplace = document.getElementById('photoActionReplace');
+  const photoActionDuplicate = document.getElementById('photoActionDuplicate');
   const photoActionDelete = document.getElementById('photoActionDelete');
   const photoActionCancel = document.getElementById('photoActionCancel');
 
@@ -644,6 +680,22 @@
       replaceInput.click();
     };
 
+    photoActionDuplicate.onclick = () => {
+      const original = list[index];
+      let copy;
+      if (kind === 'food' || kind === 'drink') {
+        const newOrder = globalUploadCounter++;
+        copy = { img: original.img, order: newOrder };
+      } else {
+        copy = original;
+      }
+      list.splice(index + 1, 0, copy);
+      updateBadges();
+      photoActionBackdrop.classList.remove('open');
+      if (kind === 'food' || kind === 'drink') rebuildFoods();
+      openPhotoModal(kind);
+    };
+
     photoActionDelete.onclick = () => {
       list.splice(index, 1);
       updateBadges();
@@ -678,25 +730,36 @@
 
   function attachUpload(inputEl, list, btnEl, kind) {
     inputEl.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const img = new Image();
-        img.onload = () => {
-          if (kind === 'food' || kind === 'drink') {
-            const order = globalUploadCounter++;
-            list.push({ img, order });
-          } else {
-            list.push(img);
-          }
-          updateBadges();
-          btnEl.classList.add('uploaded');
-          if (kind === 'food' || kind === 'drink') rebuildFoods();
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      let loadedCount = 0;
+      const total = files.length;
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const img = new Image();
+          img.onload = () => {
+            if (kind === 'food' || kind === 'drink') {
+              const order = globalUploadCounter++;
+              list.push({ img, order });
+            } else {
+              list.push(img);
+            }
+
+            loadedCount++;
+            if (loadedCount === total) {
+              updateBadges();
+              btnEl.classList.add('uploaded');
+              if (kind === 'food' || kind === 'drink') rebuildFoods();
+            }
+          };
+          img.src = evt.target.result;
         };
-        img.src = evt.target.result;
-      };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+      });
+
       inputEl.value = '';
     });
   }
@@ -706,6 +769,109 @@
   attachUpload(grassUpload, customGrassImages, grassUploadBtn, 'grass');
   attachUpload(rockUpload, customRockImages, rockUploadBtn, 'rock');
   attachUpload(flowerUpload, customFlowerImages, flowerUploadBtn, 'flower');
+
+  // -------- Drag-to-reorder --------
+  let dragState = null;
+
+  function beginDrag(e, kind, index, cell) {
+    if (dragState) return;
+    const list = getList(kind);
+    const entry = list[index];
+    if (!entry) return;
+
+    const rect = cell.getBoundingClientRect();
+
+    const ghost = document.createElement('div');
+    ghost.className = 'drag-ghost photo-cell';
+    ghost.style.width = rect.width + 'px';
+    ghost.style.height = rect.height + 'px';
+    ghost.style.position = 'fixed';
+    ghost.style.left = rect.left + rect.width / 2 + 'px';
+    ghost.style.top = rect.top + rect.height / 2 + 'px';
+
+    const ghostImg = document.createElement('img');
+    ghostImg.src = entryImg(entry).src;
+    ghostImg.draggable = false;
+    ghost.appendChild(ghostImg);
+
+    const ghostLabel = document.createElement('div');
+    ghostLabel.className = 'label';
+    ghostLabel.textContent = cell.querySelector('.label') ? cell.querySelector('.label').textContent : '';
+    ghost.appendChild(ghostLabel);
+
+    document.body.appendChild(ghost);
+    cell.classList.add('placeholder');
+
+    dragState = {
+      kind,
+      fromIndex: index,
+      toIndex: index,
+      ghost,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      cell,
+      moved: false
+    };
+
+    try { cell.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+
+  function moveDrag(e) {
+    if (!dragState) return;
+    if (e.pointerId !== dragState.pointerId) return;
+
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+    if (!dragState.moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      dragState.moved = true;
+    }
+
+    dragState.ghost.style.left = e.clientX + 'px';
+    dragState.ghost.style.top = e.clientY + 'px';
+
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const targetCell = el ? el.closest('.photo-cell') : null;
+
+    document.querySelectorAll('.photo-cell.drag-over-cell').forEach(c => c.classList.remove('drag-over-cell'));
+
+    if (targetCell && !targetCell.classList.contains('placeholder') && targetCell !== dragState.cell) {
+      targetCell.classList.add('drag-over-cell');
+      const idx = parseInt(targetCell.dataset.index, 10);
+      if (!isNaN(idx)) dragState.toIndex = idx;
+    }
+  }
+
+  function endDrag(e) {
+    if (!dragState) return;
+    if (e && e.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
+
+    const { kind, fromIndex, toIndex, ghost, cell, moved } = dragState;
+
+    ghost.remove();
+    cell.classList.remove('placeholder');
+    document.querySelectorAll('.photo-cell.drag-over-cell').forEach(c => c.classList.remove('drag-over-cell'));
+
+    dragState = null;
+
+    if (!moved) {
+      openPhotoAction(kind, fromIndex);
+      return;
+    }
+
+    if (fromIndex === toIndex) return;
+
+    const list = getList(kind);
+    const [item] = list.splice(fromIndex, 1);
+    list.splice(toIndex, 0, item);
+
+    if (kind === 'food' || kind === 'drink') rebuildFoods();
+    openPhotoModal(kind);
+  }
+
+  window.addEventListener('pointermove', moveDrag, { passive: false });
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
 
   function openPhotoModal(kind) {
     const images = getList(kind);
@@ -727,9 +893,11 @@
       images.forEach((entry, idx) => {
         const cell = document.createElement('div');
         cell.className = 'photo-cell';
+        cell.dataset.index = idx;
 
         const preview = document.createElement('img');
         preview.src = entryImg(entry).src;
+        preview.draggable = false;
         cell.appendChild(preview);
 
         const label = document.createElement('div');
@@ -742,8 +910,10 @@
         label.textContent = prefix + (idx + 1);
         cell.appendChild(label);
 
-        cell.addEventListener('click', () => {
-          openPhotoAction(kind, idx);
+        cell.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+          beginDrag(e, kind, idx, cell);
+          e.preventDefault();
         });
 
         photoGrid.appendChild(cell);
@@ -876,11 +1046,14 @@
     eatingTimer: 0,
     EAT_DURATION: 50,
     DRINK_FIZZ_DURATION: 120,
+    DRINK_RETURN_DURATION: 40,
     DRINK_BURP_DURATION: 60,
     facingFront: 0,
     facingTarget: 0,
     walkPhase: 0,
-    grounded: true
+    grounded: true,
+    landingSettle: 0,
+    pendingFood: null
   };
 
   let foods = [];
@@ -893,8 +1066,8 @@
     return (MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP)) * ZOOM;
   }
 
-  const EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
   const WALK_ZONE_FRACTION = 0.20;
+  const EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
 
   let foodEaten = 0;
   let gameActive = true;
@@ -906,6 +1079,18 @@
   const FLY_DURATION = 24;
 
   let sippingDrink = null;
+
+  // ---- Portal state ----
+  let portal = null;
+  let portalSuck = null;      // { phase, timer, ... } — suction animation
+  let portalStare = null;     // { timer, totalTime } — character stops & stares
+  let portalFlares = [];      // sparkle particles
+  let portalFlash = 0;        // white flash during suck
+  let showFinishReset = false;
+  let finishResetTimer = 0;
+
+  // ---- Arrival (falling out of portal at game start) ----
+  let arrival = null;         // { timer, totalTime, startX, startY, targetY, spinPhase }
 
   let clouds = [];
   let hills = [];
@@ -922,23 +1107,30 @@
 
   function buildFoods() {
     foods = [];
+    portal = null;
+    portalSuck = null;
+    portalStare = null;
+    portalFlares = [];
+    portalFlash = 0;
+    showFinishReset = false;
+    finishResetTimer = 0;
 
     const combined = [];
     customFoodImages.forEach((entry) => {
-      combined.push({ entry, kind: 'food', uploadOrder: entry.order });
+      combined.push({ entry, kind: 'food' });
     });
     customDrinkImages.forEach((entry) => {
-      combined.push({ entry, kind: 'drink', uploadOrder: entry.order });
+      combined.push({ entry, kind: 'drink' });
     });
 
     if (combined.length === 0) return;
 
-    combined.sort((a, b) => a.uploadOrder - b.uploadOrder);
-
     let distance = 400 * ZOOM;
+    let lastDistance = 0;
     combined.forEach((item, i) => {
       const gap = (i === 0) ? 400 * ZOOM : randomGap();
       distance += gap;
+      lastDistance = distance;
       foods.push({
         worldDistance: distance,
         gap: gap,
@@ -952,6 +1144,16 @@
         eatSquash: 1
       });
     });
+
+    // Portal spawns a random distance after the last food/drink.
+    const portalGap = (400 + Math.random() * 500) * ZOOM;
+    portal = {
+      worldDistance: lastDistance + portalGap,
+      swingPhase: 0,
+      openProgress: 0,
+      radius: 55 * ZOOM,
+      activated: false
+    };
   }
 
   function buildItemType(list, count, minSize, maxSize, yOffsetRange) {
@@ -981,8 +1183,35 @@
     buildFoods();
     if (gameState === 'idle') {
       foodEaten = 0;
-      foodCountSpan.textContent = '0';
     }
+  }
+
+  function startArrival() {
+    // Character falls out of a portal at the beginning.
+    // Portal appears high above and slightly to the right of the character.
+    const portalX = CANVAS_W * 0.30 + 40 * ZOOM;
+    const portalY = GROUND_Y - 260 * ZOOM;
+    const baseY = FOOT_GROUND - FOOT_OFFSET + CHAR_FOOT_SINK;
+
+    arrival = {
+      timer: 0,
+      totalTime: 70,       // ~1.15s of falling
+      portalX,
+      portalY,
+      targetY: baseY,
+      startY: portalY + 4 * ZOOM,
+      startX: portalX - 6 * ZOOM,
+      spinPhase: 0,
+      portalFadeIn: 0
+    };
+
+    char.screenX = arrival.startX;
+    char.y = arrival.startY;
+    char.vy = 0;
+    char.grounded = false;
+    char.state = 'arriving';
+    char.squash = 0.7;
+    char.squashVel = 0;
   }
 
   function resetGame() {
@@ -993,12 +1222,16 @@
     worldOffset = 0;
     flyingFood = null;
     sippingDrink = null;
+    portalSuck = null;
+    portalStare = null;
+    portalFlares = [];
+    portalFlash = 0;
+    showFinishReset = false;
+    finishResetTimer = 0;
+    arrival = null;
     gameState = 'idle';
     pauseBtn.classList.remove('paused');
     pauseBtn.textContent = '▶️ Start';
-
-    foodCountSpan.textContent = '0';
-    foodCounterEl.style.transform = 'scale(1)';
 
     char.screenX = CANVAS_W * 0.30;
     char.vy = 0;
@@ -1011,6 +1244,8 @@
     char.facingTarget = 0;
     char.walkPhase = 0;
     char.grounded = true;
+    char.landingSettle = 0;
+    char.pendingFood = null;
 
     char.walkDuration = 1.0 + Math.random() * 1.5;
     char.nextJumpAt = char.walkDuration;
@@ -1024,6 +1259,37 @@
     weather.gustTimer = 0;
     weather.gustStrength = 0;
     weather.gustActive = false;
+  }
+
+  function beginPlay() {
+    // Called when the user presses Start or Play Again.
+    // Character arrives by falling out of a portal.
+    foodEaten = 0;
+    gameActive = true;
+    worldOffset = 0;
+    flyingFood = null;
+    sippingDrink = null;
+    portalSuck = null;
+    portalStare = null;
+    portalFlares = [];
+    portalFlash = 0;
+    showFinishReset = false;
+    finishResetTimer = 0;
+
+    char.eatingTimer = 0;
+    char.facingFront = 0;
+    char.facingTarget = 0;
+    char.walkPhase = 0;
+    char.grounded = false;
+    char.landingSettle = 0;
+    char.pendingFood = null;
+    char.squash = 0.7;
+    char.squashVel = 0;
+
+    char.walkDuration = 1.0 + Math.random() * 1.5;
+    char.nextJumpAt = char.walkDuration;
+
+    startArrival();
   }
 
   function inWalkZone() {
@@ -1043,11 +1309,161 @@
     };
   }
 
+  function hasTouchedFood(nextFood) {
+    if (!nextFood) return false;
+    const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
+    const foodLeftEdge = foodScreenX - nextFood.radius;
+    const charRightEdge = char.screenX + char.radius;
+    return foodLeftEdge <= charRightEdge - 1;
+  }
+
+  function triggerConsume(nextFood) {
+    if (!nextFood) return;
+
+    const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
+
+    if (nextFood.isDrink) {
+      sippingDrink = {
+        food: nextFood,
+        worldDistance: nextFood.worldDistance,
+        originalY: nextFood.y,
+        timer: 0,
+        phase: 'fizz',
+        image: nextFood.image,
+        burpBubbles: []
+      };
+      nextFood.triggered = true;
+      foodEaten++;
+
+      char.state = 'drinking';
+      char.grounded = true;
+      char.squash = 0.92;
+      char.squashVel = 0.05;
+    } else {
+      const startX = foodScreenX;
+      const startY = nextFood.y;
+
+      flyingFood = {
+        startX: startX,
+        startY: startY,
+        t: 0,
+        radius: nextFood.radius,
+        image: nextFood.image,
+        rotation: 0,
+        spin: (Math.random() - 0.5) * 0.4
+      };
+
+      nextFood.triggered = true;
+      nextFood.eaten = true;
+      nextFood.eatSquash = 0.6;
+      foodEaten++;
+
+      char.state = 'eating';
+      char.eatingTimer = 0;
+      char.vy = 0;
+      char.y = char.baseY;
+      char.grounded = true;
+      char.squash = 0.92;
+      char.squashVel = 0.05;
+    }
+  }
+
+  // Called when character first reaches portal: stop, stare.
+  function startPortalStare() {
+    if (!portal || portal.activated || portalStare || portalSuck) return;
+    portalStare = {
+      timer: 0,
+      totalTime: 90   // ~1.5s stare
+    };
+    portal.activated = true;
+    char.state = 'staring';
+    char.grounded = true;
+    char.vy = 0;
+    char.y = char.baseY;
+    char.squash = 1;
+    char.squashVel = 0;
+  }
+
+  // After staring, launch the suction.
+  function startPortalSuck() {
+    if (!portal || portalSuck) return;
+
+    const portalScreenX = char.screenX + (portal.worldDistance - worldOffset);
+    const portalCenterY = GROUND_Y - portal.radius * 0.9;
+
+    portalSuck = {
+      timer: 0,
+      totalTime: 55,   // fast yank
+      startX: char.screenX,
+      startY: char.y,
+      targetScreenX: portalScreenX,
+      targetScreenY: portalCenterY
+    };
+
+    char.state = 'sucked';
+    char.grounded = false;
+    char.vy = 0;
+  }
+
   function update() {
     const dt = 1 / 60;
 
     char.blink = (char.blink + 0.025) % (Math.PI * 2);
     updateWeatherParticles();
+
+    if (portal) {
+      portal.swingPhase += 0.05;
+
+      const distToPortal = portal.worldDistance - worldOffset;
+      const proximity = Math.max(0, Math.min(1, 1 - distToPortal / (900 * ZOOM)));
+      portal.openProgress = proximity;
+
+      if (gameState === 'running' && !portal.activated && !portalStare && !portalSuck) {
+        const portalScreenX = char.screenX + (portal.worldDistance - worldOffset);
+        if (portalScreenX > -200 && portalScreenX < CANVAS_W + 200) {
+          if (Math.random() < 0.45) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = portal.radius * (0.9 + Math.random() * 1.3);
+            portalFlares.push({
+              x: portalScreenX + Math.cos(angle) * r,
+              y: GROUND_Y - portal.radius * 0.9 + Math.sin(angle) * r,
+              vx: (Math.random() - 0.5) * 2.5,
+              vy: -1 - Math.random() * 2.5,
+              life: 1,
+              size: 2 + Math.random() * 4,
+              hue: 40 + Math.random() * 40
+            });
+          }
+        }
+      }
+    }
+
+    for (const fl of portalFlares) {
+      fl.x += fl.vx;
+      fl.y += fl.vy;
+      fl.vy += 0.03;
+      fl.life -= 0.015;
+    }
+    portalFlares = portalFlares.filter(fl => fl.life > 0);
+
+    if (portalFlash > 0) {
+      portalFlash -= 0.02;
+      if (portalFlash < 0) portalFlash = 0;
+    }
+
+    if (showFinishReset) {
+      finishResetTimer -= 1;
+      if (finishResetTimer <= 0) {
+        // Auto restart with another arrival
+        resetGame();
+        gameState = 'running';
+        pauseBtn.classList.remove('paused');
+        pauseBtn.textContent = '⏸️ Pause';
+        beginPlay();
+      }
+      updateScenery(0.15);
+      return;
+    }
 
     if (gameState !== 'running') return;
     if (isDragging) return;
@@ -1079,7 +1495,7 @@
           sippingDrink.timer = 0;
         }
       } else if (sippingDrink.phase === 'return') {
-        const returnProgress = Math.min(1, sippingDrink.timer / 40);
+        const returnProgress = Math.min(1, sippingDrink.timer / char.DRINK_RETURN_DURATION);
         if (returnProgress >= 1) {
           sippingDrink.phase = 'burp';
           sippingDrink.timer = 0;
@@ -1114,8 +1530,121 @@
       }
     }
 
+    // ---- Arrival animation ----
+    if (arrival) {
+      arrival.timer++;
+      arrival.portalFadeIn = Math.min(1, arrival.timer / 20);
+      const t = Math.min(1, arrival.timer / arrival.totalTime);
+      const eased = t * t;  // accelerate downward (gravity-like)
+
+      const fallArc = Math.sin(t * Math.PI) * 6 * ZOOM;
+
+      char.screenX = arrival.startX + (CANVAS_W * 0.30 - arrival.startX) * eased + fallArc;
+      char.y = arrival.startY + (arrival.targetY - arrival.startY) * eased;
+
+      char.squash = 0.72 + eased * 0.28;
+
+      // Flares burst around arrival portal
+      if (arrival.timer < 25 && Math.random() < 0.7) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = portal ? portal.radius : 55 * ZOOM;
+        portalFlares.push({
+          x: arrival.portalX + Math.cos(angle) * r,
+          y: arrival.portalY + Math.sin(angle) * r,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3,
+          life: 1,
+          size: 3 + Math.random() * 5,
+          hue: 40 + Math.random() * 40
+        });
+      }
+
+      if (t >= 1) {
+        char.y = arrival.targetY;
+        char.baseY = arrival.targetY;
+        char.grounded = true;
+        char.state = 'walking';
+        char.vy = 0;
+        char.squash = 0.78;
+        char.squashVel = 0.14;
+        char.walkDuration = 0.9 + Math.random() * 1.2;
+        char.nextJumpAt = char.walkDuration;
+        arrival = null;
+      }
+
+      updateScenery(WALK_SPEED * 0.4);
+      return;
+    }
+
+    // ---- Portal suction ----
+    if (portalSuck) {
+      portalSuck.timer++;
+      const t = Math.min(1, portalSuck.timer / portalSuck.totalTime);
+      const eased = t * t * (3 - 2 * t);
+
+      const startX = portalSuck.startX;
+      const startY = portalSuck.startY;
+      const tgtX = portalSuck.targetScreenX;
+      const tgtY = portalSuck.targetScreenY;
+
+      const spiral = Math.sin(t * Math.PI * 8) * (1 - t) * 26 * ZOOM;
+      const wobbleY = Math.cos(t * Math.PI * 8) * (1 - t) * 16 * ZOOM;
+
+      char.screenX = startX + (tgtX - startX) * eased + spiral;
+      char.y = startY + (tgtY - startY) * eased + wobbleY;
+
+      const shrink = 1 - eased * 0.9;
+      char.squash = Math.max(0.05, shrink);
+
+      portalFlash = Math.min(1, portalFlash + 0.03 + eased * 0.06);
+
+      if (Math.random() < 0.8) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = (portal ? portal.radius * 2 : 110 * ZOOM) * (0.5 + Math.random());
+        portalFlares.push({
+          x: tgtX + Math.cos(angle) * radius,
+          y: tgtY + Math.sin(angle) * radius,
+          vx: (tgtX - (tgtX + Math.cos(angle) * radius)) * 0.05,
+          vy: (tgtY - (tgtY + Math.sin(angle) * radius)) * 0.05,
+          life: 1,
+          size: 2 + Math.random() * 5,
+          hue: 40 + Math.random() * 50
+        });
+      }
+
+      if (t >= 1) {
+        portalSuck = null;
+        char.screenX = tgtX;
+        char.y = tgtY;
+        char.squash = 0.02;
+        portalFlash = 1;
+        showFinishReset = true;
+        finishResetTimer = 100;
+      }
+
+      updateScenery(WALK_SPEED * 0.15);
+      return;
+    }
+
     if (!gameActive) {
       updateScenery(WALK_SPEED * 0.2);
+      return;
+    }
+
+    if (char.state === 'sucked') {
+      updateScenery(WALK_SPEED * 0.15);
+      return;
+    }
+
+    // ---- Staring at portal ----
+    if (char.state === 'staring' && portalStare) {
+      portalStare.timer++;
+      char.squash = 1 + Math.sin(portalStare.timer * 0.15) * 0.03;
+
+      if (portalStare.timer >= portalStare.totalTime) {
+        portalStare = null;
+        startPortalSuck();
+      }
       return;
     }
 
@@ -1158,69 +1687,38 @@
       return;
     }
 
+    if (char.landingSettle > 0) {
+      char.landingSettle -= 1;
+
+      if (char.landingSettle <= 0) {
+        const food = char.pendingFood;
+        char.pendingFood = null;
+        if (food && !food.triggered) {
+          triggerConsume(food);
+          return;
+        }
+      }
+      return;
+    }
+
     const nextFood = foods.find(f => !f.triggered);
 
-    if (nextFood) {
-      const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
-      const standoffScreenX = char.screenX + EAT_STANDOFF;
-      const remaining = foodScreenX - standoffScreenX;
-      const EAT_TRIGGER = 2;
+    if (nextFood && hasTouchedFood(nextFood)) {
+      if (char.state === 'jumping') {
+        char.pendingFood = nextFood;
+      } else {
+        triggerConsume(nextFood);
+        return;
+      }
+    }
 
-      if (char.grounded && char.state === 'walking' && remaining <= EAT_TRIGGER) {
-        worldOffset += remaining;
-
-        if (nextFood.isDrink) {
-          sippingDrink = {
-            food: nextFood,
-            worldDistance: nextFood.worldDistance,
-            originalY: nextFood.y,
-            timer: 0,
-            phase: 'fizz',
-            image: nextFood.image,
-            burpBubbles: []
-          };
-          nextFood.triggered = true;
-          foodEaten++;
-          foodCountSpan.textContent = foodEaten;
-
-          foodCounterEl.style.transform = 'scale(1.15)';
-          setTimeout(() => { foodCounterEl.style.transform = 'scale(1)'; }, 150);
-
-          char.state = 'drinking';
-          char.grounded = true;
-          char.squash = 0.92;
-          char.squashVel = 0.05;
-        } else {
-          const startX = char.screenX + EAT_STANDOFF;
-          const startY = nextFood.y;
-
-          flyingFood = {
-            startX: startX,
-            startY: startY,
-            t: 0,
-            radius: nextFood.radius,
-            image: nextFood.image,
-            rotation: 0,
-            spin: (Math.random() - 0.5) * 0.4
-          };
-
-          nextFood.triggered = true;
-          nextFood.eaten = true;
-          nextFood.eatSquash = 0.6;
-          foodEaten++;
-          foodCountSpan.textContent = foodEaten;
-
-          foodCounterEl.style.transform = 'scale(1.15)';
-          setTimeout(() => { foodCounterEl.style.transform = 'scale(1)'; }, 150);
-
-          char.state = 'eating';
-          char.eatingTimer = 0;
-          char.vy = 0;
-          char.y = char.baseY;
-          char.grounded = true;
-          char.squash = 0.92;
-          char.squashVel = 0.05;
-        }
+    // If no food left and portal exists, walk to it and trigger stare.
+    if (!nextFood && portal && !portal.activated && !portalStare && !portalSuck) {
+      const portalScreenX = char.screenX + (portal.worldDistance - worldOffset);
+      const portalLeftEdge = portalScreenX - portal.radius;
+      const charRightEdge = char.screenX + char.radius;
+      if (portalLeftEdge <= charRightEdge + 20 * ZOOM) {
+        startPortalStare();
         return;
       }
     }
@@ -1231,17 +1729,21 @@
       worldOffset += WALK_SPEED;
       char.walkPhase += 0.18;
 
-      if (inWalkZone()) {
-        char.nextJumpAt = 9999;
-      } else {
-        char.nextJumpAt -= dt;
-        if (char.nextJumpAt <= 0) {
-          char.state = 'jumping';
-          char.grounded = false;
-          char.vy = JUMP_VELOCITY;
-          char.squash = 0.82;
-          char.squashVel = 0.12;
+      if (nextFood) {
+        if (inWalkZone()) {
+          char.nextJumpAt = 9999;
+        } else {
+          char.nextJumpAt -= dt;
+          if (char.nextJumpAt <= 0) {
+            char.state = 'jumping';
+            char.grounded = false;
+            char.vy = JUMP_VELOCITY;
+            char.squash = 0.82;
+            char.squashVel = 0.12;
+          }
         }
+      } else {
+        char.nextJumpAt = 9999;
       }
     } else if (char.state === 'jumping') {
       worldOffset += JUMP_SPEED;
@@ -1257,11 +1759,16 @@
         char.squashVel = 0.08;
 
         char.state = 'walking';
-        if (inWalkZone()) {
+
+        if (char.pendingFood) {
+          char.landingSettle = 10;
+        } else if (nextFood && inWalkZone()) {
           char.nextJumpAt = 9999;
-        } else {
+        } else if (nextFood) {
           char.walkDuration = 0.7 + Math.random() * 1.8;
           char.nextJumpAt = char.walkDuration;
+        } else {
+          char.nextJumpAt = 9999;
         }
       }
     }
@@ -1562,6 +2069,115 @@
     ctx.fill();
   }
 
+  function drawCircularPortal(cx, cy, radius, open, extraBright) {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    const r = radius * (0.55 + open * 0.45);
+
+    // Soft halo
+    const haloR = r * 2.1;
+    const haloGrad = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, haloR);
+    haloGrad.addColorStop(0, `rgba(255, 245, 200, ${0.6 * open})`);
+    haloGrad.addColorStop(0.5, `rgba(255, 200, 100, ${0.3 * open})`);
+    haloGrad.addColorStop(1, 'rgba(255, 200, 100, 0)');
+    ctx.fillStyle = haloGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, haloR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer ring
+    const ringGrad = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 1.15);
+    ringGrad.addColorStop(0, `rgba(255, 255, 220, ${0.95 * open})`);
+    ringGrad.addColorStop(0.7, `rgba(255, 210, 120, ${0.55 * open})`);
+    ringGrad.addColorStop(1, 'rgba(255, 170, 80, 0)');
+    ctx.fillStyle = ringGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 1.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Circle body — bright core
+    const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    coreGrad.addColorStop(0, '#ffffff');
+    coreGrad.addColorStop(0.55, '#fff5c8');
+    coreGrad.addColorStop(1, '#ffd27a');
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner brighter ring accent
+    ctx.strokeStyle = `rgba(255, 240, 160, ${0.85 * open})`;
+    ctx.lineWidth = 3 * ZOOM * (0.6 + open * 0.4);
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // White center point
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.75 + extraBright * 0.25})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rotating sparkles
+    const tt = Date.now() * 0.005;
+    for (let i = 0; i < 8; i++) {
+      const a = tt + i * 0.785;
+      const sx = Math.cos(a) * r * 0.7;
+      const sy = Math.sin(a) * r * 0.7;
+      const alpha = 0.4 + Math.sin(tt * 3 + i) * 0.4;
+      ctx.fillStyle = `rgba(255, 255, 220, ${alpha * open})`;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2.2 * ZOOM, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawPortal() {
+    if (!portal) return;
+    const screenX = char.screenX + (portal.worldDistance - worldOffset);
+    if (screenX < -250 || screenX > CANVAS_W + 250) return;
+
+    const open = Math.max(0.35, portal.openProgress);
+    const centerY = GROUND_Y - portal.radius * 0.9;
+
+    drawCircularPortal(screenX, centerY, portal.radius, open, 0);
+
+    // Ground light pool
+    const poolGrad = ctx.createRadialGradient(screenX, GROUND_Y + 4, 0, screenX, GROUND_Y + 4, portal.radius * 1.6);
+    poolGrad.addColorStop(0, `rgba(255, 240, 180, ${0.55 * open})`);
+    poolGrad.addColorStop(1, 'rgba(255, 240, 180, 0)');
+    ctx.fillStyle = poolGrad;
+    ctx.beginPath();
+    ctx.ellipse(screenX, GROUND_Y + 4, portal.radius * 1.6, 14 * ZOOM, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawArrivalPortal() {
+    if (!arrival || !portal) return;
+    const fade = arrival.portalFadeIn;
+    drawCircularPortal(arrival.portalX, arrival.portalY, portal.radius * 0.9, fade, fade * 0.4);
+  }
+
+  function drawPortalFlares() {
+    for (const fl of portalFlares) {
+      const alpha = Math.max(0, fl.life);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(fl.x, fl.y, 0, fl.x, fl.y, fl.size * 3);
+      g.addColorStop(0, `hsla(${fl.hue}, 100%, 90%, ${alpha})`);
+      g.addColorStop(0.4, `hsla(${fl.hue}, 100%, 70%, ${alpha * 0.5})`);
+      g.addColorStop(1, `hsla(${fl.hue}, 100%, 60%, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(fl.x, fl.y, fl.size * 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   function drawCharacter() {
     const cx = char.screenX;
     const cy = char.y;
@@ -1571,10 +2187,13 @@
     const heightAboveGround = char.baseY - char.y;
     const heightFactor = Math.max(0.3, 1 - heightAboveGround / (200 * ZOOM));
 
-    ctx.beginPath();
-    ctx.ellipse(cx, GROUND_Y + 2, 40 * ZOOM * heightFactor, 10 * ZOOM * heightFactor, 0, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,0,0,${0.18 * heightFactor})`;
-    ctx.fill();
+    // Shadow only when on / near ground
+    if (char.state !== 'sucked' && char.state !== 'arriving') {
+      ctx.beginPath();
+      ctx.ellipse(cx, GROUND_Y + 2, 40 * ZOOM * heightFactor, 10 * ZOOM * heightFactor, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,0,0,${0.18 * heightFactor})`;
+      ctx.fill();
+    }
 
     let tilt = 0;
     if (char.state === 'walking' && gameState === 'running' && !isDragging) {
@@ -1588,23 +2207,35 @@
     let leanIn = 0;
     if (char.state === 'eating' || char.state === 'drinking') {
       leanIn = 0.06;
+    } else if (char.state === 'staring') {
+      // Lean slightly forward toward the portal
+      leanIn = 0.05;
     }
 
     let footStride = 0;
     let footY = 0;
-    if (char.state === 'walking' && gameState === 'running' && !isDragging) {
+    if (char.state === 'walking' && gameState === 'running' && !isDragging && char.landingSettle <= 0) {
       footStride = Math.sin(char.walkPhase) * 8;
       footY = Math.abs(Math.sin(char.walkPhase)) * -3;
     } else if (char.state === 'jumping') {
       footStride = 12;
       footY = -4;
+    } else if (char.state === 'arriving') {
+      footStride = 10;
+      footY = -6;
     }
 
     let armSwing = 0;
-    if (char.state === 'walking' && gameState === 'running' && !isDragging) {
+    if (char.state === 'walking' && gameState === 'running' && !isDragging && char.landingSettle <= 0) {
       armSwing = Math.sin(char.walkPhase) * 0.35;
     } else if (char.state === 'jumping') {
       armSwing = -0.5;
+    } else if (char.state === 'sucked') {
+      armSwing = -0.9 + Math.sin(Date.now() * 0.03) * 0.15;
+    } else if (char.state === 'arriving') {
+      armSwing = -0.8 + Math.sin(Date.now() * 0.04) * 0.2;
+    } else if (char.state === 'staring') {
+      armSwing = 0.05 * Math.sin(Date.now() * 0.008);
     }
 
     ctx.save();
@@ -1661,21 +2292,48 @@
     const eyeY = -10;
     const eyeOffsetY = Math.sin(char.blink) * 2;
 
-    ctx.fillStyle = '#2e1b0e';
-    ctx.beginPath();
-    ctx.ellipse(-eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    if (char.state === 'staring') {
+      // Wide staring eyes
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(-eyeSpacing, eyeY, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(eyeSpacing, eyeY, 7.5, 0, Math.PI * 2);
+      ctx.fill();
 
-    ctx.fillStyle = 'white';
-    ctx.beginPath();
-    ctx.arc(-eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = '#2e1b0e';
+      ctx.beginPath();
+      ctx.arc(-eyeSpacing + 2, eyeY, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(eyeSpacing + 2, eyeY, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(-eyeSpacing + 3, eyeY - 2, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(eyeSpacing + 3, eyeY - 2, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#2e1b0e';
+      ctx.beginPath();
+      ctx.ellipse(-eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(eyeSpacing, eyeY + eyeOffsetY, 5.5, 6.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(-eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(eyeSpacing - 2, eyeY - 3 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.fillStyle = '#ffa5a5b0';
     ctx.beginPath();
@@ -1711,6 +2369,34 @@
       ctx.fillStyle = '#ff8a8a';
       ctx.beginPath();
       ctx.arc(0, 11, mouthSize * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (char.state === 'sucked') {
+      ctx.fillStyle = '#6b3e1c';
+      ctx.beginPath();
+      ctx.arc(0, 12, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a8a';
+      ctx.beginPath();
+      ctx.arc(0, 13, 5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (char.state === 'arriving') {
+      ctx.fillStyle = '#6b3e1c';
+      ctx.beginPath();
+      ctx.arc(0, 12, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a8a';
+      ctx.beginPath();
+      ctx.arc(0, 13, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (char.state === 'staring') {
+      // Small "o" mouth
+      ctx.fillStyle = '#6b3e1c';
+      ctx.beginPath();
+      ctx.arc(0, 11, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a8a';
+      ctx.beginPath();
+      ctx.arc(0, 12, 3, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.beginPath();
@@ -1768,6 +2454,39 @@
         }
       }
     }
+
+    if (portalSuck) {
+      const t = Math.min(1, portalSuck.timer / portalSuck.totalTime);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 5; i++) {
+        const back = i * 6;
+        const alpha = (1 - t) * (0.4 - i * 0.06);
+        if (alpha <= 0) continue;
+        ctx.fillStyle = `rgba(255, 240, 160, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(cx + back, cy, (14 - i * 2) * ZOOM * (1 - t), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    if (arrival) {
+      // Bright trail while falling
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const t = Math.min(1, arrival.timer / arrival.totalTime);
+      for (let i = 0; i < 5; i++) {
+        const up = i * 8;
+        const alpha = (1 - t) * (0.5 - i * 0.08);
+        if (alpha <= 0) continue;
+        ctx.fillStyle = `rgba(255, 245, 190, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(cx, cy - up, (14 - i * 2) * ZOOM * (1 - t * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   function drawFoodAt(x, y, radius, scale, rotation, img) {
@@ -1813,6 +2532,133 @@
           r.size
         );
       } catch (e) {}
+    }
+  }
+
+  function drawFoods() {
+    const now = Date.now();
+    for (const f of foods) {
+      if (f.eaten) continue;
+      const screenX = char.screenX + (f.worldDistance - worldOffset);
+      if (screenX < -150 || screenX > CANVAS_W + 150) continue;
+
+      const bob = Math.sin(now * 0.005 + f.bobPhase) * 3 * ZOOM;
+
+      ctx.beginPath();
+      ctx.ellipse(screenX, GROUND_Y + 2, f.radius * 0.8, f.radius * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#00000022';
+      ctx.fill();
+
+      if (sippingDrink && sippingDrink.food === f) {
+        if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') continue;
+      }
+
+      drawFoodAt(screenX, f.y + bob, f.radius, f.eatSquash, 0, f.image);
+    }
+  }
+
+  function drawFlyingFood() {
+    if (!flyingFood) return;
+    const mouth = getMouthPos();
+    const t = flyingFood.t;
+    const eased = t < 0.5
+      ? 2 * t * t
+      : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    const px = flyingFood.startX + (mouth.x - flyingFood.startX) * eased;
+    const baseY = flyingFood.startY + (mouth.y - flyingFood.startY) * eased;
+    const arcHeight = 40 * ZOOM;
+    const arc = Math.sin(t * Math.PI) * arcHeight;
+    const py = baseY - arc;
+
+    const scale = 1 - eased * 0.6;
+    flyingFood.rotation += flyingFood.spin;
+
+    if (t < 0.9) {
+      for (let s = 0; s < 2; s++) {
+        const trailT = Math.max(0, t - 0.05 - s * 0.05);
+        const trailEased = trailT < 0.5
+          ? 2 * trailT * trailT
+          : 1 - Math.pow(-2 * trailT + 2, 2) / 2;
+        const tx = flyingFood.startX + (mouth.x - flyingFood.startX) * trailEased;
+        const baseTY = flyingFood.startY + (mouth.y - flyingFood.startY) * trailEased;
+        const arcT = Math.sin(trailT * Math.PI) * arcHeight;
+        const ty = baseTY - arcT;
+        ctx.fillStyle = `rgba(255, 240, 180, ${(1 - t) * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 3 * (1 - trailT * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    drawFoodAt(px, py, flyingFood.radius, scale, flyingFood.rotation, flyingFood.image);
+  }
+
+  function drawSippingDrink() {
+    if (!sippingDrink) return;
+    const originalScreenX = char.screenX + (sippingDrink.worldDistance - worldOffset);
+    const mouth = getMouthPos();
+    const drink = sippingDrink.food;
+
+    let px, py, scale;
+
+    if (sippingDrink.phase === 'fizz') {
+      const hoverProgress = Math.min(1, sippingDrink.timer / 30);
+      const hoverEased = hoverProgress * hoverProgress * (3 - 2 * hoverProgress);
+      px = originalScreenX + (mouth.x - originalScreenX) * hoverEased;
+      py = drink.y + (mouth.y - drink.y) * hoverEased;
+      scale = 1 - hoverEased * 0.3;
+
+      const hoverBob = Math.sin(Date.now() * 0.02) * 2 * ZOOM;
+      py += hoverBob * hoverEased;
+
+      if (hoverEased > 0.1 && hoverEased < 0.95) {
+        for (let s = 0; s < 2; s++) {
+          const trailAmt = Math.max(0, hoverEased - 0.15 - s * 0.1);
+          const tx = originalScreenX + (mouth.x - originalScreenX) * trailAmt;
+          const ty = drink.y + (mouth.y - drink.y) * trailAmt;
+          ctx.fillStyle = `rgba(180, 220, 255, ${(1 - hoverEased) * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(tx, ty, 3 * (1 - trailAmt * 0.5), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else if (sippingDrink.phase === 'return') {
+      const returnProgress = Math.min(1, sippingDrink.timer / char.DRINK_RETURN_DURATION);
+      const returnEased = returnProgress * returnProgress * (3 - 2 * returnProgress);
+      px = mouth.x + (originalScreenX - mouth.x) * returnEased;
+      py = mouth.y + (drink.y - mouth.y) * returnEased;
+      scale = 0.7 + returnEased * 0.3;
+
+      if (returnEased > 0.1 && returnEased < 0.9) {
+        ctx.fillStyle = `rgba(180, 220, 255, ${(1 - returnEased) * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 4 * ZOOM * (1 - returnEased * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      px = mouth.x;
+      py = mouth.y;
+      scale = 1;
+    }
+
+    if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') {
+      drawFoodAt(px, py, drink.radius, scale, 0, sippingDrink.image);
+    }
+
+    if (sippingDrink.phase === 'fizz') {
+      const tt = Date.now() * 0.02;
+      for (let k = 0; k < 8; k++) {
+        const angle = tt * 0.8 + k * 0.785;
+        const radius = (18 + Math.sin(tt * 2 + k) * 8) * ZOOM;
+        const bx = px + Math.cos(angle) * radius;
+        const by = py + Math.sin(angle) * radius - 10 * ZOOM;
+        const alpha = 0.4 + Math.sin(tt * 3 + k) * 0.3;
+        ctx.fillStyle = `rgba(200, 240, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(bx, by, (2 + Math.sin(tt + k) * 1.5) * ZOOM, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
@@ -1934,129 +2780,25 @@
     drawRoadsideType(rockItems, customRockImages);
     drawRoadsideType(flowerItems, customFlowerImages);
 
-    const now = Date.now();
-    for (const f of foods) {
-      if (f.eaten) continue;
-      const screenX = char.screenX + (f.worldDistance - worldOffset);
-      if (screenX < -150 || screenX > CANVAS_W + 150) continue;
+    // Arrival portal (above the scene, drawn before character)
+    drawArrivalPortal();
 
-      const bob = Math.sin(now * 0.005 + f.bobPhase) * 3 * ZOOM;
-
-      ctx.beginPath();
-      ctx.ellipse(screenX, GROUND_Y + 2, f.radius * 0.8, f.radius * 0.3, 0, 0, Math.PI * 2);
-      ctx.fillStyle = '#00000022';
-      ctx.fill();
-
-      if (sippingDrink && sippingDrink.food === f) {
-        if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') continue;
-      }
-
-      drawFoodAt(screenX, f.y + bob, f.radius, f.eatSquash, 0, f.image);
-    }
+    // Regular portal
+    drawPortal();
 
     drawCharacter();
+    drawFoods();
+    drawFlyingFood();
+    drawSippingDrink();
 
-    if (flyingFood) {
-      const mouth = getMouthPos();
-      const t = flyingFood.t;
-      const eased = t < 0.5
-        ? 2 * t * t
-        : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    drawPortalFlares();
 
-      const px = flyingFood.startX + (mouth.x - flyingFood.startX) * eased;
-      const baseY = flyingFood.startY + (mouth.y - flyingFood.startY) * eased;
-      const arcHeight = 40 * ZOOM;
-      const arc = Math.sin(t * Math.PI) * arcHeight;
-      const py = baseY - arc;
-
-      const scale = 1 - eased * 0.6;
-      flyingFood.rotation += flyingFood.spin;
-
-      if (t < 0.9) {
-        for (let s = 0; s < 2; s++) {
-          const trailT = Math.max(0, t - 0.05 - s * 0.05);
-          const trailEased = trailT < 0.5
-            ? 2 * trailT * trailT
-            : 1 - Math.pow(-2 * trailT + 2, 2) / 2;
-          const tx = flyingFood.startX + (mouth.x - flyingFood.startX) * trailEased;
-          const baseTY = flyingFood.startY + (mouth.y - flyingFood.startY) * trailEased;
-          const arcT = Math.sin(trailT * Math.PI) * arcHeight;
-          const ty = baseTY - arcT;
-          ctx.fillStyle = `rgba(255, 240, 180, ${(1 - t) * 0.6})`;
-          ctx.beginPath();
-          ctx.arc(tx, ty, 3 * (1 - trailT * 0.5), 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      drawFoodAt(px, py, flyingFood.radius, scale, flyingFood.rotation, flyingFood.image);
-    }
-
-    if (sippingDrink) {
-      const originalScreenX = char.screenX + (sippingDrink.worldDistance - worldOffset);
-      const mouth = getMouthPos();
-      const drink = sippingDrink.food;
-
-      let px, py, scale;
-
-      if (sippingDrink.phase === 'fizz') {
-        const hoverProgress = Math.min(1, sippingDrink.timer / 30);
-        const hoverEased = hoverProgress * hoverProgress * (3 - 2 * hoverProgress);
-        px = originalScreenX + (mouth.x - originalScreenX) * hoverEased;
-        py = drink.y + (mouth.y - drink.y) * hoverEased;
-        scale = 1 - hoverEased * 0.3;
-
-        const hoverBob = Math.sin(Date.now() * 0.02) * 2 * ZOOM;
-        py += hoverBob * hoverEased;
-
-        if (hoverEased > 0.1 && hoverEased < 0.95) {
-          for (let s = 0; s < 2; s++) {
-            const trailAmt = Math.max(0, hoverEased - 0.15 - s * 0.1);
-            const tx = originalScreenX + (mouth.x - originalScreenX) * trailAmt;
-            const ty = drink.y + (mouth.y - drink.y) * trailAmt;
-            ctx.fillStyle = `rgba(180, 220, 255, ${(1 - hoverEased) * 0.5})`;
-            ctx.beginPath();
-            ctx.arc(tx, ty, 3 * (1 - trailAmt * 0.5), 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      } else if (sippingDrink.phase === 'return') {
-        const returnProgress = Math.min(1, sippingDrink.timer / 40);
-        const returnEased = returnProgress * returnProgress * (3 - 2 * returnProgress);
-        px = mouth.x + (originalScreenX - mouth.x) * returnEased;
-        py = mouth.y + (drink.y - mouth.y) * returnEased;
-        scale = 0.7 + returnEased * 0.3;
-
-        if (returnEased > 0.1 && returnEased < 0.9) {
-          ctx.fillStyle = `rgba(180, 220, 255, ${(1 - returnEased) * 0.4})`;
-          ctx.beginPath();
-          ctx.arc(px, py, 4 * ZOOM * (1 - returnEased * 0.5), 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else {
-        px = mouth.x;
-        py = mouth.y;
-        scale = 1;
-      }
-
-      if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') {
-        drawFoodAt(px, py, drink.radius, scale, 0, sippingDrink.image);
-      }
-
-      if (sippingDrink.phase === 'fizz') {
-        const tt = Date.now() * 0.02;
-        for (let k = 0; k < 8; k++) {
-          const angle = tt * 0.8 + k * 0.785;
-          const radius = (18 + Math.sin(tt * 2 + k) * 8) * ZOOM;
-          const bx = px + Math.cos(angle) * radius;
-          const by = py + Math.sin(angle) * radius - 10 * ZOOM;
-          const alpha = 0.4 + Math.sin(tt * 3 + k) * 0.3;
-          ctx.fillStyle = `rgba(200, 240, 255, ${alpha})`;
-          ctx.beginPath();
-          ctx.arc(bx, by, (2 + Math.sin(tt + k) * 1.5) * ZOOM, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+    if (portalFlash > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(255, 250, 220, ${portalFlash * 0.85})`;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.restore();
     }
 
     if (type === 'rainy' || type === 'stormy') {
@@ -2288,11 +3030,13 @@
   });
 
   pauseBtn.addEventListener('click', () => {
+    if (showFinishReset) return;
     if (gameState === 'idle') {
       if (customFoodImages.length === 0 && customDrinkImages.length === 0) return;
       gameState = 'running';
       pauseBtn.classList.remove('paused');
       pauseBtn.textContent = '⏸️ Pause';
+      beginPlay();
     } else if (gameState === 'running') {
       gameState = 'paused';
       pauseBtn.classList.add('paused');
@@ -2304,9 +3048,22 @@
     }
   });
 
-  document.getElementById('resetBtn').addEventListener('click', resetGame);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    resetGame();
+    gameState = 'running';
+    pauseBtn.classList.remove('paused');
+    pauseBtn.textContent = '⏸️ Pause';
+    beginPlay();
+  });
+
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'r' || e.key === 'R') resetGame();
+    if (e.key === 'r' || e.key === 'R') {
+      resetGame();
+      gameState = 'running';
+      pauseBtn.classList.remove('paused');
+      pauseBtn.textContent = '⏸️ Pause';
+      beginPlay();
+    }
     if (e.key === ' ') {
       e.preventDefault();
       pauseBtn.click();
