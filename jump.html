@@ -767,14 +767,39 @@
   const ZOOM = 1.7;
   const SKY_SHIFT = 30;
 
+  // ✅ Foot-ground line is recomputed on every resize.
+  let FOOT_GROUND = GROUND_Y + 2;
+
+  // ✅ Character foot vertical offset from center (constant)
+  const FOOT_OFFSET = 37 * ZOOM;
+  const CHAR_FOOT_SINK = 4;
+
+  // ✅ The one function that keeps the character planted on the road
+  //    no matter what size the window is.
   function resizeCanvas() {
     CANVAS_W = window.innerWidth;
     CANVAS_H = window.innerHeight;
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
     GROUND_Y = CANVAS_H * 0.80;
-    char.baseY = FOOT_GROUND - FOOT_OFFSET;
-    char.y = char.baseY;
+
+    // Recompute foot-ground line for the new GROUND_Y
+    FOOT_GROUND = GROUND_Y + 2;
+
+    const newBaseY = FOOT_GROUND - FOOT_OFFSET + CHAR_FOOT_SINK;
+
+    // If the character is grounded, snap them to the new ground line.
+    // If they're mid-jump, preserve their height above ground.
+    if (char.grounded) {
+      char.baseY = newBaseY;
+      char.y = newBaseY;
+      char.vy = 0;
+    } else {
+      const oldHeightAboveGround = char.baseY - char.y;
+      char.baseY = newBaseY;
+      char.y = newBaseY - oldHeightAboveGround;
+    }
+
     char.maxX = CANVAS_W * 0.50;
   }
   window.addEventListener('resize', resizeCanvas);
@@ -821,9 +846,6 @@
 
   const EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
   const WALK_ZONE_FRACTION = 0.20;
-  const FOOT_OFFSET = 37 * ZOOM;
-  const FOOT_GROUND = GROUND_Y + 2;
-  const CHAR_FOOT_SINK = 4;
 
   let foodEaten = 0;
   let gameActive = true;
@@ -903,6 +925,7 @@
   }
 
   function resetGame() {
+    // resizeCanvas() will correctly place the character on the road
     resizeCanvas();
 
     foodEaten = 0;
@@ -918,8 +941,7 @@
     foodCounterEl.style.transform = 'scale(1)';
 
     char.screenX = CANVAS_W * 0.30;
-    char.baseY = FOOT_GROUND - FOOT_OFFSET + CHAR_FOOT_SINK;
-    char.y = char.baseY;
+    // baseY & y already set correctly by resizeCanvas()
     char.vy = 0;
     char.squash = 1;
     char.squashVel = 0;
