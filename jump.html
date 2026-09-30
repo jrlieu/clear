@@ -578,7 +578,7 @@
 <div class="top-bar">
   <div class="weather-panel">
     <button class="weather-toggle" id="weatherToggle">
-      <span id="weatherToggleLabel">☀️ Sunny</span>
+      <span id="weatherToggleLabel">☀️</span>
       <span class="chev">▼</span>
     </button>
     <div class="weather-menu" id="weatherMenu">
@@ -624,8 +624,8 @@
 
   <div class="top-bar-spacer"></div>
 
-  <button class="pause-btn" id="pauseBtn">▶️ Start</button>
-  <button class="reset-btn" id="resetBtn">🔄 Play Again</button>
+  <button class="pause-btn" id="pauseBtn">▶️</button>
+  <button class="reset-btn" id="resetBtn">🔄</button>
 </div>
 
 <div class="photo-modal-backdrop" id="photoModalBackdrop">
@@ -1058,14 +1058,14 @@
     gustActive: false
   };
 
-  const weatherLabels = {
-    sunny: '☀️ Sunny',
-    cloudy: '☁️ Cloudy',
-    rainy: '🌧️ Rainy',
-    windy: '💨 Windy',
-    stormy: '⛈️ Stormy',
-    snowy: '❄️ Snowy',
-    foggy: '🌫️ Foggy'
+  const weatherEmojis = {
+    sunny: '☀️',
+    cloudy: '☁️',
+    rainy: '🌧️',
+    windy: '💨',
+    stormy: '⛈️',
+    snowy: '❄️',
+    foggy: '🌫️'
   };
 
   let CANVAS_W = window.innerWidth;
@@ -1213,6 +1213,9 @@
   let fogBanks = [];
   let lightningFlashes = [];
 
+  const MAX_PYRAMID_ROWS = 6;
+  const MAX_PYRAMID_ITEMS = (MAX_PYRAMID_ROWS * (MAX_PYRAMID_ROWS + 1)) / 2; // 21
+
   function buildFoods() {
     foods = [];
     portal = null;
@@ -1253,27 +1256,29 @@
     if (foodOnly.length > 0) {
       const totalItems = foodOnly.length;
 
-      let rows = 1;
-      while ((rows * (rows + 1)) / 2 < totalItems) rows++;
-
-      const strictTotal = (rows * (rows + 1)) / 2;
-      const excess = totalItems - strictTotal;
-      const bottomCount = rows + excess;
+      // Build the organized pyramid up to MAX_PYRAMID_ROWS (21 slots)
+      const pyrRows = Math.min(MAX_PYRAMID_ROWS, (() => {
+        let r = 1;
+        while ((r * (r + 1)) / 2 < totalItems) r++;
+        return r;
+      })());
 
       const rowCounts = [];
-      for (let r = 0; r < rows; r++) {
-        if (r === 0) {
-          rowCounts.push(bottomCount);
-        } else {
-          rowCounts.push(rows - r);
-        }
+      for (let r = 0; r < pyrRows; r++) {
+        rowCounts.push(pyrRows - r);
       }
+      // rowCounts[0] is the bottom (widest) row, rowCounts[pyrRows-1] is top (1)
+
+      const organizedSlots = rowCounts.reduce((a, b) => a + b, 0);
 
       const items = [];
       let imgIdx = 0;
+
+      // Place first `organizedSlots` items into organized pyramid positions
       for (let r = 0; r < rowCounts.length; r++) {
         const colsInRow = rowCounts[r];
         for (let c = 0; c < colsInRow; c++) {
+          if (imgIdx >= totalItems) break;
           const src = foodOnly[imgIdx % foodOnly.length];
           imgIdx++;
           items.push({
@@ -1283,9 +1288,37 @@
             image: src.img,
             eaten: false,
             bobPhase: Math.random() * Math.PI * 2,
-            sharedEntry: src
+            sharedEntry: src,
+            pileOffsetX: 0,
+            pileOffsetY: 0
           });
         }
+      }
+
+      // Any remaining items get scattered randomly within the pyramid area
+      let extraIdx = organizedSlots;
+      while (extraIdx < totalItems) {
+        const src = foodOnly[extraIdx % foodOnly.length];
+        extraIdx++;
+        // random row 0..pyrRows-1
+        const r = Math.floor(Math.random() * rowCounts.length);
+        const colsInRow = rowCounts[r];
+        // random col position, can extend slightly beyond row for "messy" pile
+        const c = Math.floor(Math.random() * (colsInRow + 2)) - 1;
+        // random jitter offsets
+        const jitterX = (Math.random() - 0.5) * 0.8;
+        const jitterY = (Math.random() - 0.5) * 0.9;
+        items.push({
+          row: r,
+          col: c,
+          colsInRow,
+          image: src.img,
+          eaten: false,
+          bobPhase: Math.random() * Math.PI * 2,
+          sharedEntry: src,
+          pileOffsetX: jitterX,
+          pileOffsetY: jitterY
+        });
       }
 
       const baseWorldDistance = lastDistance + 250 * ZOOM;
@@ -1415,7 +1448,7 @@
     arrival = null;
     gameState = 'idle';
     pauseBtn.classList.remove('paused');
-    pauseBtn.textContent = '▶️ Start';
+    pauseBtn.textContent = '▶️';
 
     char.screenX = CANVAS_W * 0.30;
     char.vy = 0;
@@ -1576,11 +1609,15 @@
     const colsInRow = mi.colsInRow;
     const widest = rowCounts[0];
     const rowStartOffset = (widest - colsInRow) * 0.5;
-    return baseWorldDistance + (rowStartOffset + mi.col) * colSpacing;
+    const organizedX = baseWorldDistance + (rowStartOffset + mi.col) * colSpacing;
+    const jitter = (mi.pileOffsetX || 0) * colSpacing;
+    return organizedX + jitter;
   }
 
   function mountainItemY(mi) {
-    return foodMountain.bottomRowY - mi.row * foodMountain.rowSpacing;
+    const organizedY = foodMountain.bottomRowY - mi.row * foodMountain.rowSpacing;
+    const jitter = (mi.pileOffsetY || 0) * foodMountain.rowSpacing;
+    return organizedY + jitter;
   }
 
   function triggerMountainConsume(mi) {
@@ -1647,22 +1684,24 @@
     char.vy = 0;
   }
 
+  // Top-to-bottom eating: pick the uneaten item with the smallest screen Y (highest up)
   function nextMountainItem() {
     if (!foodMountain) return null;
-    const lastRow = foodMountain.rows - 1;
-    for (let r = lastRow; r >= 0; r--) {
-      const colsInRow = foodMountain.rowCounts[r];
-      for (let c = 0; c < colsInRow; c++) {
-        const it = foodMountain.items.find(x => x.row === r && x.col === c && !x.eaten);
-        if (it) return it;
-      }
-    }
-    return null;
+    const uneaten = foodMountain.items.filter(x => !x.eaten);
+    if (uneaten.length === 0) return null;
+    uneaten.sort((a, b) => mountainItemY(a) - mountainItemY(b));
+    return uneaten[0];
   }
 
   function pyramidLeftWorldX() {
     if (!foodMountain) return Infinity;
-    return foodMountain.baseWorldDistance;
+    // Find the leftmost world X among all pyramid items
+    let minX = foodMountain.baseWorldDistance;
+    for (const mi of foodMountain.items) {
+      const x = mountainItemWorldX(mi);
+      if (x < minX) minX = x;
+    }
+    return minX;
   }
 
   function openItemSizePopup(target) {
@@ -1752,7 +1791,7 @@
         resetGame();
         gameState = 'running';
         pauseBtn.classList.remove('paused');
-        pauseBtn.textContent = '⏸️ Pause';
+        pauseBtn.textContent = '⏸️';
         beginPlay();
       }
       updateScenery(0.15);
@@ -2508,8 +2547,6 @@
   function drawFoodMountain() {
     if (!foodMountain) return;
 
-    const { bottomRowY, rowSpacing } = foodMountain;
-
     for (const mi of foodMountain.items) {
       if (mi.eaten) continue;
 
@@ -2517,7 +2554,7 @@
       const screenX = char.screenX + (worldX - worldOffset);
       if (screenX < -150 || screenX > CANVAS_W + 150) continue;
 
-      const y = bottomRowY - mi.row * rowSpacing;
+      const y = mountainItemY(mi);
       const bob = Math.sin(Date.now() * 0.005 + mi.bobPhase) * 2 * ZOOM;
       const scale = itemSize(mi);
 
@@ -3386,7 +3423,7 @@
     document.querySelectorAll('.weather-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     weather.type = btn.dataset.weather;
-    weatherToggleLabel.textContent = weatherLabels[weather.type];
+    weatherToggleLabel.textContent = weatherEmojis[weather.type];
     weatherToggle.classList.remove('open');
     weatherMenu.classList.remove('open');
   });
@@ -3403,16 +3440,16 @@
       if (sharedEatableList.length === 0) return;
       gameState = 'running';
       pauseBtn.classList.remove('paused');
-      pauseBtn.textContent = '⏸️ Pause';
+      pauseBtn.textContent = '⏸️';
       beginPlay();
     } else if (gameState === 'running') {
       gameState = 'paused';
       pauseBtn.classList.add('paused');
-      pauseBtn.textContent = '▶️ Resume';
+      pauseBtn.textContent = '▶️';
     } else if (gameState === 'paused') {
       gameState = 'running';
       pauseBtn.classList.remove('paused');
-      pauseBtn.textContent = '⏸️ Pause';
+      pauseBtn.textContent = '⏸️';
     }
   });
 
@@ -3420,7 +3457,7 @@
     resetGame();
     gameState = 'running';
     pauseBtn.classList.remove('paused');
-    pauseBtn.textContent = '⏸️ Pause';
+    pauseBtn.textContent = '⏸️';
     beginPlay();
   });
 
@@ -3429,7 +3466,7 @@
       resetGame();
       gameState = 'running';
       pauseBtn.classList.remove('paused');
-      pauseBtn.textContent = '⏸️ Pause';
+      pauseBtn.textContent = '⏸️';
       beginPlay();
     }
     if (e.key === ' ') {
