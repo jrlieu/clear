@@ -490,6 +490,86 @@
     transform: translateY(3px);
     box-shadow: 0 2px 0 #b46f3f;
   }
+
+  .item-size-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 45;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .item-size-backdrop.open { display: flex; }
+  .item-size-popup {
+    background: #fff5e1;
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+  }
+  .item-size-popup img {
+    width: 100%;
+    height: 120px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .item-size-popup h3 {
+    color: #5e3a1c;
+    font-size: 1rem;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+  .item-size-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .item-size-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: #ffd8a8;
+    box-shadow: inset 0 2px 3px rgba(0,0,0,0.15);
+    outline: none;
+    cursor: pointer;
+  }
+  .item-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffb882;
+    box-shadow: 0 3px 0 #b46f3f, 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    border: 2px solid #fff2d7;
+  }
+  .item-size-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffb882;
+    box-shadow: 0 3px 0 #b46f3f, 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    border: 2px solid #fff2d7;
+  }
+  .item-size-value {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #6b3e1c;
+    min-width: 48px;
+    text-align: right;
+  }
 </style>
 </head>
 <body>
@@ -569,6 +649,18 @@
   </div>
 </div>
 
+<div class="item-size-backdrop" id="itemSizeBackdrop">
+  <div class="item-size-popup">
+    <img id="itemSizePreview" src="" alt="">
+    <h3 id="itemSizeTitle">Item Size</h3>
+    <div class="item-size-slider-row">
+      <input type="range" id="itemSizeSlider" min="30" max="300" value="100" class="item-size-slider">
+      <span class="item-size-value" id="itemSizeValue">100%</span>
+    </div>
+    <button class="cancel-btn" id="itemSizeDone">Done</button>
+  </div>
+</div>
+
 <script>
 (function() {
   const canvas = document.getElementById('gameCanvas');
@@ -605,6 +697,12 @@
   const photoActionDuplicate = document.getElementById('photoActionDuplicate');
   const photoActionDelete = document.getElementById('photoActionDelete');
   const photoActionCancel = document.getElementById('photoActionCancel');
+  const itemSizeBackdrop = document.getElementById('itemSizeBackdrop');
+  const itemSizePreview = document.getElementById('itemSizePreview');
+  const itemSizeTitle = document.getElementById('itemSizeTitle');
+  const itemSizeSlider = document.getElementById('itemSizeSlider');
+  const itemSizeValue = document.getElementById('itemSizeValue');
+  const itemSizeDone = document.getElementById('itemSizeDone');
 
   const sharedEatableList = [];
   const customGrassImages = [];
@@ -646,7 +744,11 @@
       img.onload = () => {
         const list = getList(pendingReplace.kind);
         const old = list[pendingReplace.index];
-        list[pendingReplace.index] = { img, kind: old.kind };
+        if (pendingReplace.kind === 'food' || pendingReplace.kind === 'drink') {
+          list[pendingReplace.index] = { img, kind: old.kind, sizeScale: old.sizeScale || 1 };
+        } else {
+          list[pendingReplace.index] = img;
+        }
         if (pendingReplace.kind === 'eatable') rebuildFoods();
         openPhotoModal(pendingReplace.kind);
         pendingReplace = null;
@@ -679,7 +781,7 @@
 
     photoActionDuplicate.onclick = () => {
       const original = list[index];
-      const copy = { img: original.img, kind: original.kind };
+      const copy = { img: original.img, kind: original.kind, sizeScale: original.sizeScale || 1 };
       list.splice(index + 1, 0, copy);
       updateBadges();
       photoActionBackdrop.classList.remove('open');
@@ -735,7 +837,7 @@
           const img = new Image();
           img.onload = () => {
             if (kind === 'food' || kind === 'drink') {
-              sharedEatableList.push({ img, kind });
+              sharedEatableList.push({ img, kind, sizeScale: 1 });
             } else if (kind === 'grass') {
               customGrassImages.push(img);
             } else if (kind === 'rock') {
@@ -972,10 +1074,8 @@
 
   const ZOOM = 2.2;
   const SKY_SHIFT = 30;
-  // Vertical band for clouds — kept low so a 16:9 crop won't cut them off.
   const CLOUD_TOP_MIN = 130;
   const CLOUD_TOP_RANGE = 90;
-  // Sun vertical position — also lowered to survive the top crop.
   const SUN_Y_FRACTION = 0.32;
 
   let FOOT_GROUND = GROUND_Y + 2;
@@ -1036,7 +1136,10 @@
 
   const char = {
     screenX: 0, y: 0, baseY: 0,
+    baseRadius: 34 * ZOOM,
     radius: 34 * ZOOM,
+    sizeBoost: 0,
+    EAT_STANDOFF: 0,
     vy: 0,
     jumpPower: -14 * ZOOM,
     maxX: 0,
@@ -1071,7 +1174,6 @@
   }
 
   const WALK_ZONE_FRACTION = 0.20;
-  const EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
 
   let foodEaten = 0;
   let gameActive = true;
@@ -1096,6 +1198,7 @@
 
   let foodMountain = null;
   let finalDrinkRef = null;
+  let itemSizeEditTarget = null;
 
   let clouds = [];
   let hills = [];
@@ -1141,7 +1244,8 @@
         triggered: false,
         bobPhase: Math.random() * Math.PI * 2,
         eatSquash: 1,
-        isFinalDrink: false
+        isFinalDrink: false,
+        sharedEntry: item
       });
     });
 
@@ -1178,7 +1282,8 @@
             colsInRow,
             image: src.img,
             eaten: false,
-            bobPhase: Math.random() * Math.PI * 2
+            bobPhase: Math.random() * Math.PI * 2,
+            sharedEntry: src
           });
         }
       }
@@ -1219,7 +1324,8 @@
         triggered: false,
         bobPhase: Math.random() * Math.PI * 2,
         eatSquash: 1,
-        isFinalDrink: true
+        isFinalDrink: true,
+        sharedEntry: pick
       };
       foods.push(finalDrinkObj);
       finalDrinkRef = finalDrinkObj;
@@ -1325,6 +1431,10 @@
     char.landingSettle = 0;
     char.pendingFood = null;
 
+    char.sizeBoost = 0;
+    char.radius = char.baseRadius;
+    char.EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
+
     char.walkDuration = 1.0 + Math.random() * 1.5;
     char.nextJumpAt = char.walkDuration;
 
@@ -1362,39 +1472,56 @@
     char.squash = 0.7;
     char.squashVel = 0;
 
+    char.sizeBoost = 0;
+    char.radius = char.baseRadius;
+    char.EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
+
     char.walkDuration = 1.0 + Math.random() * 1.5;
     char.nextJumpAt = char.walkDuration;
 
     startArrival();
   }
 
+  function applyGrowth() {
+    char.sizeBoost += 1;
+    char.radius = char.baseRadius + char.sizeBoost;
+    char.EAT_STANDOFF = char.radius + FOOD_RADIUS + 22;
+  }
+
+  function itemSize(item) {
+    return (item && item.sharedEntry && item.sharedEntry.sizeScale) || 1;
+  }
+
   function inWalkZone() {
     const nextFood = foods.find(f => !f.triggered);
     if (!nextFood) return false;
     const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
-    const standoffScreenX = char.screenX + EAT_STANDOFF;
+    const standoffScreenX = char.screenX + char.EAT_STANDOFF;
     const remaining = foodScreenX - standoffScreenX;
     const walkZoneWidth = nextFood.gap * WALK_ZONE_FRACTION;
     return remaining <= walkZoneWidth;
   }
 
   function getMouthPos() {
+    const sizeFactor = char.radius / char.baseRadius;
     return {
       x: char.screenX,
-      y: char.y + 10 * ZOOM * (char.squash)
+      y: char.y + 10 * ZOOM * char.squash * sizeFactor
     };
   }
 
   function hasTouchedFood(nextFood) {
     if (!nextFood) return false;
     const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
-    const foodLeftEdge = foodScreenX - nextFood.radius;
+    const foodLeftEdge = foodScreenX - nextFood.radius * itemSize(nextFood);
     const charRightEdge = char.screenX + char.radius;
     return foodLeftEdge <= charRightEdge - 1;
   }
 
   function triggerConsume(nextFood) {
     if (!nextFood) return;
+
+    applyGrowth();
 
     const foodScreenX = char.screenX + (nextFood.worldDistance - worldOffset);
 
@@ -1423,7 +1550,7 @@
         startX: startX,
         startY: startY,
         t: 0,
-        radius: nextFood.radius,
+        radius: nextFood.radius * itemSize(nextFood),
         image: nextFood.image,
         rotation: 0,
         spin: (Math.random() - 0.5) * 0.4
@@ -1464,11 +1591,13 @@
     mi.eaten = true;
     foodEaten++;
 
+    applyGrowth();
+
     flyingFood = {
       startX: screenX,
       startY: y,
       t: 0,
-      radius: FOOD_RADIUS,
+      radius: FOOD_RADIUS * itemSize(mi),
       image: mi.image,
       rotation: 0,
       spin: (Math.random() - 0.5) * 0.4
@@ -1535,6 +1664,41 @@
     if (!foodMountain) return Infinity;
     return foodMountain.baseWorldDistance;
   }
+
+  function openItemSizePopup(target) {
+    itemSizeEditTarget = target;
+    const img = target.ref.image || target.ref.img;
+    itemSizePreview.src = img.src;
+
+    itemSizeTitle.textContent = target.ref.isDrink ? 'Drink on Road' : 'Food on Road';
+
+    const scale = itemSize(target.ref);
+    const pct = Math.round(scale * 100);
+    itemSizeSlider.value = pct;
+    itemSizeValue.textContent = pct + '%';
+
+    itemSizeBackdrop.classList.add('open');
+  }
+
+  itemSizeSlider.addEventListener('input', (e) => {
+    const pct = parseInt(e.target.value, 10);
+    itemSizeValue.textContent = pct + '%';
+    if (itemSizeEditTarget && itemSizeEditTarget.ref.sharedEntry) {
+      itemSizeEditTarget.ref.sharedEntry.sizeScale = pct / 100;
+    }
+  });
+
+  itemSizeDone.addEventListener('click', () => {
+    itemSizeBackdrop.classList.remove('open');
+    itemSizeEditTarget = null;
+  });
+
+  itemSizeBackdrop.addEventListener('click', (e) => {
+    if (e.target === itemSizeBackdrop) {
+      itemSizeBackdrop.classList.remove('open');
+      itemSizeEditTarget = null;
+    }
+  });
 
   function update() {
     const dt = 1 / 60;
@@ -1840,11 +2004,12 @@
 
     const spacedDone = !foods.some(f => !f.triggered && !f.isFinalDrink);
     if (spacedDone && foodMountain && !foodMountain.triggered) {
+      const charRightEdgeOffset = char.radius;
       const pyrLeft = pyramidLeftWorldX();
       const pyrLeftScreen = char.screenX + (pyrLeft - worldOffset);
-      const charRightEdge = char.screenX + char.radius;
+      const stopX = pyrLeftScreen - 20 - charRightEdgeOffset;
 
-      if (charRightEdge >= pyrLeftScreen - 4 * ZOOM) {
+      if (char.screenX >= stopX) {
         const mi = nextMountainItem();
         if (mi) {
           triggerMountainConsume(mi);
@@ -2034,12 +2199,9 @@
   function initScenery() {
     clouds = [];
     const CLOUD_COUNT = 7;
-    // Spread across a moderately wide band so clouds sit comfortably apart
-    // but don't disappear off-screen for ages.
     const SPREAD = CANVAS_W * 3.5;
     const baseSpacing = SPREAD / CLOUD_COUNT;
     for (let i = 0; i < CLOUD_COUNT; i++) {
-      // Random spacing so it doesn't look perfectly uniform.
       const jitter = (Math.random() - 0.5) * baseSpacing * 0.4;
       clouds.push({
         worldX: i * baseSpacing + jitter,
@@ -2132,15 +2294,13 @@
     for (const c of clouds) {
       c.worldX -= effectiveSpeed * c.speed;
       if (c.worldX < -300 * c.scale) {
-        // Place the wrapped cloud past the rightmost cloud with a tight,
-        // randomized gap of 50–200 px so they stay close but never overlap.
         let maxRight = -Infinity;
         for (const other of clouds) {
           if (other === c) continue;
           const otherRight = other.worldX + 130 * ZOOM * other.scale;
           if (otherRight > maxRight) maxRight = otherRight;
         }
-        const gap = 50 + Math.random() * 150;   // 50–200 px
+        const gap = 50 + Math.random() * 150;
         c.worldX = Math.max(CANVAS_W + 100, maxRight + gap);
         c.y = CLOUD_TOP_MIN + Math.random() * CLOUD_TOP_RANGE;
         c.scale = 0.55 + Math.random() * 0.7;
@@ -2359,13 +2519,14 @@
 
       const y = bottomRowY - mi.row * rowSpacing;
       const bob = Math.sin(Date.now() * 0.005 + mi.bobPhase) * 2 * ZOOM;
+      const scale = itemSize(mi);
 
       ctx.beginPath();
-      ctx.ellipse(screenX, GROUND_Y + 2, FOOD_RADIUS * 0.7, FOOD_RADIUS * 0.25, 0, 0, Math.PI * 2);
+      ctx.ellipse(screenX, GROUND_Y + 2, FOOD_RADIUS * 0.7 * scale, FOOD_RADIUS * 0.25 * scale, 0, 0, Math.PI * 2);
       ctx.fillStyle = '#00000022';
       ctx.fill();
 
-      drawFoodAt(screenX, y + bob, FOOD_RADIUS, 1, 0, mi.image);
+      drawFoodAt(screenX, y + bob, FOOD_RADIUS, scale, 0, mi.image);
     }
   }
 
@@ -2378,9 +2539,12 @@
     const heightAboveGround = char.baseY - char.y;
     const heightFactor = Math.max(0.3, 1 - heightAboveGround / (200 * ZOOM));
 
+    const sizeFactor = char.radius / char.baseRadius;
+
     if (char.state !== 'sucked' && char.state !== 'arriving') {
+      const shadowScale = sizeFactor;
       ctx.beginPath();
-      ctx.ellipse(cx, GROUND_Y + 2, 40 * ZOOM * heightFactor, 10 * ZOOM * heightFactor, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, GROUND_Y + 2, 40 * ZOOM * heightFactor * shadowScale, 10 * ZOOM * heightFactor * shadowScale, 0, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(0,0,0,${0.18 * heightFactor})`;
       ctx.fill();
     }
@@ -2430,7 +2594,7 @@
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(tilt + windTilt + leanIn);
-    ctx.scale(squash * ZOOM, stretch * ZOOM);
+    ctx.scale(squash * ZOOM * sizeFactor, stretch * ZOOM * sizeFactor);
 
     ctx.fillStyle = '#ffb07c';
     ctx.beginPath();
@@ -2610,8 +2774,8 @@
       const tt = Date.now() * 0.01;
       for (let i = 0; i < 3; i++) {
         const a = tt + i * 2.1;
-        const px = cx + Math.cos(a) * (30 * ZOOM + Math.sin(tt * 2) * 10 * ZOOM);
-        const py = cy - 20 * ZOOM + Math.sin(a) * 15 * ZOOM;
+        const px = cx + Math.cos(a) * (30 * ZOOM + Math.sin(tt * 2) * 10 * ZOOM) * sizeFactor;
+        const py = cy - 20 * ZOOM * sizeFactor + Math.sin(a) * 15 * ZOOM * sizeFactor;
         ctx.fillStyle = `rgba(255, 220, 120, ${0.6 + Math.sin(tt * 3 + i) * 0.4})`;
         ctx.beginPath();
         ctx.arc(px, py, 3 * ZOOM, 0, Math.PI * 2);
@@ -2624,8 +2788,8 @@
         const tt = Date.now() * 0.015;
         for (let i = 0; i < 6; i++) {
           const a = tt + i * 1.05;
-          const px = cx + Math.cos(a) * (25 * ZOOM + Math.sin(tt * 3) * 12 * ZOOM);
-          const py = cy - 15 * ZOOM + Math.sin(a * 1.7) * 18 * ZOOM;
+          const px = cx + Math.cos(a) * (25 * ZOOM + Math.sin(tt * 3) * 12 * ZOOM) * sizeFactor;
+          const py = cy - 15 * ZOOM * sizeFactor + Math.sin(a * 1.7) * 18 * ZOOM * sizeFactor;
           const alpha = 0.5 + Math.sin(tt * 4 + i * 1.2) * 0.4;
           ctx.fillStyle = `rgba(180, 230, 255, ${alpha})`;
           ctx.beginPath();
@@ -2636,7 +2800,7 @@
         for (const b of sippingDrink.burpBubbles) {
           ctx.fillStyle = `rgba(200, 240, 255, ${b.life * 0.8})`;
           ctx.beginPath();
-          ctx.arc(cx + b.x * ZOOM, cy - 10 * ZOOM + b.y * ZOOM, b.r * ZOOM * b.life, 0, Math.PI * 2);
+          ctx.arc(cx + b.x * ZOOM * sizeFactor, cy - 10 * ZOOM * sizeFactor + b.y * ZOOM * sizeFactor, b.r * ZOOM * b.life, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -2729,9 +2893,10 @@
       if (screenX < -150 || screenX > CANVAS_W + 150) continue;
 
       const bob = Math.sin(now * 0.005 + f.bobPhase) * 3 * ZOOM;
+      const scale = itemSize(f);
 
       ctx.beginPath();
-      ctx.ellipse(screenX, GROUND_Y + 2, f.radius * 0.8, f.radius * 0.3, 0, 0, Math.PI * 2);
+      ctx.ellipse(screenX, GROUND_Y + 2, f.radius * 0.8 * scale, f.radius * 0.3 * scale, 0, 0, Math.PI * 2);
       ctx.fillStyle = '#00000022';
       ctx.fill();
 
@@ -2739,7 +2904,7 @@
         if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') continue;
       }
 
-      drawFoodAt(screenX, f.y + bob, f.radius, f.eatSquash, 0, f.image);
+      drawFoodAt(screenX, f.y + bob, f.radius, f.eatSquash * scale, 0, f.image);
     }
   }
 
@@ -2785,6 +2950,7 @@
     const originalScreenX = char.screenX + (sippingDrink.worldDistance - worldOffset);
     const mouth = getMouthPos();
     const drink = sippingDrink.food;
+    const drinkScale = itemSize(drink);
 
     let px, py, scale;
 
@@ -2793,7 +2959,7 @@
       const hoverEased = hoverProgress * hoverProgress * (3 - 2 * hoverProgress);
       px = originalScreenX + (mouth.x - originalScreenX) * hoverEased;
       py = drink.y + (mouth.y - drink.y) * hoverEased;
-      scale = 1 - hoverEased * 0.3;
+      scale = (1 - hoverEased * 0.3) * drinkScale;
 
       const hoverBob = Math.sin(Date.now() * 0.02) * 2 * ZOOM;
       py += hoverBob * hoverEased;
@@ -2814,7 +2980,7 @@
       const returnEased = returnProgress * returnProgress * (3 - 2 * returnProgress);
       px = mouth.x + (originalScreenX - mouth.x) * returnEased;
       py = mouth.y + (drink.y - mouth.y) * returnEased;
-      scale = 0.7 + returnEased * 0.3;
+      scale = (0.7 + returnEased * 0.3) * drinkScale;
 
       if (returnEased > 0.1 && returnEased < 0.9) {
         ctx.fillStyle = `rgba(180, 220, 255, ${(1 - returnEased) * 0.4})`;
@@ -2825,7 +2991,7 @@
     } else {
       px = mouth.x;
       py = mouth.y;
-      scale = 1;
+      scale = drinkScale;
     }
 
     if (sippingDrink.phase === 'fizz' || sippingDrink.phase === 'return') {
@@ -3179,6 +3345,27 @@
   window.addEventListener('touchmove', onPointerMove, { passive: false });
   window.addEventListener('touchend', onPointerUp, { passive: false });
   window.addEventListener('touchcancel', onPointerUp, { passive: false });
+
+  // Click-to-resize: only road items (including final drink) while paused.
+  canvas.addEventListener('click', (e) => {
+    if (gameState !== 'paused') return;
+    if (itemSizeBackdrop.classList.contains('open')) return;
+    if (dragMoved) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    for (const f of foods) {
+      if (f.eaten) continue;
+      const screenX = char.screenX + (f.worldDistance - worldOffset);
+      const r = f.radius * itemSize(f) * 1.15;
+      if (Math.hypot(clickX - screenX, clickY - f.y) <= r) {
+        openItemSizePopup({ type: 'food', ref: f });
+        return;
+      }
+    }
+  });
 
   weatherToggle.addEventListener('click', (e) => {
     e.stopPropagation();
