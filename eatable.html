@@ -12,11 +12,12 @@
     min-height: 100vh;
     background: #eef4ec;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
     overflow: hidden;
     transition: background 0.3s ease;
+    padding-top: 40px;
   }
 
   /* ---------- TINY TOP-LEFT CONTROL BAR ---------- */
@@ -108,7 +109,70 @@
   .clear-btn:hover { background: rgba(200, 150, 120, 0.25); transform: scale(1.1); }
   .clear-btn:active { transform: scale(0.95); }
 
-  /* ---------- SCENE ---------- */
+  /* ---------- ZOOM CONTROL ---------- */
+  .zoom-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 8px;
+    border-left: 1px solid rgba(107, 74, 56, 0.15);
+    color: #6b4a38;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .zoom-wrap input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 4px;
+    background: rgba(107, 74, 56, 0.25);
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+  }
+  .zoom-wrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #a8bfa0;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(50, 60, 45, 0.35);
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .zoom-wrap input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  .zoom-wrap input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #a8bfa0;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(50, 60, 45, 0.35);
+    cursor: pointer;
+  }
+  .zoom-wrap input[type="range"]::-moz-range-track {
+    height: 4px;
+    background: rgba(107, 74, 56, 0.25);
+    border-radius: 999px;
+  }
+
+  .zoom-value {
+    min-width: 34px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    color: #6b4a38;
+  }
+
+  /* ---------- SCENE (zoomable, anchored at top) ---------- */
   .scene {
     position: relative;
     width: 1100px;
@@ -120,6 +184,8 @@
     justify-content: flex-start;
     padding: 10px 0 0 0;
     overflow: visible;
+    transform-origin: top center;   /* ← anchored at top so zooming grows DOWN */
+    will-change: transform;
   }
 
   /* ---------- CUTE CHIBI CHARACTER ---------- */
@@ -179,9 +245,9 @@
     left: 50%;
     transform: translateX(-50%);
     width: 278px;
-    height: 252px;
+    height: 278px;
     background: #f0dcbc;
-    border-radius: 50% 50% 46% 46% / 55% 55% 45% 45%;
+    border-radius: 50% 50% 48% 48% / 55% 55% 45% 45%;
     box-shadow: inset -8px -10px 0 rgba(120, 90, 60, 0.15);
     z-index: 2;
     transform-origin: 50% 100%;
@@ -199,44 +265,100 @@
 
   .chibi.curious .chibi-body { transform: translateX(-50%) rotate(3deg); }
 
-  .chibi-hair {
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 290px;
-    height: 132px;
-    background: #6b4a38;
-    border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
-    box-shadow: inset 0 -6px 8px rgba(40, 25, 15, 0.25);
-    z-index: 3;
-  }
-  .chibi-hair::before,
-  .chibi-hair::after {
+  .chibi-head::before {
     content: '';
     position: absolute;
-    top: 81px;
-    width: 56px;
-    height: 72px;
-    background: #6b4a38;
-    border-radius: 0 0 60% 60%;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 60px;
+    background: radial-gradient(ellipse at 50% 40%, rgba(220, 190, 160, 0.55) 0%, transparent 72%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
   }
-  .chibi-hair::before { left: 17px; transform: rotate(-8deg); }
-  .chibi-hair::after  { right: 17px; transform: rotate(8deg); }
+
+  /* ---------- 3 HAIR STRANDS ---------- */
+  .hair-strand {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    transform-origin: 50% 100%;
+    filter: drop-shadow(0 1px 1px rgba(60, 40, 25, 0.18));
+  }
+
+  .hair-strand svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .hair-strand path {
+    fill: #6b4a38;
+    stroke: #6b4a38;
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .hair-strand.hs1 {
+    top: 6px;
+    left: 50%;
+    margin-left: -58px;
+    width: 30px;
+    height: 62px;
+    animation: hairWaveL 2.8s ease-in-out infinite;
+    transform-origin: 60% 100%;
+  }
+
+  .hair-strand.hs2 {
+    top: -6px;
+    left: 50%;
+    margin-left: -14px;
+    width: 32px;
+    height: 78px;
+    animation: hairWaveM 3.2s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  .hair-strand.hs3 {
+    top: 8px;
+    left: 50%;
+    margin-left: 26px;
+    width: 30px;
+    height: 58px;
+    animation: hairWaveR 3s ease-in-out infinite;
+    transform-origin: 40% 100%;
+  }
+
+  @keyframes hairWaveL {
+    0%, 100% { transform: rotate(-2deg); }
+    50%      { transform: rotate(-7deg); }
+  }
+  @keyframes hairWaveM {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(4deg); }
+  }
+  @keyframes hairWaveR {
+    0%, 100% { transform: rotate(2deg); }
+    50%      { transform: rotate(7deg); }
+  }
 
   .chibi-eyes {
     position: absolute;
-    top: 132px;
+    top: 150px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 56px;
+    gap: 60px;
     z-index: 4;
     transition: transform 0.4s ease;
   }
   .chibi-eye {
-    width: 42px;
-    height: 50px;
+    width: 44px;
+    height: 52px;
     background: #3a2a20;
     border-radius: 50%;
     position: relative;
@@ -247,8 +369,8 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    width: 17px;
-    height: 21px;
+    width: 18px;
+    height: 22px;
     background: #fff;
     border-radius: 50%;
   }
@@ -257,14 +379,14 @@
     position: absolute;
     bottom: 8px;
     right: 7px;
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     background: #fff;
     border-radius: 50%;
     opacity: 0.8;
   }
 
-  .chibi.curious .chibi-eye { width: 47px; height: 56px; }
+  .chibi.curious .chibi-eye { width: 49px; height: 58px; }
   .chibi.curious .chibi-eyes {
     transform: translateX(-50%) translateY(-3px) translateX(-3px);
   }
@@ -281,125 +403,38 @@
   .chibi.sad .chibi-eyes { transform: translateX(-50%) translateY(5px); }
   .chibi.sad .chibi-blush { opacity: 0.2; }
 
-  /* ---- Mouth curves drawn as SVG shapes (no CSS borders) ---- */
-  .chibi-mouth {
+  .chibi.sad .chibi-arm.left  { transform: rotate(-5deg) translate(0, 5px); }
+  .chibi.sad .chibi-arm.right { transform: rotate(5deg)  translate(0, 5px); }
+
+  .tear {
     position: absolute;
-    top: 213px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 35px;
-    height: 17px;
-    z-index: 4;
-    transition: width 0.4s ease, height 0.4s ease, top 0.4s ease;
-  }
-  .chibi-mouth svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-  }
-  .chibi-mouth path {
-    fill: none;
-    stroke: #3a2a20;
-    stroke-width: 5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transition: d 0.4s ease;
-  }
-
-  /* Curious mouth = small circle (also SVG) */
-  .chibi-mouth .mouth-smile,
-  .chibi-mouth .mouth-frown,
-  .chibi-mouth .mouth-bigsmile,
-  .chibi-mouth .mouth-o {
-    display: none;
-  }
-  .chibi-mouth .mouth-smile { display: block; }
-
-  .chibi.curious .chibi-mouth {
     width: 21px;
-    height: 21px;
-    top: 211px;
+    height: 29px;
+    background: linear-gradient(180deg, #a8d4f0 0%, #6aaede 100%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 0 5px rgba(106, 174, 222, 0.5);
   }
-  .chibi.curious .chibi-mouth .mouth-smile { display: none; }
-  .chibi.curious .chibi-mouth .mouth-o { display: block; }
-
-  .chibi.sad .chibi-mouth {
-    width: 40px;
-    height: 20px;
-    top: 229px;
+  .tear.left  { top: 180px; left: 66px; }
+  .tear.right { top: 180px; right: 66px; }
+  .chibi.sad .tear { animation: tearDrop 1.2s ease-in infinite; }
+  .chibi.sad .tear.left  { animation-delay: 0s; }
+  .chibi.sad .tear.right { animation-delay: 0.5s; }
+  @keyframes tearDrop {
+    0%   { opacity: 0; transform: translateY(0) scaleY(0.6); }
+    20%  { opacity: 1; transform: translateY(3px) scaleY(1); }
+    80%  { opacity: 1; transform: translateY(24px) scaleY(1.1); }
+    100% { opacity: 0; transform: translateY(35px) scaleY(0.8); }
   }
-  .chibi.sad .chibi-mouth .mouth-smile { display: none; }
-  .chibi.sad .chibi-mouth .mouth-frown { display: block; }
-
-  .chibi.excited .chibi-mouth,
-  .chibi.happy .chibi-mouth {
-    width: 48px;
-    height: 27px;
-    top: 210px;
-  }
-  .chibi.excited .chibi-mouth .mouth-smile,
-  .chibi.happy .chibi-mouth .mouth-smile { display: none; }
-  .chibi.excited .chibi-mouth .mouth-bigsmile,
-  .chibi.happy .chibi-mouth .mouth-bigsmile { display: block; }
-
-  /* Eating = big open mouth (CSS-filled ellipse) */
-  .chibi.eating .chibi-mouth {
-    width: 64px;
-    height: 59px;
-    top: 197px;
-  }
-  .chibi.eating .chibi-mouth svg { display: none; }
-  .chibi.eating .chibi-mouth::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 35%, #8a3a3a 0%, #c97070 55%, #d98a8a 100%);
-    border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
-    box-shadow: inset 0 -4px 0 rgba(60, 20, 20, 0.35);
-    animation: chewMouth 0.4s ease-in-out infinite;
-  }
-  .chibi.eating .chibi-mouth::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: 6px;
-    transform: translateX(-50%);
-    width: 29px;
-    height: 19px;
-    background: #6b2a2a;
-    border-radius: 50% 50% 40% 40%;
-    opacity: 0.85;
-  }
-  @keyframes chewMouth {
-    0%, 100% { transform: scaleY(1); }
-    50%      { transform: scaleY(0.85); }
-  }
-  .chibi.eating .chibi-arm.left  { transform: rotate(-45deg) translate(3px, -5px); }
-  .chibi.eating .chibi-arm.right { transform: rotate(45deg)  translate(-3px, -5px); }
-
-  .chibi-blush {
-    position: absolute;
-    top: 196px;
-    width: 39px;
-    height: 21px;
-    background: #c9a68a;
-    border-radius: 50%;
-    opacity: 0.65;
-    filter: blur(0.5px);
-    z-index: 4;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-  }
-  .chibi-blush.left  { left: 39px; }
-  .chibi-blush.right { right: 39px; }
-  .chibi.curious .chibi-blush { opacity: 0.95; transform: scale(1.2); }
 
   .chibi.excited { animation: excitedBounce 0.55s ease-in-out infinite; }
   @keyframes excitedBounce {
     0%, 100% { transform: translateY(0px)   scale(1); }
     50%      { transform: translateY(-11px) scale(1.03); }
   }
-  .chibi.excited .chibi-eye { width: 47px; height: 56px; }
+  .chibi.excited .chibi-eye { width: 49px; height: 58px; }
   .chibi.excited .chibi-blush { opacity: 0.95; transform: scale(1.2); }
 
   .chibi.excited .chibi-arm.left  { animation: excitedArmL 0.7s ease-in-out infinite; }
@@ -429,6 +464,128 @@
     0%, 100% { transform: rotate(50deg) translate(5px, -11px); }
     50%      { transform: rotate(75deg) translate(8px, -16px); }
   }
+
+  /* ---------- EATING ---------- */
+  .chibi.eating { animation: none; }
+
+  .chibi.eating .chibi-mouth {
+    width: 64px;
+    height: 59px;
+    top: 212px;
+  }
+  .chibi.eating .chibi-mouth svg { display: none; }
+  .chibi.eating .chibi-mouth::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 35%, #8a3a3a 0%, #c97070 55%, #d98a8a 100%);
+    border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+    box-shadow: inset 0 -4px 0 rgba(60, 20, 20, 0.35);
+    animation: chewMouth 0.35s ease-in-out infinite;
+    transform-origin: 50% 40%;
+  }
+  .chibi.eating .chibi-mouth::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%);
+    width: 29px;
+    height: 19px;
+    background: #6b2a2a;
+    border-radius: 50% 50% 40% 40%;
+    opacity: 0.85;
+  }
+
+  @keyframes chewMouth {
+    0%   { transform: scaleY(1)    scaleX(1); }
+    35%  { transform: scaleY(0.55) scaleX(1.05); }
+    70%  { transform: scaleY(0.9)  scaleX(0.98); }
+    100% { transform: scaleY(1)    scaleX(1); }
+  }
+
+  .chibi.eating .chibi-arm.left  {
+    transform: rotate(-45deg) translate(3px, -5px);
+  }
+  .chibi.eating .chibi-arm.right {
+    transform: rotate(45deg) translate(-3px, -5px);
+  }
+
+  /* ---------- MOUTH SHAPES ---------- */
+  .chibi-mouth {
+    position: absolute;
+    top: 228px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35px;
+    height: 17px;
+    z-index: 4;
+    transition: width 0.4s ease, height 0.4s ease, top 0.4s ease;
+  }
+  .chibi-mouth svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  .chibi-mouth path,
+  .chibi-mouth circle {
+    fill: none;
+    stroke: #3a2a20;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .chibi-mouth .mouth-smile,
+  .chibi-mouth .mouth-frown,
+  .chibi-mouth .mouth-bigsmile,
+  .chibi-mouth .mouth-o {
+    display: none;
+  }
+  .chibi-mouth .mouth-smile { display: block; }
+
+  .chibi.curious .chibi-mouth {
+    width: 21px;
+    height: 21px;
+    top: 226px;
+  }
+  .chibi.curious .chibi-mouth .mouth-smile { display: none; }
+  .chibi.curious .chibi-mouth .mouth-o { display: block; }
+
+  .chibi.sad .chibi-mouth {
+    width: 40px;
+    height: 20px;
+    top: 244px;
+  }
+  .chibi.sad .chibi-mouth .mouth-smile { display: none; }
+  .chibi.sad .chibi-mouth .mouth-frown { display: block; }
+
+  .chibi.excited .chibi-mouth,
+  .chibi.happy .chibi-mouth {
+    width: 48px;
+    height: 27px;
+    top: 225px;
+  }
+  .chibi.excited .chibi-mouth .mouth-smile,
+  .chibi.happy .chibi-mouth .mouth-smile { display: none; }
+  .chibi.excited .chibi-mouth .mouth-bigsmile,
+  .chibi.happy .chibi-mouth .mouth-bigsmile { display: block; }
+
+  .chibi-blush {
+    position: absolute;
+    top: 208px;
+    width: 39px;
+    height: 21px;
+    background: #c9a68a;
+    border-radius: 50%;
+    opacity: 0.65;
+    filter: blur(0.5px);
+    z-index: 4;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .chibi-blush.left  { left: 39px; }
+  .chibi-blush.right { right: 39px; }
+  .chibi.curious .chibi-blush { opacity: 0.95; transform: scale(1.2); }
 
   .chibi-arm {
     position: absolute;
@@ -488,11 +645,7 @@
     50%      { text-shadow: 0 0 14px rgba(184, 201, 168, 0.95); }
   }
 
-  /* ---------- BIG ? ----------
-     iPad fix: transition on opacity/transform is unreliable on iOS
-     when the value swings widely (0.2 → 1) inside an animated parent.
-     Use a dedicated keyframe animation that plays once on show,
-     and a one-shot fade-out animation on hide, driven purely by class. */
+  /* ---------- BIG ? ---------- */
   .question-bubble {
     position: absolute;
     top: -55px;
@@ -507,7 +660,6 @@
     will-change: opacity, transform;
   }
 
-  /* Idle/hidden state has no animation running */
   .question-bubble.show {
     opacity: 1;
     transform: scale(1);
@@ -520,10 +672,6 @@
     100% { opacity: 1; transform: scale(1); }
   }
 
-  /* When .show is removed, the element animates out via transition.
-     On iOS, transitions on opacity + transform can stutter if the
-     parent is also animating. We disable the parent animation for
-     the duration of the hide so it's rock-solid. */
   .question-bubble svg {
     width: 100%;
     height: 100%;
@@ -767,9 +915,14 @@
   </div>
 
   <button class="clear-btn" id="clearBtn" title="Clear all">✕</button>
+
+  <div class="zoom-wrap" title="Zoom scene">
+    <input type="range" id="zoomRange" min="50" max="200" step="1" value="100">
+    <span class="zoom-value" id="zoomValue">100px</span>
+  </div>
 </div>
 
-<div class="scene">
+<div class="scene" id="scene">
 
   <div class="character-wrapper" id="characterWrapper">
     <div class="chibi" id="chibi">
@@ -780,7 +933,22 @@
       <div class="chibi-foot left"></div>
       <div class="chibi-foot right"></div>
       <div class="chibi-head">
-        <div class="chibi-hair"></div>
+        <div class="hair-strand hs1">
+          <svg viewBox="0 0 30 62" preserveAspectRatio="xMidYMax meet">
+            <path d="M 15,62 C 13,45 8,30 4,14 C 3,10 2,6 4,3 C 7,1 11,4 12,8 C 13,22 15,40 15,62 Z"/>
+          </svg>
+        </div>
+        <div class="hair-strand hs2">
+          <svg viewBox="0 0 32 78" preserveAspectRatio="xMidYMax meet">
+            <path d="M 16,78 C 15,58 14,36 15,18 C 16,12 16,6 18,3 C 21,1 24,5 23,10 C 22,30 20,55 16,78 Z"/>
+          </svg>
+        </div>
+        <div class="hair-strand hs3">
+          <svg viewBox="0 0 30 58" preserveAspectRatio="xMidYMax meet">
+            <path d="M 15,58 C 15,40 13,24 18,10 C 19,6 21,3 24,2 C 27,3 27,8 25,12 C 21,26 18,42 15,58 Z"/>
+          </svg>
+        </div>
+
         <div class="chibi-eyes">
           <div class="chibi-eye"></div>
           <div class="chibi-eye"></div>
@@ -791,13 +959,9 @@
         <div class="chibi-blush right"></div>
         <div class="chibi-mouth">
           <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-            <!-- Small smile (idle) -->
-            <path class="mouth-smile" d="M 8,20 Q 50,95 92,20" />
-            <!-- Big smile (happy/excited) -->
+            <path class="mouth-smile"    d="M 8,20 Q 50,95 92,20" />
             <path class="mouth-bigsmile" d="M 5,15 Q 50,100 95,15" />
-            <!-- Frown (sad) -->
-            <path class="mouth-frown" d="M 5,80 Q 50,5 95,80" />
-            <!-- Curious o -->
+            <path class="mouth-frown"    d="M 5,80 Q 50,5 95,80" />
             <circle class="mouth-o" cx="50" cy="50" r="42" />
           </svg>
         </div>
@@ -841,12 +1005,21 @@
   const bgPicker = document.getElementById('bgPicker');
   const clearBtn = document.getElementById('clearBtn');
   const emptyHint = document.getElementById('emptyHint');
+  const scene = document.getElementById('scene');
+  const zoomRange = document.getElementById('zoomRange');
+  const zoomValue = document.getElementById('zoomValue');
 
   const ITEM_PITCH = 230;
   const ITEM_VISUAL_WIDTH = 150;
   const PADDING_LEFT = 50;
 
-  let FOODS = [];
+  const STORAGE_KEYS = {
+    bg: 'chibi_bg',
+    zoom: 'chibi_zoom',
+    foods: 'chibi_foods'
+  };
+
+  let FOODS = [];   // array of image src strings (data URLs or http URLs)
 
   let currentIndex = 0;
   let stripOffset = 0;
@@ -857,6 +1030,59 @@
   let stateTimer = null;
   let isFeeding = false;
 
+  // ---------- ZOOM ----------
+  function applyZoom(px) {
+    const scale = px / 100;
+    scene.style.transform = `scale(${scale})`;
+    zoomValue.textContent = px + 'px';
+  }
+
+  function loadZoom() {
+    let saved = 100;
+    try {
+      const s = localStorage.getItem(STORAGE_KEYS.zoom);
+      if (s !== null) {
+        const n = parseInt(s, 10);
+        if (!isNaN(n)) saved = Math.max(50, Math.min(200, n));
+      }
+    } catch (_) {}
+    zoomRange.value = saved;
+    applyZoom(saved);
+  }
+
+  zoomRange.addEventListener('input', (e) => {
+    const px = parseInt(e.target.value, 10);
+    applyZoom(px);
+    try {
+      localStorage.setItem(STORAGE_KEYS.zoom, String(px));
+    } catch (_) {}
+  });
+
+  // ---------- SAVE FOODS ----------
+  function saveFoods() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.foods, JSON.stringify(FOODS));
+    } catch (_) {
+      // Quota exceeded — silently skip. localStorage can hold ~5MB,
+      // so many big photos won't fit. Consider IndexedDB for larger storage.
+      console.warn('Could not save food photos (storage full).');
+    }
+  }
+
+  function loadFoods() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEYS.foods);
+      if (!s) return;
+      const arr = JSON.parse(s);
+      if (Array.isArray(arr)) {
+        FOODS = arr.filter(x => typeof x === 'string');
+      }
+    } catch (_) {
+      FOODS = [];
+    }
+  }
+
+  // ---------- BUILD STRIP ----------
   function buildStrip() {
     strip.innerHTML = '';
 
@@ -1007,7 +1233,7 @@
     const charRect = characterWrapper.getBoundingClientRect();
 
     const mouthX = charRect.left + charRect.width / 2;
-    const mouthY = charRect.top + charRect.height * 0.62;
+    const mouthY = charRect.top + charRect.height * 0.68;
 
     foodEl.classList.remove('center');
     foodEl.classList.add('flying');
@@ -1046,8 +1272,11 @@
       isFeeding = false;
       updateHighlight();
 
-      setCharacterState('happy');
-      stateTimer = setTimeout(() => setCharacterState('idle'), 1600);
+      setCharacterState('idle');
+      stateTimer = setTimeout(() => {
+        setCharacterState('happy');
+        stateTimer = setTimeout(() => setCharacterState('idle'), 1400);
+      }, 180);
     }, 780);
   }
 
@@ -1146,16 +1375,31 @@
     }
   });
 
-  photoUpload.addEventListener('change', (e) => {
+  // ---------- PHOTO UPLOAD → data URL, so it survives reloads ----------
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  photoUpload.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      const url = URL.createObjectURL(file);
-      FOODS.push(url);
+    const results = await Promise.all(
+      files
+        .filter(f => f.type.startsWith('image/'))
+        .map(f => fileToDataUrl(f).catch(() => null))
+    );
+
+    results.forEach(url => {
+      if (typeof url === 'string') FOODS.push(url);
     });
 
+    saveFoods();
     buildStrip();
     currentIndex = 0;
     stripOffset = getCenteredOffsetForIndex(0);
@@ -1165,19 +1409,37 @@
     photoUpload.value = '';
   });
 
+  // ---------- BACKGROUND COLOR (saved) ----------
+  function loadBg() {
+    let saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEYS.bg); } catch (_) {}
+    if (saved) {
+      bgPicker.value = saved;
+      document.body.style.background = saved;
+    }
+  }
+
   bgPicker.addEventListener('input', (e) => {
     document.body.style.background = e.target.value;
+    try {
+      localStorage.setItem(STORAGE_KEYS.bg, e.target.value);
+    } catch (_) {}
   });
 
   clearBtn.addEventListener('click', () => {
-    FOODS.forEach(url => { try { URL.revokeObjectURL(url); } catch(_) {} });
     FOODS = [];
+    try { localStorage.removeItem(STORAGE_KEYS.foods); } catch (_) {}
     buildStrip();
     setCharacterState('idle');
     emptyHint.style.display = 'block';
     stripOffset = 0;
     applyTransform();
   });
+
+  // ---------- INIT ----------
+  loadBg();
+  loadZoom();
+  loadFoods();
 
   buildStrip();
   stripOffset = getCenteredOffsetForIndex(0);
