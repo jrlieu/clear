@@ -173,10 +173,7 @@
     color: #6b4a38;
   }
 
-  /* ---------- SCENE ----------
-     Fixed-size design canvas centered on screen.
-     Inside, the group containing character + plate is what gets
-     centered — so the COMBINED bounding box of both sits at the middle. */
+  /* ---------- SCENE ---------- */
   .scene {
     position: relative;
     width: 1080px;
@@ -190,9 +187,6 @@
     will-change: transform;
   }
 
-  /* This is the COMBINED GROUP: character + plate together.
-     Its natural height is 320 (character) + 440 (plate overlap area),
-     so its center sits at the visual middle of the pair. */
   .group {
     position: relative;
     width: 1080px;
@@ -204,7 +198,7 @@
     overflow: visible;
   }
 
-  /* ---------- CHARACTER (top of group) ---------- */
+  /* ---------- CHARACTER ---------- */
   .character-wrapper {
     position: absolute;
     top: 0;
@@ -717,7 +711,7 @@
     stroke-linecap: round;
   }
 
-  /* ---------- BOWL / PLATE (bottom of group) ---------- */
+  /* ---------- BOWL / PLATE ---------- */
   .carousel-section {
     position: absolute;
     bottom: 0;
@@ -798,6 +792,55 @@
     z-index: 15;
     height: 150px;
     pointer-events: none;
+  }
+
+  /* ---------- EATEN ROW (inside .stage, same Y as carousel) ---------- */
+  .eaten-row {
+    position: absolute;
+    top: 50%;
+    right: calc(50% + 260px);
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 80px;
+    height: 150px;
+    padding: 0;
+    pointer-events: none;
+    z-index: 16;
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+  .eaten-entry {
+    flex: 0 0 auto;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 12px 12px rgba(0, 0, 0, 0.2));
+    opacity: 0.35;
+    transform: scale(0.75);
+    transform-origin: center center;
+    animation: settleEntry 0.6s cubic-bezier(0.34, 1.5, 0.5, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .eaten-entry img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  @keyframes settleEntry {
+    0%   { opacity: 0;    transform: translateX(260px) scale(0.4); }
+    60%  { opacity: 0.45; transform: translateX(-8px)  scale(0.82); }
+    100% { opacity: 0.35; transform: translateX(0)     scale(0.75); }
   }
 
   .food-slot {
@@ -882,6 +925,17 @@
     will-change: left, top, transform, opacity;
     border-radius: 0 !important;
     overflow: visible !important;
+  }
+
+  /* Skipped food fades out in place */
+  .food-item.skipping {
+    animation: skipOut 0.5s cubic-bezier(0.4, 0, 0.6, 1) forwards !important;
+    pointer-events: none !important;
+  }
+  @keyframes skipOut {
+    0%   { opacity: 1;   transform: scale(1.8); }
+    40%  { opacity: 0.8; transform: scale(1.9); }
+    100% { opacity: 0;   transform: scale(0.4); }
   }
 
   .crumb {
@@ -1002,6 +1056,9 @@
           <div class="plate" id="plate"></div>
         </div>
         <div class="carousel-strip" id="carouselStrip"></div>
+
+        <div class="eaten-row" id="eatenRow"></div>
+
         <div class="empty-hint" id="emptyHint">Upload food photos 📷</div>
       </div>
     </div>
@@ -1024,6 +1081,7 @@
   const scene = document.getElementById('scene');
   const zoomRange = document.getElementById('zoomRange');
   const zoomValue = document.getElementById('zoomValue');
+  const eatenRow = document.getElementById('eatenRow');
 
   const ITEM_PITCH = 230;
   const ITEM_VISUAL_WIDTH = 150;
@@ -1032,10 +1090,12 @@
   const STORAGE_KEYS = {
     bg: 'chibi_bg',
     zoom: 'chibi_zoom',
-    foods: 'chibi_foods'
+    foods: 'chibi_foods',
+    eaten: 'chibi_eaten'
   };
 
   let FOODS = [];
+  let EATEN = [];
 
   let currentIndex = 0;
   let stripOffset = 0;
@@ -1074,13 +1134,14 @@
     } catch (_) {}
   });
 
-  // ---------- SAVE FOODS ----------
+  // ---------- SAVE / LOAD ----------
   function saveFoods() {
-    try {
-      localStorage.setItem(STORAGE_KEYS.foods, JSON.stringify(FOODS));
-    } catch (_) {
-      console.warn('Could not save food photos (storage full).');
-    }
+    try { localStorage.setItem(STORAGE_KEYS.foods, JSON.stringify(FOODS)); }
+    catch (_) { console.warn('Could not save food photos (storage full).'); }
+  }
+  function saveEaten() {
+    try { localStorage.setItem(STORAGE_KEYS.eaten, JSON.stringify(EATEN)); }
+    catch (_) { console.warn('Could not save eaten list (storage full).'); }
   }
 
   function loadFoods() {
@@ -1088,11 +1149,44 @@
       const s = localStorage.getItem(STORAGE_KEYS.foods);
       if (!s) return;
       const arr = JSON.parse(s);
-      if (Array.isArray(arr)) {
-        FOODS = arr.filter(x => typeof x === 'string');
-      }
-    } catch (_) {
-      FOODS = [];
+      if (Array.isArray(arr)) FOODS = arr.filter(x => typeof x === 'string');
+    } catch (_) { FOODS = []; }
+  }
+  function loadEaten() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEYS.eaten);
+      if (!s) return;
+      const arr = JSON.parse(s);
+      if (Array.isArray(arr)) EATEN = arr.filter(x => typeof x === 'string');
+    } catch (_) { EATEN = []; }
+  }
+
+  // ---------- EATEN ROW RENDER ----------
+  function renderEaten() {
+    eatenRow.innerHTML = '';
+    EATEN.forEach(src => addEatenEntry(src, false, null));
+  }
+
+  function addEatenEntry(src, animateIn, index) {
+    const entry = document.createElement('div');
+    entry.className = 'eaten-entry';
+
+    if (!animateIn) {
+      entry.style.animation = 'none';
+      entry.style.opacity = '0.35';
+      entry.style.transform = 'scale(0.75)';
+    }
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'eaten';
+    img.draggable = false;
+    entry.appendChild(img);
+
+    if (typeof index === 'number' && index < eatenRow.children.length) {
+      eatenRow.insertBefore(entry, eatenRow.children[index]);
+    } else {
+      eatenRow.appendChild(entry);
     }
   }
 
@@ -1193,7 +1287,7 @@
 
       const isCentered = dist < ITEM_PITCH * 0.35;
       const item = slot.querySelector('.food-item');
-      if (item && !item.classList.contains('flying')) {
+      if (item && !item.classList.contains('flying') && !item.classList.contains('skipping')) {
         item.classList.toggle('center', isCentered);
       }
     });
@@ -1239,7 +1333,65 @@
     });
   }
 
-  function autoFeedFood(foodEl) {
+  // ---------- SKIP CURRENT CENTERED FOOD ----------
+  // When the user clicks a non-centered food while another is centered,
+  // the previously centered one is "skipped" — it fades out and is removed
+  // from FOODS entirely.
+  function skipCenteredFood() {
+    const slots = getSlots();
+    if (slots.length === 0) return -1;
+
+    // Find the currently centered item
+    const stageCenterX = getStageCenterX();
+    let centerIdx = -1;
+    let minDist = Infinity;
+
+    slots.forEach((slot, i) => {
+      const slotCenter =
+        stripOffset + PADDING_LEFT + (i * ITEM_PITCH) + (ITEM_VISUAL_WIDTH / 2);
+      const dist = Math.abs(slotCenter - stageCenterX);
+      if (dist < minDist) {
+        minDist = dist;
+        centerIdx = i;
+      }
+    });
+
+    if (centerIdx < 0) return -1;
+    if (minDist >= ITEM_PITCH * 0.35) return -1; // nothing actually centered
+
+    const slot = slots[centerIdx];
+    const item = slot.querySelector('.food-item');
+    if (!item) return -1;
+
+    // Animate out
+    item.classList.remove('center');
+    item.classList.add('skipping');
+
+    // After animation, remove from FOODS and rebuild
+    setTimeout(() => {
+      FOODS.splice(centerIdx, 1);
+      saveFoods();
+      buildStrip();
+
+      // Re-center on the next available food
+      const newSlots = getSlots();
+      if (newSlots.length > 0) {
+        const next = Math.min(centerIdx, newSlots.length - 1);
+        stripOffset = getCenteredOffsetForIndex(next);
+        currentIndex = next;
+      } else {
+        stripOffset = 0;
+        currentIndex = 0;
+      }
+      applyTransform();
+      updateHighlight();
+    }, 520);
+
+    return centerIdx;
+  }
+
+  // ---------- FEEDING ----------
+  function autoFeedFood(foodEl, src, indexInFoods) {
     if (isFeeding) return;
     isFeeding = true;
 
@@ -1283,8 +1435,31 @@
 
     setTimeout(() => {
       if (foodEl.parentNode) foodEl.parentNode.removeChild(foodEl);
+      if (typeof indexInFoods === 'number' && indexInFoods >= 0) {
+        FOODS.splice(indexInFoods, 1);
+        saveFoods();
+        buildStrip();
+        const slots = getSlots();
+        if (slots.length > 0) {
+          const next = Math.min(indexInFoods, slots.length - 1);
+          stripOffset = getCenteredOffsetForIndex(next);
+          currentIndex = next;
+        } else {
+          stripOffset = 0;
+          currentIndex = 0;
+        }
+        applyTransform();
+        updateHighlight();
+      }
+
+      if (src) {
+        const idx = EATEN.length;
+        EATEN.push(src);
+        saveEaten();
+        addEatenEntry(src, true, idx);
+      }
+
       isFeeding = false;
-      updateHighlight();
 
       setCharacterState('idle');
       stateTimer = setTimeout(() => {
@@ -1314,6 +1489,7 @@
     const item = e.target.closest && e.target.closest('.food-item');
     if (!item) return;
     if (item.classList.contains('flying')) return;
+    if (item.classList.contains('skipping')) return;
     e.stopPropagation();
 
     if (currentState === 'eating' || currentState === 'excited' || isFeeding) return;
@@ -1324,13 +1500,40 @@
     const isCentered = item.classList.contains('center');
 
     if (!isCentered) {
-      snapToIndex(idx, () => {
-        setCharacterState('curious');
-      });
+      // Clicked a NON-centered food → this means the user is skipping the
+      // currently centered food. Remove the centered one, then snap to the
+      // newly clicked one.
+      skipCenteredFood();
+
+      // Snap to the clicked food once the skip-out finishes
+      setTimeout(() => {
+        // Recalculate idx based on the rebuilt strip (index may have shifted)
+        const slots = getSlots();
+        // Find the clicked food by its src to get the correct new index
+        const clickedImg = item.querySelector('img');
+        const clickedSrc = clickedImg ? clickedImg.src : null;
+        let newIdx = -1;
+        if (clickedSrc) {
+          slots.forEach((s, i) => {
+            const im = s.querySelector('img');
+            if (im && im.src === clickedSrc) newIdx = i;
+          });
+        }
+        if (newIdx >= 0) {
+          snapToIndex(newIdx, () => {
+            setCharacterState('curious');
+          });
+        } else {
+          setCharacterState('curious');
+        }
+      }, 540);
     } else {
+      // Clicked the centered food
       if (currentState === 'happy') {
         clearStateTimer();
-        autoFeedFood(item);
+        const imgEl = item.querySelector('img');
+        const src = imgEl ? imgEl.src : null;
+        autoFeedFood(item, src, idx);
       } else {
         setCharacterState('happy');
         clearStateTimer();
@@ -1442,8 +1645,13 @@
 
   clearBtn.addEventListener('click', () => {
     FOODS = [];
-    try { localStorage.removeItem(STORAGE_KEYS.foods); } catch (_) {}
+    EATEN = [];
+    try {
+      localStorage.removeItem(STORAGE_KEYS.foods);
+      localStorage.removeItem(STORAGE_KEYS.eaten);
+    } catch (_) {}
     buildStrip();
+    renderEaten();
     setCharacterState('idle');
     emptyHint.style.display = 'block';
     stripOffset = 0;
@@ -1454,11 +1662,14 @@
   loadBg();
   loadZoom();
   loadFoods();
+  loadEaten();
 
   buildStrip();
   stripOffset = getCenteredOffsetForIndex(0);
   applyTransform();
   updateHighlight();
+
+  renderEaten();
 
 })();
 </script>
