@@ -2,23 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
 <title>cute character · plate carousel</title>
 <style>
-  * { box-sizing: border-box; user-select: none; }
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
 
-  html, body { height: 100%; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+    touch-action: none;
+    -webkit-touch-callout: none;
+  }
 
   body {
     margin: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     background: #eef4ec;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
-    overflow: hidden;
     transition: background 0.3s ease;
+    position: fixed;
+    inset: 0;
+    width: 100%;
   }
 
   /* ---------- TINY TOP-LEFT CONTROL BAR ---------- */
@@ -39,6 +52,7 @@
     z-index: 1000;
     opacity: 0.4;
     transition: opacity 0.25s ease, box-shadow 0.25s ease;
+    touch-action: manipulation;
   }
   .top-bar:hover {
     opacity: 1;
@@ -62,6 +76,7 @@
     cursor: pointer;
     padding: 0;
     transition: transform 0.15s ease, background 0.15s ease;
+    touch-action: manipulation;
   }
   .upload-btn:hover { background: #b8cfae; transform: scale(1.1); }
   .upload-btn:active { transform: scale(0.95); }
@@ -79,6 +94,7 @@
     overflow: hidden;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
     transition: transform 0.15s ease;
+    touch-action: manipulation;
   }
   .color-picker-wrap input[type="color"]:hover { transform: scale(1.1); }
   .color-picker-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
@@ -106,6 +122,7 @@
     align-items: center;
     justify-content: center;
     transition: background 0.15s ease, transform 0.15s ease;
+    touch-action: manipulation;
   }
   .clear-btn:hover { background: rgba(200, 150, 120, 0.25); transform: scale(1.1); }
   .clear-btn:active { transform: scale(0.95); }
@@ -121,6 +138,7 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.3px;
+    touch-action: manipulation;
   }
 
   .zoom-wrap input[type="range"] {
@@ -134,6 +152,7 @@
     cursor: pointer;
     padding: 0;
     margin: 0;
+    touch-action: manipulation;
   }
   .zoom-wrap input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -185,6 +204,7 @@
     overflow: visible;
     transform-origin: center center;
     will-change: transform;
+    touch-action: none;
   }
 
   .group {
@@ -196,6 +216,7 @@
     align-items: center;
     justify-content: center;
     overflow: visible;
+    touch-action: none;
   }
 
   /* ---------- CHARACTER ---------- */
@@ -730,6 +751,7 @@
     height: 440px;
     overflow: visible;
     -webkit-tap-highlight-color: transparent;
+    touch-action: none;
   }
 
   .plate-stand {
@@ -794,7 +816,7 @@
     pointer-events: none;
   }
 
-  /* ---------- EATEN ROW (inside .stage, same Y as carousel) ---------- */
+  /* ---------- EATEN ROW ---------- */
   .eaten-row {
     position: absolute;
     top: 50%;
@@ -1087,12 +1109,8 @@
   const ITEM_VISUAL_WIDTH = 150;
   const PADDING_LEFT = 50;
 
-  const STORAGE_KEYS = {
-    bg: 'chibi_bg',
-    zoom: 'chibi_zoom',
-    foods: 'chibi_foods',
-    eaten: 'chibi_eaten'
-  };
+  /* ---------- THE ONLY THING WE SAVE ---------- */
+  const ZOOM_STORAGE_KEY = 'chibi_zoom';
 
   let FOODS = [];
   let EATEN = [];
@@ -1106,7 +1124,35 @@
   let stateTimer = null;
   let isFeeding = false;
 
-  // ---------- ZOOM ----------
+  // ---------- BLOCK NATIVE ZOOM GESTURES (iPad pinch & double-tap) ----------
+  // 1. Prevent pinch zoom (two-finger gesture)
+  document.addEventListener('gesturestart', (e) => { e.preventDefault(); }, { passive: false });
+  document.addEventListener('gesturechange', (e) => { e.preventDefault(); }, { passive: false });
+  document.addEventListener('gestureend', (e) => { e.preventDefault(); }, { passive: false });
+
+  // 2. Prevent double-tap zoom (iOS Safari)
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 350) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  // 3. Prevent multi-touch (pinch) via touchstart when 2+ fingers are down
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // 4. Prevent Ctrl+wheel zoom (desktop) and any wheel pinch-zoom gesture
+  window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
+
+  // ---------- ZOOM (saved to browser) ----------
   function applyZoom(px) {
     const scale = px / 100;
     scene.style.transform = `scale(${scale})`;
@@ -1116,7 +1162,7 @@
   function loadZoom() {
     let saved = 100;
     try {
-      const s = localStorage.getItem(STORAGE_KEYS.zoom);
+      const s = localStorage.getItem(ZOOM_STORAGE_KEY);
       if (s !== null) {
         const n = parseInt(s, 10);
         if (!isNaN(n)) saved = Math.max(50, Math.min(200, n));
@@ -1130,44 +1176,17 @@
     const px = parseInt(e.target.value, 10);
     applyZoom(px);
     try {
-      localStorage.setItem(STORAGE_KEYS.zoom, String(px));
+      localStorage.setItem(ZOOM_STORAGE_KEY, String(px));
     } catch (_) {}
   });
-
-  // ---------- SAVE / LOAD ----------
-  function saveFoods() {
-    try { localStorage.setItem(STORAGE_KEYS.foods, JSON.stringify(FOODS)); }
-    catch (_) { console.warn('Could not save food photos (storage full).'); }
-  }
-  function saveEaten() {
-    try { localStorage.setItem(STORAGE_KEYS.eaten, JSON.stringify(EATEN)); }
-    catch (_) { console.warn('Could not save eaten list (storage full).'); }
-  }
-
-  function loadFoods() {
-    try {
-      const s = localStorage.getItem(STORAGE_KEYS.foods);
-      if (!s) return;
-      const arr = JSON.parse(s);
-      if (Array.isArray(arr)) FOODS = arr.filter(x => typeof x === 'string');
-    } catch (_) { FOODS = []; }
-  }
-  function loadEaten() {
-    try {
-      const s = localStorage.getItem(STORAGE_KEYS.eaten);
-      if (!s) return;
-      const arr = JSON.parse(s);
-      if (Array.isArray(arr)) EATEN = arr.filter(x => typeof x === 'string');
-    } catch (_) { EATEN = []; }
-  }
 
   // ---------- EATEN ROW RENDER ----------
   function renderEaten() {
     eatenRow.innerHTML = '';
-    EATEN.forEach(src => addEatenEntry(src, false, null));
+    EATEN.forEach(src => addEatenEntry(src, false));
   }
 
-  function addEatenEntry(src, animateIn, index) {
+  function addEatenEntry(src, animateIn) {
     const entry = document.createElement('div');
     entry.className = 'eaten-entry';
 
@@ -1183,11 +1202,7 @@
     img.draggable = false;
     entry.appendChild(img);
 
-    if (typeof index === 'number' && index < eatenRow.children.length) {
-      eatenRow.insertBefore(entry, eatenRow.children[index]);
-    } else {
-      eatenRow.appendChild(entry);
-    }
+    eatenRow.appendChild(entry);
   }
 
   // ---------- BUILD STRIP ----------
@@ -1334,14 +1349,10 @@
   }
 
   // ---------- SKIP CURRENT CENTERED FOOD ----------
-  // When the user clicks a non-centered food while another is centered,
-  // the previously centered one is "skipped" — it fades out and is removed
-  // from FOODS entirely.
   function skipCenteredFood() {
     const slots = getSlots();
     if (slots.length === 0) return -1;
 
-    // Find the currently centered item
     const stageCenterX = getStageCenterX();
     let centerIdx = -1;
     let minDist = Infinity;
@@ -1357,23 +1368,19 @@
     });
 
     if (centerIdx < 0) return -1;
-    if (minDist >= ITEM_PITCH * 0.35) return -1; // nothing actually centered
+    if (minDist >= ITEM_PITCH * 0.35) return -1;
 
     const slot = slots[centerIdx];
     const item = slot.querySelector('.food-item');
     if (!item) return -1;
 
-    // Animate out
     item.classList.remove('center');
     item.classList.add('skipping');
 
-    // After animation, remove from FOODS and rebuild
     setTimeout(() => {
       FOODS.splice(centerIdx, 1);
-      saveFoods();
       buildStrip();
 
-      // Re-center on the next available food
       const newSlots = getSlots();
       if (newSlots.length > 0) {
         const next = Math.min(centerIdx, newSlots.length - 1);
@@ -1437,7 +1444,6 @@
       if (foodEl.parentNode) foodEl.parentNode.removeChild(foodEl);
       if (typeof indexInFoods === 'number' && indexInFoods >= 0) {
         FOODS.splice(indexInFoods, 1);
-        saveFoods();
         buildStrip();
         const slots = getSlots();
         if (slots.length > 0) {
@@ -1453,10 +1459,8 @@
       }
 
       if (src) {
-        const idx = EATEN.length;
         EATEN.push(src);
-        saveEaten();
-        addEatenEntry(src, true, idx);
+        addEatenEntry(src, true);
       }
 
       isFeeding = false;
@@ -1500,16 +1504,10 @@
     const isCentered = item.classList.contains('center');
 
     if (!isCentered) {
-      // Clicked a NON-centered food → this means the user is skipping the
-      // currently centered food. Remove the centered one, then snap to the
-      // newly clicked one.
       skipCenteredFood();
 
-      // Snap to the clicked food once the skip-out finishes
       setTimeout(() => {
-        // Recalculate idx based on the rebuilt strip (index may have shifted)
         const slots = getSlots();
-        // Find the clicked food by its src to get the correct new index
         const clickedImg = item.querySelector('img');
         const clickedSrc = clickedImg ? clickedImg.src : null;
         let newIdx = -1;
@@ -1528,7 +1526,6 @@
         }
       }, 540);
     } else {
-      // Clicked the centered food
       if (currentState === 'happy') {
         clearStateTimer();
         const imgEl = item.querySelector('img');
@@ -1592,7 +1589,7 @@
     }
   });
 
-  // ---------- PHOTO UPLOAD ----------
+  // ---------- PHOTO UPLOAD (in-memory, not saved) ----------
   function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1616,7 +1613,6 @@
       if (typeof url === 'string') FOODS.push(url);
     });
 
-    saveFoods();
     buildStrip();
     currentIndex = 0;
     stripOffset = getCenteredOffsetForIndex(0);
@@ -1626,30 +1622,14 @@
     photoUpload.value = '';
   });
 
-  // ---------- BACKGROUND COLOR ----------
-  function loadBg() {
-    let saved = null;
-    try { saved = localStorage.getItem(STORAGE_KEYS.bg); } catch (_) {}
-    if (saved) {
-      bgPicker.value = saved;
-      document.body.style.background = saved;
-    }
-  }
-
+  // ---------- BACKGROUND COLOR (not saved) ----------
   bgPicker.addEventListener('input', (e) => {
     document.body.style.background = e.target.value;
-    try {
-      localStorage.setItem(STORAGE_KEYS.bg, e.target.value);
-    } catch (_) {}
   });
 
   clearBtn.addEventListener('click', () => {
     FOODS = [];
     EATEN = [];
-    try {
-      localStorage.removeItem(STORAGE_KEYS.foods);
-      localStorage.removeItem(STORAGE_KEYS.eaten);
-    } catch (_) {}
     buildStrip();
     renderEaten();
     setCharacterState('idle');
@@ -1659,10 +1639,7 @@
   });
 
   // ---------- INIT ----------
-  loadBg();
   loadZoom();
-  loadFoods();
-  loadEaten();
 
   buildStrip();
   stripOffset = getCenteredOffsetForIndex(0);
