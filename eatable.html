@@ -7,17 +7,18 @@
 <style>
   * { box-sizing: border-box; user-select: none; }
 
+  html, body { height: 100%; }
+
   body {
     margin: 0;
     min-height: 100vh;
     background: #eef4ec;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
     overflow: hidden;
     transition: background 0.3s ease;
-    padding-top: 40px;
   }
 
   /* ---------- TINY TOP-LEFT CONTROL BAR ---------- */
@@ -172,26 +173,41 @@
     color: #6b4a38;
   }
 
-  /* ---------- SCENE (zoomable, anchored at top) ---------- */
+  /* ---------- SCENE ----------
+     Fixed-size design canvas centered on screen.
+     Inside, the group containing character + plate is what gets
+     centered — so the COMBINED bounding box of both sits at the middle. */
   .scene {
     position: relative;
-    width: 1100px;
-    height: 780px;
+    width: 1080px;
+    height: 900px;
     background: transparent;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding: 10px 0 0 0;
+    justify-content: center;
     overflow: visible;
-    transform-origin: top center;   /* ← anchored at top so zooming grows DOWN */
+    transform-origin: center center;
     will-change: transform;
   }
 
-  /* ---------- CUTE CHIBI CHARACTER ---------- */
+  /* This is the COMBINED GROUP: character + plate together.
+     Its natural height is 320 (character) + 440 (plate overlap area),
+     so its center sits at the visual middle of the pair. */
+  .group {
+    position: relative;
+    width: 1080px;
+    height: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  /* ---------- CHARACTER (top of group) ---------- */
   .character-wrapper {
     position: absolute;
-    top: -20px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     width: 320px;
@@ -701,21 +717,23 @@
     stroke-linecap: round;
   }
 
-  /* ---------- STAGE & PLATE ---------- */
+  /* ---------- BOWL / PLATE (bottom of group) ---------- */
   .carousel-section {
-    margin-top: 200px;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
     z-index: 20;
   }
 
   .stage {
     position: relative;
     width: 1080px;
-    height: 500px;
+    height: 440px;
     overflow: visible;
     -webkit-tap-highlight-color: transparent;
   }
@@ -850,13 +868,8 @@
     100%  { transform: scale(1.8) rotate(-3deg)   translate(-2px, 0px); }
   }
 
-  .food-item:not(.center):hover {
-    opacity: 0.35;
-  }
-  .food-item:not(.center):active {
-    opacity: 0.35;
-    transform: scale(0.75);
-  }
+  .food-item:not(.center):hover { opacity: 0.35; }
+  .food-item:not(.center):active { opacity: 0.35; transform: scale(0.75); }
   .food-item.center:hover { opacity: 1; }
 
   .food-item.flying {
@@ -923,73 +936,76 @@
 </div>
 
 <div class="scene" id="scene">
+  <div class="group">
 
-  <div class="character-wrapper" id="characterWrapper">
-    <div class="chibi" id="chibi">
-      <div class="sparkle s1">✦</div>
-      <div class="sparkle s2">✦</div>
-      <div class="sparkle s3">✦</div>
-      <div class="chibi-body"></div>
-      <div class="chibi-foot left"></div>
-      <div class="chibi-foot right"></div>
-      <div class="chibi-head">
-        <div class="hair-strand hs1">
-          <svg viewBox="0 0 30 62" preserveAspectRatio="xMidYMax meet">
-            <path d="M 15,62 C 13,45 8,30 4,14 C 3,10 2,6 4,3 C 7,1 11,4 12,8 C 13,22 15,40 15,62 Z"/>
-          </svg>
-        </div>
-        <div class="hair-strand hs2">
-          <svg viewBox="0 0 32 78" preserveAspectRatio="xMidYMax meet">
-            <path d="M 16,78 C 15,58 14,36 15,18 C 16,12 16,6 18,3 C 21,1 24,5 23,10 C 22,30 20,55 16,78 Z"/>
-          </svg>
-        </div>
-        <div class="hair-strand hs3">
-          <svg viewBox="0 0 30 58" preserveAspectRatio="xMidYMax meet">
-            <path d="M 15,58 C 15,40 13,24 18,10 C 19,6 21,3 24,2 C 27,3 27,8 25,12 C 21,26 18,42 15,58 Z"/>
-          </svg>
-        </div>
+    <div class="character-wrapper" id="characterWrapper">
+      <div class="chibi" id="chibi">
+        <div class="sparkle s1">✦</div>
+        <div class="sparkle s2">✦</div>
+        <div class="sparkle s3">✦</div>
+        <div class="chibi-body"></div>
+        <div class="chibi-foot left"></div>
+        <div class="chibi-foot right"></div>
+        <div class="chibi-head">
+          <div class="hair-strand hs1">
+            <svg viewBox="0 0 30 62" preserveAspectRatio="xMidYMax meet">
+              <path d="M 15,62 C 13,45 8,30 4,14 C 3,10 2,6 4,3 C 7,1 11,4 12,8 C 13,22 15,40 15,62 Z"/>
+            </svg>
+          </div>
+          <div class="hair-strand hs2">
+            <svg viewBox="0 0 32 78" preserveAspectRatio="xMidYMax meet">
+              <path d="M 16,78 C 15,58 14,36 15,18 C 16,12 16,6 18,3 C 21,1 24,5 23,10 C 22,30 20,55 16,78 Z"/>
+            </svg>
+          </div>
+          <div class="hair-strand hs3">
+            <svg viewBox="0 0 30 58" preserveAspectRatio="xMidYMax meet">
+              <path d="M 15,58 C 15,40 13,24 18,10 C 19,6 21,3 24,2 C 27,3 27,8 25,12 C 21,26 18,42 15,58 Z"/>
+            </svg>
+          </div>
 
-        <div class="chibi-eyes">
-          <div class="chibi-eye"></div>
-          <div class="chibi-eye"></div>
+          <div class="chibi-eyes">
+            <div class="chibi-eye"></div>
+            <div class="chibi-eye"></div>
+          </div>
+          <div class="tear left"></div>
+          <div class="tear right"></div>
+          <div class="chibi-blush left"></div>
+          <div class="chibi-blush right"></div>
+          <div class="chibi-mouth">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path class="mouth-smile"    d="M 8,20 Q 50,95 92,20" />
+              <path class="mouth-bigsmile" d="M 5,15 Q 50,100 95,15" />
+              <path class="mouth-frown"    d="M 5,80 Q 50,5 95,80" />
+              <circle class="mouth-o" cx="50" cy="50" r="42" />
+            </svg>
+          </div>
         </div>
-        <div class="tear left"></div>
-        <div class="tear right"></div>
-        <div class="chibi-blush left"></div>
-        <div class="chibi-blush right"></div>
-        <div class="chibi-mouth">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-            <path class="mouth-smile"    d="M 8,20 Q 50,95 92,20" />
-            <path class="mouth-bigsmile" d="M 5,15 Q 50,100 95,15" />
-            <path class="mouth-frown"    d="M 5,80 Q 50,5 95,80" />
-            <circle class="mouth-o" cx="50" cy="50" r="42" />
+        <div class="chibi-arm left"></div>
+        <div class="chibi-arm right"></div>
+
+        <div class="question-bubble" id="questionBubble">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <text
+              class="question-mark"
+              x="50"
+              y="54"
+              text-anchor="middle"
+              dominant-baseline="central">?</text>
           </svg>
         </div>
-      </div>
-      <div class="chibi-arm left"></div>
-      <div class="chibi-arm right"></div>
-
-      <div class="question-bubble" id="questionBubble">
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <text
-            class="question-mark"
-            x="50"
-            y="54"
-            text-anchor="middle"
-            dominant-baseline="central">?</text>
-        </svg>
       </div>
     </div>
-  </div>
 
-  <div class="carousel-section">
-    <div class="stage" id="stage">
-      <div class="plate-stand">
-        <div class="plate" id="plate"></div>
+    <div class="carousel-section">
+      <div class="stage" id="stage">
+        <div class="plate-stand">
+          <div class="plate" id="plate"></div>
+        </div>
+        <div class="carousel-strip" id="carouselStrip"></div>
+        <div class="empty-hint" id="emptyHint">Upload food photos 📷</div>
       </div>
-      <div class="carousel-strip" id="carouselStrip"></div>
-      <div class="empty-hint" id="emptyHint">Upload food photos 📷</div>
     </div>
+
   </div>
 </div>
 
@@ -1019,7 +1035,7 @@
     foods: 'chibi_foods'
   };
 
-  let FOODS = [];   // array of image src strings (data URLs or http URLs)
+  let FOODS = [];
 
   let currentIndex = 0;
   let stripOffset = 0;
@@ -1063,8 +1079,6 @@
     try {
       localStorage.setItem(STORAGE_KEYS.foods, JSON.stringify(FOODS));
     } catch (_) {
-      // Quota exceeded — silently skip. localStorage can hold ~5MB,
-      // so many big photos won't fit. Consider IndexedDB for larger storage.
       console.warn('Could not save food photos (storage full).');
     }
   }
@@ -1375,7 +1389,7 @@
     }
   });
 
-  // ---------- PHOTO UPLOAD → data URL, so it survives reloads ----------
+  // ---------- PHOTO UPLOAD ----------
   function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1409,7 +1423,7 @@
     photoUpload.value = '';
   });
 
-  // ---------- BACKGROUND COLOR (saved) ----------
+  // ---------- BACKGROUND COLOR ----------
   function loadBg() {
     let saved = null;
     try { saved = localStorage.getItem(STORAGE_KEYS.bg); } catch (_) {}
