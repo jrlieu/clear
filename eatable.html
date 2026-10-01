@@ -281,146 +281,89 @@
   .chibi.sad .chibi-eyes { transform: translateX(-50%) translateY(5px); }
   .chibi.sad .chibi-blush { opacity: 0.2; }
 
+  /* ---- Mouth curves drawn as SVG shapes (no CSS borders) ---- */
+  .chibi-mouth {
+    position: absolute;
+    top: 213px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35px;
+    height: 17px;
+    z-index: 4;
+    transition: width 0.4s ease, height 0.4s ease, top 0.4s ease;
+  }
+  .chibi-mouth svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  .chibi-mouth path {
+    fill: none;
+    stroke: #3a2a20;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: d 0.4s ease;
+  }
+
+  /* Curious mouth = small circle (also SVG) */
+  .chibi-mouth .mouth-smile,
+  .chibi-mouth .mouth-frown,
+  .chibi-mouth .mouth-bigsmile,
+  .chibi-mouth .mouth-o {
+    display: none;
+  }
+  .chibi-mouth .mouth-smile { display: block; }
+
+  .chibi.curious .chibi-mouth {
+    width: 21px;
+    height: 21px;
+    top: 211px;
+  }
+  .chibi.curious .chibi-mouth .mouth-smile { display: none; }
+  .chibi.curious .chibi-mouth .mouth-o { display: block; }
+
   .chibi.sad .chibi-mouth {
     width: 40px;
-    height: 18px;
-    top: 229px;
-    background: none;
-    border: none;
-    border-radius: 0;
-  }
-  .chibi.sad .chibi-mouth::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 40px;
     height: 20px;
-    border-top: 5px solid #3a2a20;
-    border-radius: 50% / 100% 100% 0 0;
-    border-bottom: none;
+    top: 229px;
   }
+  .chibi.sad .chibi-mouth .mouth-smile { display: none; }
+  .chibi.sad .chibi-mouth .mouth-frown { display: block; }
 
-  .chibi.sad .chibi-arm.left  { transform: rotate(-5deg) translate(0, 5px); }
-  .chibi.sad .chibi-arm.right { transform: rotate(5deg)  translate(0, 5px); }
-
-  .tear {
-    position: absolute;
-    width: 21px;
-    height: 29px;
-    background: linear-gradient(180deg, #a8d4f0 0%, #6aaede 100%);
-    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-    z-index: 5;
-    opacity: 0;
-    pointer-events: none;
-    box-shadow: 0 0 5px rgba(106, 174, 222, 0.5);
-  }
-  .tear.left  { top: 166px; left: 64px; }
-  .tear.right { top: 166px; right: 64px; }
-  .chibi.sad .tear { animation: tearDrop 1.2s ease-in infinite; }
-  .chibi.sad .tear.left  { animation-delay: 0s; }
-  .chibi.sad .tear.right { animation-delay: 0.5s; }
-  @keyframes tearDrop {
-    0%   { opacity: 0; transform: translateY(0) scaleY(0.6); }
-    20%  { opacity: 1; transform: translateY(3px) scaleY(1); }
-    80%  { opacity: 1; transform: translateY(24px) scaleY(1.1); }
-    100% { opacity: 0; transform: translateY(35px) scaleY(0.8); }
-  }
-
-  .chibi.excited { animation: excitedBounce 0.55s ease-in-out infinite; }
-  @keyframes excitedBounce {
-    0%, 100% { transform: translateY(0px)   scale(1); }
-    50%      { transform: translateY(-11px) scale(1.03); }
-  }
-  .chibi.excited .chibi-eye { width: 47px; height: 56px; }
-  .chibi.excited .chibi-blush { opacity: 0.95; transform: scale(1.2); }
-
-  .chibi.excited .chibi-mouth {
-    width: 48px;
-    height: 27px;
-    top: 210px;
-    background: none;
-    border: none;
-    border-radius: 0;
-  }
-  .chibi.excited .chibi-mouth::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 48px;
-    height: 27px;
-    border-bottom: 5px solid #3a2a20;
-    border-radius: 0 0 50% 50% / 0 0 100% 100%;
-    border-top: none;
-  }
-
-  .chibi.excited .chibi-arm.left  { animation: excitedArmL 0.7s ease-in-out infinite; }
-  .chibi.excited .chibi-arm.right { animation: excitedArmR 0.7s ease-in-out infinite; }
-  @keyframes excitedArmL {
-    0%, 100% { transform: rotate(-60deg) translate(-4px, -8px); }
-    50%      { transform: rotate(-80deg) translate(-7px, -14px); }
-  }
-  @keyframes excitedArmR {
-    0%, 100% { transform: rotate(60deg) translate(4px, -8px); }
-    50%      { transform: rotate(80deg) translate(7px, -14px); }
-  }
-
-  .chibi.happy { animation: happyJump 0.6s ease-in-out infinite; }
-  @keyframes happyJump {
-    0%, 100% { transform: translateY(0px)   scale(1); }
-    50%      { transform: translateY(-24px) scale(1.04); }
-  }
-
+  .chibi.excited .chibi-mouth,
   .chibi.happy .chibi-mouth {
     width: 48px;
     height: 27px;
     top: 210px;
-    background: none;
-    border: none;
-    border-radius: 0;
   }
-  .chibi.happy .chibi-mouth::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 48px;
-    height: 27px;
-    border-bottom: 5px solid #3a2a20;
-    border-radius: 0 0 50% 50% / 0 0 100% 100%;
-    border-top: none;
-  }
+  .chibi.excited .chibi-mouth .mouth-smile,
+  .chibi.happy .chibi-mouth .mouth-smile { display: none; }
+  .chibi.excited .chibi-mouth .mouth-bigsmile,
+  .chibi.happy .chibi-mouth .mouth-bigsmile { display: block; }
 
-  .chibi.happy .chibi-arm.left  { animation: happyArmL 0.6s ease-in-out infinite; }
-  .chibi.happy .chibi-arm.right { animation: happyArmR 0.6s ease-in-out infinite; }
-  @keyframes happyArmL {
-    0%, 100% { transform: rotate(-50deg) translate(-5px, -11px); }
-    50%      { transform: rotate(-75deg) translate(-8px, -16px); }
-  }
-  @keyframes happyArmR {
-    0%, 100% { transform: rotate(50deg) translate(5px, -11px); }
-    50%      { transform: rotate(75deg) translate(8px, -16px); }
-  }
-
-  /* ---------- EATING ---------- */
+  /* Eating = big open mouth (CSS-filled ellipse) */
   .chibi.eating .chibi-mouth {
     width: 64px;
     height: 59px;
     top: 197px;
-    background: radial-gradient(ellipse at 50% 35%, #8a3a3a 0%, #c97070 55%, #d98a8a 100%);
-    border: none;
-    border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
-    box-shadow: inset 0 -4px 0 rgba(60, 20, 20, 0.35);
-    overflow: hidden;
-    animation: chewMouth 0.4s ease-in-out infinite;
   }
-  .chibi.eating .chibi-mouth::after { display: none; }
+  .chibi.eating .chibi-mouth svg { display: none; }
   .chibi.eating .chibi-mouth::before {
     content: '';
     position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 35%, #8a3a3a 0%, #c97070 55%, #d98a8a 100%);
+    border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+    box-shadow: inset 0 -4px 0 rgba(60, 20, 20, 0.35);
+    animation: chewMouth 0.4s ease-in-out infinite;
+  }
+  .chibi.eating .chibi-mouth::after {
+    content: '';
+    position: absolute;
     left: 50%;
-    bottom: 5px;
+    bottom: 6px;
     transform: translateX(-50%);
     width: 29px;
     height: 19px;
@@ -429,8 +372,8 @@
     opacity: 0.85;
   }
   @keyframes chewMouth {
-    0%, 100% { transform: translateX(-50%) scaleY(1); }
-    50%      { transform: translateX(-50%) scaleY(0.85); }
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(0.85); }
   }
   .chibi.eating .chibi-arm.left  { transform: rotate(-45deg) translate(3px, -5px); }
   .chibi.eating .chibi-arm.right { transform: rotate(45deg)  translate(-3px, -5px); }
@@ -451,42 +394,40 @@
   .chibi-blush.right { right: 39px; }
   .chibi.curious .chibi-blush { opacity: 0.95; transform: scale(1.2); }
 
-  /* ---------- MOUTH (idle & curious) ---------- */
-  .chibi-mouth {
-    position: absolute;
-    top: 213px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 35px;
-    height: 17px;
-    background: none;
-    border: none;
-    z-index: 4;
-    transition: all 0.4s ease;
+  .chibi.excited { animation: excitedBounce 0.55s ease-in-out infinite; }
+  @keyframes excitedBounce {
+    0%, 100% { transform: translateY(0px)   scale(1); }
+    50%      { transform: translateY(-11px) scale(1.03); }
   }
-  .chibi-mouth::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 35px;
-    height: 17px;
-    border-bottom: 5px solid #3a2a20;
-    border-radius: 0 0 50% 50% / 0 0 100% 100%;
-    border-top: none;
-    box-sizing: border-box;
-    transition: all 0.4s ease;
+  .chibi.excited .chibi-eye { width: 47px; height: 56px; }
+  .chibi.excited .chibi-blush { opacity: 0.95; transform: scale(1.2); }
+
+  .chibi.excited .chibi-arm.left  { animation: excitedArmL 0.7s ease-in-out infinite; }
+  .chibi.excited .chibi-arm.right { animation: excitedArmR 0.7s ease-in-out infinite; }
+  @keyframes excitedArmL {
+    0%, 100% { transform: rotate(-60deg) translate(-4px, -8px); }
+    50%      { transform: rotate(-80deg) translate(-7px, -14px); }
   }
-  .chibi.curious .chibi-mouth {
-    width: 21px;
-    height: 21px;
+  @keyframes excitedArmR {
+    0%, 100% { transform: rotate(60deg) translate(4px, -8px); }
+    50%      { transform: rotate(80deg) translate(7px, -14px); }
   }
-  .chibi.curious .chibi-mouth::after {
-    width: 21px;
-    height: 21px;
-    border: 5px solid #3a2a20;
-    border-radius: 50%;
-    background: transparent;
+
+  .chibi.happy { animation: happyJump 0.6s ease-in-out infinite; }
+  @keyframes happyJump {
+    0%, 100% { transform: translateY(0px)   scale(1); }
+    50%      { transform: translateY(-24px) scale(1.04); }
+  }
+
+  .chibi.happy .chibi-arm.left  { animation: happyArmL 0.6s ease-in-out infinite; }
+  .chibi.happy .chibi-arm.right { animation: happyArmR 0.6s ease-in-out infinite; }
+  @keyframes happyArmL {
+    0%, 100% { transform: rotate(-50deg) translate(-5px, -11px); }
+    50%      { transform: rotate(-75deg) translate(-8px, -16px); }
+  }
+  @keyframes happyArmR {
+    0%, 100% { transform: rotate(50deg) translate(5px, -11px); }
+    50%      { transform: rotate(75deg) translate(8px, -16px); }
   }
 
   .chibi-arm {
@@ -517,9 +458,7 @@
   .chibi-foot.left  { left: 64px; }
   .chibi-foot.right { right: 64px; }
 
-  /* ---------- SPARKLES ----------
-     Fade + scale combined into a smooth in/out.
-     Twinkle animation only drives text-shadow, so it never conflicts. */
+  /* ---------- SPARKLES ---------- */
   .sparkle {
     position: absolute;
     color: #b8c9a8;
@@ -539,7 +478,6 @@
   .sparkle.s2 { top: 22px;    right: 26px; font-size: 28px; transition-delay: 60ms; }
   .sparkle.s3 { bottom: 120px; right: 18px; font-size: 20px; transition-delay: 120ms; }
 
-  /* When curious → sparkles scale down & fade out smoothly (staggered) */
   .chibi.curious .sparkle {
     opacity: 0;
     transform: scale(0.2) rotate(-15deg);
@@ -550,10 +488,11 @@
     50%      { text-shadow: 0 0 14px rgba(184, 201, 168, 0.95); }
   }
 
-  /* ---------- BIG ? WITH WHITE STROKE ----------
-     Fade + scale combined. Two-layer approach: outer wrapper handles
-     fade-in/out via opacity+scale transition; inner svg plays the bob
-     animation only while shown, so there's no transform conflict. */
+  /* ---------- BIG ? ----------
+     iPad fix: transition on opacity/transform is unreliable on iOS
+     when the value swings widely (0.2 → 1) inside an animated parent.
+     Use a dedicated keyframe animation that plays once on show,
+     and a one-shot fade-out animation on hide, driven purely by class. */
   .question-bubble {
     position: absolute;
     top: -55px;
@@ -563,27 +502,34 @@
     z-index: 10;
     pointer-events: none;
     opacity: 0;
-    transform: scale(0.2) translateY(10px);
-    transition:
-      opacity 0.55s cubic-bezier(0.45, 0, 0.25, 1),
-      transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.2);
     transform-origin: 55% 75%;
+    will-change: opacity, transform;
   }
 
+  /* Idle/hidden state has no animation running */
   .question-bubble.show {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1);
+    animation: qmPopIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
-  /* The bob is applied to the inner SVG instead of the wrapper, so the
-     wrapper's transition and the bob animation never fight over transform. */
+  @keyframes qmPopIn {
+    0%   { opacity: 0; transform: scale(0.2); }
+    60%  { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* When .show is removed, the element animates out via transition.
+     On iOS, transitions on opacity + transform can stutter if the
+     parent is also animating. We disable the parent animation for
+     the duration of the hide so it's rock-solid. */
   .question-bubble svg {
     width: 100%;
     height: 100%;
     display: block;
     overflow: visible;
     transform-origin: 55% 75%;
-    animation: none;
   }
 
   .question-bubble.show svg {
@@ -843,7 +789,18 @@
         <div class="tear right"></div>
         <div class="chibi-blush left"></div>
         <div class="chibi-blush right"></div>
-        <div class="chibi-mouth"></div>
+        <div class="chibi-mouth">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <!-- Small smile (idle) -->
+            <path class="mouth-smile" d="M 8,20 Q 50,95 92,20" />
+            <!-- Big smile (happy/excited) -->
+            <path class="mouth-bigsmile" d="M 5,15 Q 50,100 95,15" />
+            <!-- Frown (sad) -->
+            <path class="mouth-frown" d="M 5,80 Q 50,5 95,80" />
+            <!-- Curious o -->
+            <circle class="mouth-o" cx="50" cy="50" r="42" />
+          </svg>
+        </div>
       </div>
       <div class="chibi-arm left"></div>
       <div class="chibi-arm right"></div>
