@@ -10,53 +10,71 @@
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
 
-  html, body {
+  html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
     touch-action: none;
     -webkit-touch-callout: none;
+    background: #eef4ec;
+    font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
+    transition: background 0.3s ease;
   }
 
-  body {
-    margin: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    background: #eef4ec;
+  /* The fullscreen centering layer for the scene.
+     It's a fixed layer so the scene stays centered on any screen size. */
+  .stage-wrap {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
-    transition: background 0.3s ease;
-    position: fixed;
-    inset: 0;
-    width: 100%;
+    overflow: hidden;
+    pointer-events: none;   /* clicks pass through to children */
+    touch-action: none;
   }
 
-  /* ---------- TINY TOP-LEFT CONTROL BAR ---------- */
+  /* ---------- FLOATING TOOLBAR ----------
+     Lives as a fixed element DIRECTLY under <body>, outside any transformed
+     ancestor, so it never scrolls or scales with the scene. */
   .top-bar {
     position: fixed;
-    top: 8px;
-    left: 8px;
+    top: 10px;
+    left: 10px;
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(107, 74, 56, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(107, 74, 56, 0.15);
     border-radius: 999px;
-    padding: 3px 6px;
-    box-shadow: 0 2px 8px rgba(50, 60, 45, 0.08);
-    z-index: 1000;
-    opacity: 0.4;
+    padding: 4px 8px;
+    box-shadow: 0 4px 14px rgba(50, 60, 45, 0.12);
+    z-index: 2147483647;    /* maximum possible z-index */
+    opacity: 0.55;
     transition: opacity 0.25s ease, box-shadow 0.25s ease;
     touch-action: manipulation;
+    transform: translateZ(0);  /* force own layer */
+    will-change: opacity;
   }
   .top-bar:hover {
     opacity: 1;
-    box-shadow: 0 4px 14px rgba(50, 60, 45, 0.15);
+    box-shadow: 0 6px 20px rgba(50, 60, 45, 0.2);
   }
 
   .top-bar input[type="file"] { display: none; }
@@ -127,7 +145,6 @@
   .clear-btn:hover { background: rgba(200, 150, 120, 0.25); transform: scale(1.1); }
   .clear-btn:active { transform: scale(0.95); }
 
-  /* ---------- ZOOM CONTROL ---------- */
   .zoom-wrap {
     display: flex;
     align-items: center;
@@ -192,7 +209,7 @@
     color: #6b4a38;
   }
 
-  /* ---------- SCENE ---------- */
+  /* ---------- SCENE (this is what scales with the zoom) ---------- */
   .scene {
     position: relative;
     width: 1080px;
@@ -205,6 +222,7 @@
     transform-origin: center center;
     will-change: transform;
     touch-action: none;
+    pointer-events: auto;
   }
 
   .group {
@@ -949,7 +967,6 @@
     overflow: visible !important;
   }
 
-  /* Skipped food fades out in place */
   .food-item.skipping {
     animation: skipOut 0.5s cubic-bezier(0.4, 0, 0.6, 1) forwards !important;
     pointer-events: none !important;
@@ -993,6 +1010,7 @@
 </head>
 <body>
 
+<!-- TOOLBAR — fixed, floating, unaffected by scene zoom -->
 <div class="top-bar">
   <label for="photoUpload" title="Upload food photos">
     <span class="upload-btn">📷</span>
@@ -1011,80 +1029,83 @@
   </div>
 </div>
 
-<div class="scene" id="scene">
-  <div class="group">
+<!-- SCENE WRAP — fullscreen centering layer -->
+<div class="stage-wrap">
+  <div class="scene" id="scene">
+    <div class="group">
 
-    <div class="character-wrapper" id="characterWrapper">
-      <div class="chibi" id="chibi">
-        <div class="sparkle s1">✦</div>
-        <div class="sparkle s2">✦</div>
-        <div class="sparkle s3">✦</div>
-        <div class="chibi-body"></div>
-        <div class="chibi-foot left"></div>
-        <div class="chibi-foot right"></div>
-        <div class="chibi-head">
-          <div class="hair-strand hs1">
-            <svg viewBox="0 0 30 62" preserveAspectRatio="xMidYMax meet">
-              <path d="M 15,62 C 13,45 8,30 4,14 C 3,10 2,6 4,3 C 7,1 11,4 12,8 C 13,22 15,40 15,62 Z"/>
-            </svg>
-          </div>
-          <div class="hair-strand hs2">
-            <svg viewBox="0 0 32 78" preserveAspectRatio="xMidYMax meet">
-              <path d="M 16,78 C 15,58 14,36 15,18 C 16,12 16,6 18,3 C 21,1 24,5 23,10 C 22,30 20,55 16,78 Z"/>
-            </svg>
-          </div>
-          <div class="hair-strand hs3">
-            <svg viewBox="0 0 30 58" preserveAspectRatio="xMidYMax meet">
-              <path d="M 15,58 C 15,40 13,24 18,10 C 19,6 21,3 24,2 C 27,3 27,8 25,12 C 21,26 18,42 15,58 Z"/>
-            </svg>
-          </div>
+      <div class="character-wrapper" id="characterWrapper">
+        <div class="chibi" id="chibi">
+          <div class="sparkle s1">✦</div>
+          <div class="sparkle s2">✦</div>
+          <div class="sparkle s3">✦</div>
+          <div class="chibi-body"></div>
+          <div class="chibi-foot left"></div>
+          <div class="chibi-foot right"></div>
+          <div class="chibi-head">
+            <div class="hair-strand hs1">
+              <svg viewBox="0 0 30 62" preserveAspectRatio="xMidYMax meet">
+                <path d="M 15,62 C 13,45 8,30 4,14 C 3,10 2,6 4,3 C 7,1 11,4 12,8 C 13,22 15,40 15,62 Z"/>
+              </svg>
+            </div>
+            <div class="hair-strand hs2">
+              <svg viewBox="0 0 32 78" preserveAspectRatio="xMidYMax meet">
+                <path d="M 16,78 C 15,58 14,36 15,18 C 16,12 16,6 18,3 C 21,1 24,5 23,10 C 22,30 20,55 16,78 Z"/>
+              </svg>
+            </div>
+            <div class="hair-strand hs3">
+              <svg viewBox="0 0 30 58" preserveAspectRatio="xMidYMax meet">
+                <path d="M 15,58 C 15,40 13,24 18,10 C 19,6 21,3 24,2 C 27,3 27,8 25,12 C 21,26 18,42 15,58 Z"/>
+              </svg>
+            </div>
 
-          <div class="chibi-eyes">
-            <div class="chibi-eye"></div>
-            <div class="chibi-eye"></div>
+            <div class="chibi-eyes">
+              <div class="chibi-eye"></div>
+              <div class="chibi-eye"></div>
+            </div>
+            <div class="tear left"></div>
+            <div class="tear right"></div>
+            <div class="chibi-blush left"></div>
+            <div class="chibi-blush right"></div>
+            <div class="chibi-mouth">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path class="mouth-smile"    d="M 8,20 Q 50,95 92,20" />
+                <path class="mouth-bigsmile" d="M 5,15 Q 50,100 95,15" />
+                <path class="mouth-frown"    d="M 5,80 Q 50,5 95,80" />
+                <circle class="mouth-o" cx="50" cy="50" r="42" />
+              </svg>
+            </div>
           </div>
-          <div class="tear left"></div>
-          <div class="tear right"></div>
-          <div class="chibi-blush left"></div>
-          <div class="chibi-blush right"></div>
-          <div class="chibi-mouth">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path class="mouth-smile"    d="M 8,20 Q 50,95 92,20" />
-              <path class="mouth-bigsmile" d="M 5,15 Q 50,100 95,15" />
-              <path class="mouth-frown"    d="M 5,80 Q 50,5 95,80" />
-              <circle class="mouth-o" cx="50" cy="50" r="42" />
+          <div class="chibi-arm left"></div>
+          <div class="chibi-arm right"></div>
+
+          <div class="question-bubble" id="questionBubble">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <text
+                class="question-mark"
+                x="50"
+                y="54"
+                text-anchor="middle"
+                dominant-baseline="central">?</text>
             </svg>
           </div>
-        </div>
-        <div class="chibi-arm left"></div>
-        <div class="chibi-arm right"></div>
-
-        <div class="question-bubble" id="questionBubble">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <text
-              class="question-mark"
-              x="50"
-              y="54"
-              text-anchor="middle"
-              dominant-baseline="central">?</text>
-          </svg>
         </div>
       </div>
-    </div>
 
-    <div class="carousel-section">
-      <div class="stage" id="stage">
-        <div class="plate-stand">
-          <div class="plate" id="plate"></div>
+      <div class="carousel-section">
+        <div class="stage" id="stage">
+          <div class="plate-stand">
+            <div class="plate" id="plate"></div>
+          </div>
+          <div class="carousel-strip" id="carouselStrip"></div>
+
+          <div class="eaten-row" id="eatenRow"></div>
+
+          <div class="empty-hint" id="emptyHint">Upload food photos 📷</div>
         </div>
-        <div class="carousel-strip" id="carouselStrip"></div>
-
-        <div class="eaten-row" id="eatenRow"></div>
-
-        <div class="empty-hint" id="emptyHint">Upload food photos 📷</div>
       </div>
-    </div>
 
+    </div>
   </div>
 </div>
 
@@ -1124,35 +1145,27 @@
   let stateTimer = null;
   let isFeeding = false;
 
-  // ---------- BLOCK NATIVE ZOOM GESTURES (iPad pinch & double-tap) ----------
-  // 1. Prevent pinch zoom (two-finger gesture)
-  document.addEventListener('gesturestart', (e) => { e.preventDefault(); }, { passive: false });
+  // ---------- BLOCK NATIVE ZOOM GESTURES ----------
+  document.addEventListener('gesturestart',  (e) => { e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturechange', (e) => { e.preventDefault(); }, { passive: false });
-  document.addEventListener('gestureend', (e) => { e.preventDefault(); }, { passive: false });
+  document.addEventListener('gestureend',    (e) => { e.preventDefault(); }, { passive: false });
 
-  // 2. Prevent double-tap zoom (iOS Safari)
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (e) => {
     const now = Date.now();
-    if (now - lastTouchEnd <= 350) {
-      e.preventDefault();
-    }
+    if (now - lastTouchEnd <= 350) e.preventDefault();
     lastTouchEnd = now;
   }, { passive: false });
 
-  // 3. Prevent multi-touch (pinch) via touchstart when 2+ fingers are down
   document.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 1) {
-      e.preventDefault();
-    }
+    if (e.touches.length > 1) e.preventDefault();
   }, { passive: false });
 
-  // 4. Prevent Ctrl+wheel zoom (desktop) and any wheel pinch-zoom gesture
   window.addEventListener('wheel', (e) => {
     if (e.ctrlKey) e.preventDefault();
   }, { passive: false });
 
-  // ---------- ZOOM (saved to browser) ----------
+  // ---------- ZOOM ----------
   function applyZoom(px) {
     const scale = px / 100;
     scene.style.transform = `scale(${scale})`;
