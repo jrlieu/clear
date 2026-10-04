@@ -715,6 +715,57 @@
 
   <script>
     (function() {
+      // ============================================================
+      // AUDIO SETUP — bounce.aac preloaded and primed for instant play
+      // ============================================================
+      const bounceSound = new Audio();
+      // Use a relative path to bounce.aac. The file is assumed to be in the same directory.
+      bounceSound.src = 'bounce.aac';
+      bounceSound.preload = 'auto';
+      bounceSound.volume = 0.7;
+      bounceSound.load(); // begin loading immediately
+
+      // Attempt to "prime" the audio on the first user interaction
+      // so that later playback (e.g., during jumps) is instantaneous.
+      let audioPrimed = false;
+      function primeAudio() {
+        if (audioPrimed) return;
+        audioPrimed = true;
+        // Play and immediately pause to unlock audio on iOS / mobile.
+        bounceSound.play()
+          .then(() => {
+            bounceSound.pause();
+            bounceSound.currentTime = 0;
+            console.log('Audio primed successfully');
+          })
+          .catch(err => {
+            // If autoplay fails, we retry on next interaction
+            audioPrimed = false;
+            console.warn('Audio priming failed, will retry on next interaction', err);
+          });
+      }
+
+      // Attach to various early events to catch the first user gesture
+      window.addEventListener('pointerdown', primeAudio, { once: false, passive: true });
+      window.addEventListener('touchstart', primeAudio, { once: false, passive: true });
+      window.addEventListener('mousedown', primeAudio, { once: false, passive: true });
+      window.addEventListener('keydown', primeAudio, { once: false, passive: true });
+
+      // Also try to prime after a very short delay (in case the page already has permission)
+      setTimeout(() => {
+        // If we haven't primed yet, try silently (might fail due to autoplay policy)
+        if (!audioPrimed) {
+          bounceSound.play().then(() => {
+            bounceSound.pause();
+            bounceSound.currentTime = 0;
+            audioPrimed = true;
+          }).catch(() => {});
+        }
+      }, 200);
+
+      // ============================================================
+      // DOM REFERENCES
+      // ============================================================
       const pupils = document.querySelectorAll('.eye .pupil');
       const charWrap = document.getElementById('charWrap');
       const scene = document.getElementById('scene');
@@ -786,7 +837,6 @@
 
       // ============================================================
       // SPEECH — load once, save on blur / Enter only
-      // The 3-second auto-hide is PAUSED while editing.
       // ============================================================
       const SPEECH_KEY = 'mukbang_speech_v4';
       const DEFAULT_SPEECH = "Baby, let's eat!";
@@ -802,7 +852,6 @@
         } catch (e) {}
       })();
 
-      // Show bubble for 3 seconds (or indefinitely if editing)
       function showBubbleTemporarily() {
         speechWrap.classList.add('visible');
         startBubbleHideTimer();
@@ -810,11 +859,9 @@
 
       function startBubbleHideTimer() {
         if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
-        // Don't set a hide timer while the user is editing.
         if (isEditing) return;
         bubbleHideTimer = setTimeout(() => {
           bubbleHideTimer = null;
-          // Re-check editing flag when the timer fires
           if (isEditing) return;
           speechWrap.classList.remove('visible');
         }, 3000);
@@ -830,11 +877,8 @@
       function enterEdit() {
         if (isEditing) return;
         isEditing = true;
-        pauseBubbleHideTimer(); // <-- freeze the auto-hide while editing
-
-        // Make sure the bubble is visible (in case the timer just fired)
+        pauseBubbleHideTimer();
         speechWrap.classList.add('visible');
-
         speechText.setAttribute('contenteditable', 'true');
         speechText.focus();
         try {
@@ -858,12 +902,8 @@
 
         try {
           localStorage.setItem(SPEECH_KEY, val);
-          console.log('Saved speech:', val);
-        } catch (e) {
-          console.warn('Failed to save speech', e);
-        }
+        } catch (e) {}
 
-        // Restart the 3-second countdown now that editing is done
         startBubbleHideTimer();
       }
 
@@ -1170,6 +1210,19 @@
           const cycleT = charState.bouncingPhase / cycle;
           const bounceIndex = Math.floor(cycleT);
           const localT = cycleT - bounceIndex;
+
+          // ============================================================
+          // PLAY BOUNCE SOUND ON EVERY JUMP (each bounce cycle)
+          // Reset currentTime and play to ensure immediate playback
+          // ============================================================
+          // We play the sound when a new bounce cycle starts (localT near 0)
+          // Use a small threshold to detect the start of a new bounce.
+          if (localT < 0.02 && bounceIndex < 5) {
+            try {
+              bounceSound.currentTime = 0;
+              bounceSound.play().catch(e => { /* ignore autoplay errors */ });
+            } catch (e) {}
+          }
 
           if (bounceIndex >= 5) {
             charState.mode = 'staying';
