@@ -716,69 +716,48 @@
   <script>
     (function() {
       // ============================================================
-      // AUDIO SETUP — bounce sound
+      // AUDIO SETUP — bounce sound (robust, MP3-preferred)
       // ============================================================
-      // Priority list of candidate files. First one that loads wins.
-      // Add/remove as needed. .mp3 is universally supported; .aac has
-      // spotty support in Firefox desktop and some Chrome builds.
-      const BOUNCE_FILES = ['bounce.mp3', 'bounce.aac', 'bounce.m4a', 'bounce.wav'];
+      // MP3 first (universally supported), then m4a/aac (same codec,
+      // different container) as fallbacks.
+      const BOUNCE_FILES = ['bounce.mp3', 'bounce.m4a', 'bounce.aac', 'bounce.wav'];
 
-      // Detect the first working source up-front so later plays are instant.
-      let resolvedBounceSrc = null;
-      let probeIndex = 0;
+      // Pre-load a probe for each candidate and lock in the first one
+      // that the browser can actually decode.
+      const audioProbes = [];
+      let workingAudioIndex = -1;
+      let audioReady = false;
 
-      function probeNext() {
-        if (probeIndex >= BOUNCE_FILES.length) {
-          console.error('[bounce] No playable audio file found. Tried:', BOUNCE_FILES.join(', '));
-          return;
-        }
-        const candidate = BOUNCE_FILES[probeIndex++];
-        const probe = new Audio();
-        probe.preload = 'auto';
-        probe.muted = true;
+      BOUNCE_FILES.forEach((src, i) => {
+        const a = new Audio();
+        a.preload = 'auto';
+        a.muted = true;      // muted so preload play() won't be blocked
+        a.volume = 0;
+        a.src = src;
 
-        let settled = false;
-        const finish = (ok) => {
-          if (settled) return;
-          settled = true;
-          if (ok) {
-            resolvedBounceSrc = candidate;
-            console.log('[bounce] Using audio source:', candidate);
-          } else {
-            probeNext();
+        a.addEventListener('canplaythrough', () => {
+          if (workingAudioIndex === -1) {
+            workingAudioIndex = i;
+            audioReady = true;
+            console.log('[bounce] Ready:', src);
           }
-        };
+        }, { once: true });
 
-        probe.addEventListener('canplaythrough', () => finish(true), { once: true });
-        probe.addEventListener('loadeddata',      () => finish(true), { once: true });
-        probe.addEventListener('error',           () => finish(false), { once: true });
+        a.addEventListener('loadeddata', () => {
+          if (workingAudioIndex === -1) {
+            workingAudioIndex = i;
+            audioReady = true;
+            console.log('[bounce] Ready (loadeddata):', src);
+          }
+        }, { once: true });
 
-        // Also try a silent play/pause to catch codec-not-supported errors.
-        probe.src = candidate;
-        probe.load();
+        a.addEventListener('error', () => {
+          console.warn('[bounce] Cannot load:', src);
+        }, { once: true });
 
-        const playAttempt = probe.play();
-        if (playAttempt && playAttempt.then) {
-          playAttempt.then(() => {
-            try { probe.pause(); probe.currentTime = 0; } catch (e) {}
-            finish(true);
-          }).catch(err => {
-            // NotAllowedError just means "needs gesture" — file itself may still be fine.
-            // NotSupportedError means codec problem — try next file.
-            if (err && err.name === 'NotSupportedError') {
-              finish(false);
-            } else {
-              // assume file exists; playback will work after a gesture
-              finish(true);
-            }
-          });
-        }
-
-        // Fallback timeout in case no event fires
-        setTimeout(() => finish(false), 2500);
-      }
-
-      probeNext();
+        a.load();
+        audioProbes.push(a);
+      });
 
       // ============================================================
       // AUDIO PRIMING (unlock on first user gesture)
@@ -787,26 +766,29 @@
 
       function primeAudio() {
         if (audioPrimed) return;
-        if (!resolvedBounceSrc) {
-          // Try again later once a source resolves; don't lock the flag yet.
-          return;
-        }
+        if (workingAudioIndex === -1) return; // wait until a source resolves
         audioPrimed = true;
 
-        const unlock = new Audio(resolvedBounceSrc);
-        unlock.muted = true;
-        unlock.volume = 0;
-        const p = unlock.play();
-        if (p && p.then) {
-          p.then(() => {
-            try { unlock.pause(); unlock.currentTime = 0; } catch (e) {}
-            console.log('[bounce] Audio unlocked via', resolvedBounceSrc);
-          }).catch(err => {
-            audioPrimed = false; // allow retry on next gesture
-            console.warn('[bounce] Unlock failed:', err.name, err.message);
-          });
-        } else {
-          try { unlock.pause(); unlock.currentTime = 0; } catch (e) {}
+        const a = audioProbes[workingAudioIndex];
+        try {
+          a.currentTime = 0;
+          const p = a.play();
+          if (p && p.then) {
+            p.then(() => {
+              try { a.pause(); a.currentTime = 0; } catch (e) {}
+              a.muted = false;
+              console.log('[bounce] Audio unlocked');
+            }).catch(err => {
+              audioPrimed = false;
+              console.warn('[bounce] Unlock failed:', err.name);
+            });
+          } else {
+            try { a.pause(); a.currentTime = 0; } catch (e) {}
+            a.muted = false;
+          }
+        } catch (e) {
+          audioPrimed = false;
+          console.warn('[bounce] primeAudio threw:', e);
         }
       }
 
@@ -815,22 +797,20 @@
       });
 
       // ============================================================
-      // PLAY BOUNCE — creates a fresh Audio each time
+      // PLAY BOUNCE — clones the working audio for overlapping sounds
       // ============================================================
       function playBounce() {
-        const src = resolvedBounceSrc || BOUNCE_FILES[0];
+        if (workingAudioIndex === -1) return; // no working source yet
+        const src = BOUNCE_FILES[workingAudioIndex];
         try {
           const snd = new Audio(src);
           snd.volume = 0.7;
           const p = snd.play();
           if (p && p.catch) {
             p.catch(err => {
-              console.warn('[bounce] Play failed for', src, '→', err.name, err.message);
-              // If codec was bad, try the next candidate on the spot.
-              if (err.name === 'NotSupportedError') {
-                resolvedBounceSrc = null;
-                probeIndex = 0;
-                probeNext();
+              // NotAllowedError just means user hasn't gestured yet.
+              if (err.name !== 'NotAllowedError') {
+                console.warn('[bounce] Play failed:', err.name, '→', src);
               }
             });
           }
@@ -1111,7 +1091,12 @@
         enteringPhase: 0,
         exitingPhase: 0,
         bouncingPhase: 0,
-        stayPhase: 0
+        stayPhase: 0,
+        // Jump timing — used for both walking jumps AND exit jumps.
+        // We track a single "jump phase" so the sound always fires on
+        // the takeoff (bottom) of each hop.
+        jumpPhase: 0,
+        lastJumpIndex: -1
       };
 
       const startTime = performance.now();
@@ -1142,7 +1127,19 @@
         else targetNorm = Math.random() * 0.45;
         charState.targetX = b.minX + targetNorm * (b.maxX - b.minX);
         charState.running = true;
+        // Reset jump phase so the first hop of the new run plays its sound.
+        charState.jumpPhase = 0;
+        charState.lastJumpIndex = -1;
       }
+
+      // ============================================================
+      // HOP TIMING
+      // ============================================================
+      // A "hop" is one full up+down arc. SOUND is triggered at the
+      // start of each hop (when the character is on the ground / lowest).
+      const HOP_DURATION = 0.42;      // seconds per hop
+      const HOP_HEIGHT   = 26;        // px peak height
+      const HOP_STRIDE   = 22;        // px horizontal distance per hop
 
       // ============================================================
       // EXIT SEQUENCE — triggered by X key OR door tap
@@ -1192,14 +1189,13 @@
       });
 
       let lastTime = performance.now();
-      let lastBounceIndex = -1;
 
       function tick(now) {
         const dt = Math.min(0.05, (now - lastTime) / 1000);
         lastTime = now;
         const elapsed = (now - startTime) / 1000;
 
-        // At 5s → walk to house
+        // At 5s → hop to house
         if (elapsed >= 5 && charState.mode === 'wander') {
           charState.mode = 'walking-to-house';
           showBubbleTemporarily();
@@ -1220,11 +1216,18 @@
               charState.running = false;
               charState.pauseTimer = 0.4 + Math.random() * 1.0;
             } else {
-              const step = charState.speed * dt;
               const dir = Math.sign(dx);
+              // Move by hop-stride over the hop duration
+              const step = (HOP_STRIDE / HOP_DURATION) * dt;
               charState.x += dir * Math.min(step, dist);
               charState.facing = dir;
-              charState.bobbingPhase += dt * 16;
+              // Advance hop phase and trigger sound on each new hop
+              charState.jumpPhase += dt;
+              const jumpIndex = Math.floor(charState.jumpPhase / HOP_DURATION);
+              if (jumpIndex !== charState.lastJumpIndex) {
+                charState.lastJumpIndex = jumpIndex;
+                playBounce();
+              }
             }
           }
           if (!charState.running && charState.pauseTimer <= 0) pickNewCharTarget();
@@ -1241,11 +1244,17 @@
               charState.enteringPhase = 0;
               door.classList.add('open');
             } else {
-              const step = charState.speed * dt;
               const dir = Math.sign(dx);
+              const step = (HOP_STRIDE / HOP_DURATION) * dt;
               charState.x += dir * Math.min(step, dist);
               charState.facing = dir;
-              charState.bobbingPhase += dt * 16;
+              // Advance hop phase and trigger sound on each new hop
+              charState.jumpPhase += dt;
+              const jumpIndex = Math.floor(charState.jumpPhase / HOP_DURATION);
+              if (jumpIndex !== charState.lastJumpIndex) {
+                charState.lastJumpIndex = jumpIndex;
+                playBounce();
+              }
             }
           }
         } else if (charState.mode === 'entering') {
@@ -1279,7 +1288,7 @@
           if (t >= 1) {
             charState.mode = 'bouncing';
             charState.bouncingPhase = 0;
-            lastBounceIndex = -1;
+            charState.lastJumpIndex = -1;
             door.classList.remove('open');
           }
         } else if (charState.mode === 'bouncing') {
@@ -1289,12 +1298,9 @@
           const bounceIndex = Math.floor(cycleT);
           const localT = cycleT - bounceIndex;
 
-          // ============================================================
-          // PLAY BOUNCE SOUND ONCE PER JUMP (per bounce cycle)
-          // ============================================================
-          if (bounceIndex !== lastBounceIndex && bounceIndex < 5) {
-            lastBounceIndex = bounceIndex;
-            console.log('[bounce] jump', bounceIndex + 1, '→ playing sound');
+          // Play sound at the START of each hop (takeoff from ground).
+          if (bounceIndex !== charState.lastJumpIndex && bounceIndex < 5) {
+            charState.lastJumpIndex = bounceIndex;
             playBounce();
           }
 
@@ -1341,16 +1347,26 @@
           charWrap.style.left = charState.x + 'px';
         }
 
+        // Apply hop animation for wander / walking-to-house
         if (charState.mode === 'wander' || charState.mode === 'walking-to-house') {
-          const isMoving = charState.running || (charState.mode === 'walking-to-house' && charState.pauseTimer <= 0);
-          const bobAmp = isMoving ? 4 : 1.5;
-          const bobFreq = isMoving ? 1 : 0.5;
-          const bob = Math.abs(Math.sin(charState.bobbingPhase * bobFreq)) * bobAmp;
-          const squashX = isMoving ? 1 + Math.sin(charState.bobbingPhase * 2) * 0.05 : 1;
-          const squashY = isMoving ? 1 - Math.sin(charState.bobbingPhase * 2) * 0.05 : 1;
-          const tilt = isMoving ? Math.sin(charState.bobbingPhase) * 5 : Math.sin(charState.bobbingPhase * 0.5) * 1.5;
-          charWrap.style.transform =
-            `translate(-50%, ${-bob}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(${squashX}, ${squashY})`;
+          const isMoving = charState.running ||
+            (charState.mode === 'walking-to-house' && charState.pauseTimer <= 0);
+
+          if (isMoving) {
+            // Continuous hop arc based on jumpPhase
+            const localT = (charState.jumpPhase % HOP_DURATION) / HOP_DURATION;
+            const hopHeight = HOP_HEIGHT * Math.sin(localT * Math.PI);
+            const tilt = Math.sin(localT * Math.PI * 2) * 4;
+            const squashY = 1 - Math.sin(localT * Math.PI) * 0.08;
+            const squashX = 1 + Math.sin(localT * Math.PI) * 0.05;
+            charWrap.style.transform =
+              `translate(-50%, ${-hopHeight}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(${squashX}, ${squashY})`;
+          } else {
+            // Idle breathing while paused
+            const bob = Math.abs(Math.sin(charState.bobbingPhase * 0.5)) * 1.5;
+            charWrap.style.transform =
+              `translate(-50%, ${-bob}px) scaleX(${charState.facing}) scale(1)`;
+          }
         }
 
         updateEyesFromPointer();
