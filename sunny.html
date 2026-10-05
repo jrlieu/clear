@@ -7,6 +7,7 @@
   <meta name="format-detection" content="telephone=no">
   <title>Cozy House · Happy Character</title>
 
+  <!-- Comic Neue — web equivalent of Comic Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
@@ -55,6 +56,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* ---------- SUN ---------- */
     .sun {
       position: absolute;
       top: 40px;
@@ -76,6 +78,7 @@
       50% { transform: scale(1.06); box-shadow: 0 0 55px #fff5b0, 0 0 100px #ffd93baa, 0 0 150px #ffb80066; }
     }
 
+    /* ---------- CLOUDS ---------- */
     .cloud {
       position: absolute;
       background: #fff;
@@ -116,16 +119,29 @@
       right: 12%;
     }
 
-    .cloud1 { width: 140px; height: 50px; top: 70px; left: 8%; animation: drift 28s ease-in-out infinite; }
-    .cloud2 { width: 180px; height: 60px; top: 120px; left: 45%; opacity: 0.85; animation: drift 36s ease-in-out infinite reverse; }
-    .cloud3 { width: 110px; height: 42px; top: 45px; left: 70%; opacity: 0.9; animation: drift 22s ease-in-out infinite; }
-    .cloud4 { width: 150px; height: 52px; top: 140px; left: 55%; opacity: 0.8; animation: drift 42s ease-in-out infinite reverse; }
+    .cloud1 {
+      width: 140px; height: 50px; top: 70px; left: 8%;
+      animation: drift 28s ease-in-out infinite;
+    }
+    .cloud2 {
+      width: 180px; height: 60px; top: 120px; left: 45%; opacity: 0.85;
+      animation: drift 36s ease-in-out infinite reverse;
+    }
+    .cloud3 {
+      width: 110px; height: 42px; top: 45px; left: 70%; opacity: 0.9;
+      animation: drift 22s ease-in-out infinite;
+    }
+    .cloud4 {
+      width: 150px; height: 52px; top: 140px; left: 55%; opacity: 0.8;
+      animation: drift 42s ease-in-out infinite reverse;
+    }
     @keyframes drift {
       0%   { transform: translateX(0); }
       50%  { transform: translateX(40px); }
       100% { transform: translateX(0); }
     }
 
+    /* ---------- GROUND ---------- */
     .ground {
       position: absolute;
       bottom: 0;
@@ -155,6 +171,7 @@
       pointer-events: none;
     }
 
+    /* ---------- HOUSE ---------- */
     .house {
       position: absolute;
       bottom: 22%;
@@ -343,6 +360,7 @@
     .window.left  { bottom: 50px; left: 26px; }
     .window.right { bottom: 50px; right: 26px; }
 
+    /* ---------- TREES (clickable to refresh) ---------- */
     .tree {
       position: absolute;
       bottom: 20%;
@@ -407,6 +425,7 @@
     .bush1 { left: 46%; }
     .bush2 { left: 58%; width: 55px; height: 32px; animation-duration: 3s; animation-delay: -1s; }
 
+    /* ---------- SPEECH BUBBLE (mom's) ---------- */
     .speech-wrap {
       position: absolute;
       bottom: 58%;
@@ -478,6 +497,7 @@
       box-shadow: 0 0 0 3px #ffb80055;
     }
 
+    /* ---------- SUBSCRIBE BUBBLE ---------- */
     .subscribe-bubble {
       position: absolute;
       bottom: calc(100% + 8px);
@@ -495,6 +515,7 @@
       box-shadow: 0 8px 0 #b48c5c, 0 16px 28px rgba(0,0,0,0.25);
       white-space: nowrap;
       z-index: 20;
+
       transform: scaleX(var(--flip, 1));
       opacity: 0;
       transition: opacity 0.5s ease;
@@ -532,6 +553,7 @@
       50%      { transform: scaleX(var(--flip, 1)) scale(1.05) translateY(-3px); }
     }
 
+    /* ---------- CHARACTER ---------- */
     .character-wrap {
       position: absolute;
       bottom: 18%;
@@ -643,6 +665,7 @@
       <div class="roof"></div>
     </div>
 
+    <!-- TREES — clicking either refreshes the page -->
     <div class="tree tree1" id="tree1">
       <div class="leaves"></div>
       <div class="trunk"></div>
@@ -655,6 +678,7 @@
     <div class="bush bush1"></div>
     <div class="bush bush2"></div>
 
+    <!-- MOM'S SPEECH BUBBLE -->
     <div class="speech-wrap" id="speechWrap">
       <div class="speech-bubble">
         <div
@@ -666,17 +690,23 @@
       </div>
     </div>
 
+    <!-- CHARACTER -->
     <div class="character-wrap" id="charWrap">
       <div class="character" id="character">
         <div class="face">
           <div class="eyes">
-            <div class="eye"><div class="pupil"></div></div>
-            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye">
+              <div class="pupil"></div>
+            </div>
+            <div class="eye">
+              <div class="pupil"></div>
+            </div>
           </div>
           <div class="mouth"></div>
         </div>
         <div class="blush left"></div>
         <div class="blush right"></div>
+
         <div class="subscribe-bubble" id="subscribeBubble">subscribe</div>
       </div>
     </div>
@@ -686,64 +716,131 @@
   <script>
     (function() {
       // ============================================================
-      // AUDIO — lean, single instance, no clones, no probing
+      // AUDIO SETUP — bounce sound
       // ============================================================
-      // Use ONE audio element, preload it once, reuse it forever.
-      // On each bounce: reset currentTime to 0 and play. That's it.
-      const bounceSound = new Audio();
-      bounceSound.preload = 'auto';
-      bounceSound.volume = 0.7;
-      // Pick the best available format. MP3 works everywhere; AAC is fallback.
-      // The browser will pick the first one it can decode.
-      const aacSource = document.createElement('source');
-      aacSource.src = 'bounce.aac';
-      aacSource.type = 'audio/aac';
-      const mp3Source = document.createElement('source');
-      mp3Source.src = 'bounce.mp3';
-      mp3Source.type = 'audio/mpeg';
-      // Put mp3 first — best compatibility.
-      bounceSound.appendChild(mp3Source);
-      bounceSound.appendChild(aacSource);
-      bounceSound.load();
+      // Priority list of candidate files. First one that loads wins.
+      // Add/remove as needed. .mp3 is universally supported; .aac has
+      // spotty support in Firefox desktop and some Chrome builds.
+      const BOUNCE_FILES = ['bounce.mp3', 'bounce.aac', 'bounce.m4a', 'bounce.wav'];
 
-      // Unlock on first user gesture (muted, silent, one time only).
-      let audioUnlocked = false;
-      function unlockAudio() {
-        if (audioUnlocked) return;
-        const prevMuted = bounceSound.muted;
-        bounceSound.muted = true;
-        const p = bounceSound.play();
+      // Detect the first working source up-front so later plays are instant.
+      let resolvedBounceSrc = null;
+      let probeIndex = 0;
+
+      function probeNext() {
+        if (probeIndex >= BOUNCE_FILES.length) {
+          console.error('[bounce] No playable audio file found. Tried:', BOUNCE_FILES.join(', '));
+          return;
+        }
+        const candidate = BOUNCE_FILES[probeIndex++];
+        const probe = new Audio();
+        probe.preload = 'auto';
+        probe.muted = true;
+
+        let settled = false;
+        const finish = (ok) => {
+          if (settled) return;
+          settled = true;
+          if (ok) {
+            resolvedBounceSrc = candidate;
+            console.log('[bounce] Using audio source:', candidate);
+          } else {
+            probeNext();
+          }
+        };
+
+        probe.addEventListener('canplaythrough', () => finish(true), { once: true });
+        probe.addEventListener('loadeddata',      () => finish(true), { once: true });
+        probe.addEventListener('error',           () => finish(false), { once: true });
+
+        // Also try a silent play/pause to catch codec-not-supported errors.
+        probe.src = candidate;
+        probe.load();
+
+        const playAttempt = probe.play();
+        if (playAttempt && playAttempt.then) {
+          playAttempt.then(() => {
+            try { probe.pause(); probe.currentTime = 0; } catch (e) {}
+            finish(true);
+          }).catch(err => {
+            // NotAllowedError just means "needs gesture" — file itself may still be fine.
+            // NotSupportedError means codec problem — try next file.
+            if (err && err.name === 'NotSupportedError') {
+              finish(false);
+            } else {
+              // assume file exists; playback will work after a gesture
+              finish(true);
+            }
+          });
+        }
+
+        // Fallback timeout in case no event fires
+        setTimeout(() => finish(false), 2500);
+      }
+
+      probeNext();
+
+      // ============================================================
+      // AUDIO PRIMING (unlock on first user gesture)
+      // ============================================================
+      let audioPrimed = false;
+
+      function primeAudio() {
+        if (audioPrimed) return;
+        if (!resolvedBounceSrc) {
+          // Try again later once a source resolves; don't lock the flag yet.
+          return;
+        }
+        audioPrimed = true;
+
+        const unlock = new Audio(resolvedBounceSrc);
+        unlock.muted = true;
+        unlock.volume = 0;
+        const p = unlock.play();
         if (p && p.then) {
           p.then(() => {
-            bounceSound.pause();
-            bounceSound.currentTime = 0;
-            bounceSound.muted = prevMuted;
-            audioUnlocked = true;
-          }).catch(() => {
-            bounceSound.muted = prevMuted;
+            try { unlock.pause(); unlock.currentTime = 0; } catch (e) {}
+            console.log('[bounce] Audio unlocked via', resolvedBounceSrc);
+          }).catch(err => {
+            audioPrimed = false; // allow retry on next gesture
+            console.warn('[bounce] Unlock failed:', err.name, err.message);
           });
         } else {
-          bounceSound.pause();
-          bounceSound.currentTime = 0;
-          bounceSound.muted = prevMuted;
-          audioUnlocked = true;
+          try { unlock.pause(); unlock.currentTime = 0; } catch (e) {}
         }
       }
+
       ['pointerdown','touchstart','mousedown','keydown'].forEach(evt => {
-        window.addEventListener(evt, unlockAudio, { passive: true });
+        window.addEventListener(evt, primeAudio, { passive: true });
       });
 
-      // Play: reset position and fire. Ultra lightweight.
+      // ============================================================
+      // PLAY BOUNCE — creates a fresh Audio each time
+      // ============================================================
       function playBounce() {
+        const src = resolvedBounceSrc || BOUNCE_FILES[0];
         try {
-          bounceSound.currentTime = 0;
-          const p = bounceSound.play();
-          if (p && p.catch) p.catch(() => {});
-        } catch (e) {}
+          const snd = new Audio(src);
+          snd.volume = 0.7;
+          const p = snd.play();
+          if (p && p.catch) {
+            p.catch(err => {
+              console.warn('[bounce] Play failed for', src, '→', err.name, err.message);
+              // If codec was bad, try the next candidate on the spot.
+              if (err.name === 'NotSupportedError') {
+                resolvedBounceSrc = null;
+                probeIndex = 0;
+                probeNext();
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('[bounce] playBounce threw:', e);
+        }
       }
 
       // ============================================================
-      // DOM references
+      // DOM REFERENCES
       // ============================================================
       const pupils = document.querySelectorAll('.eye .pupil');
       const charWrap = document.getElementById('charWrap');
@@ -757,7 +854,7 @@
       const tree2 = document.getElementById('tree2');
 
       // ============================================================
-      // Prevent double-tap zoom (allow trees to pass through)
+      // PREVENT DOUBLE-TAP ZOOM ON iOS (but allow tree taps to work)
       // ============================================================
       let lastTouchEnd = 0;
       document.addEventListener('touchend', (e) => {
@@ -777,7 +874,7 @@
       document.addEventListener('dragstart',     e => e.preventDefault(), { passive: false });
 
       // ============================================================
-      // Trees → reload
+      // TREES → REFRESH THE PAGE
       // ============================================================
       function reloadPage() {
         try {
@@ -790,6 +887,7 @@
           window.location.href = window.location.href;
         }
       }
+
       [tree1, tree2].forEach(tree => {
         let treePressed = false;
         tree.addEventListener('pointerdown', (e) => {
@@ -805,6 +903,7 @@
           reloadPage();
         });
         tree.addEventListener('pointercancel', () => { treePressed = false; });
+
         tree.addEventListener('click', (e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -813,7 +912,7 @@
       });
 
       // ============================================================
-      // Speech bubble
+      // SPEECH — load once, save on blur / Enter only
       // ============================================================
       const SPEECH_KEY = 'mukbang_speech_v4';
       const DEFAULT_SPEECH = "Baby, let's eat!";
@@ -833,6 +932,7 @@
         speechWrap.classList.add('visible');
         startBubbleHideTimer();
       }
+
       function startBubbleHideTimer() {
         if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
         if (isEditing) return;
@@ -842,12 +942,14 @@
           speechWrap.classList.remove('visible');
         }, 3000);
       }
+
       function pauseBubbleHideTimer() {
         if (bubbleHideTimer) {
           clearTimeout(bubbleHideTimer);
           bubbleHideTimer = null;
         }
       }
+
       function enterEdit() {
         if (isEditing) return;
         isEditing = true;
@@ -864,42 +966,59 @@
           sel.addRange(range);
         } catch (e) {}
       }
+
       function exitEditAndSave() {
         if (!isEditing) return;
         isEditing = false;
         speechText.setAttribute('contenteditable', 'false');
+
         let val = (speechText.textContent || '').replace(/\s+/g, ' ').trim();
         if (val.length === 0) val = DEFAULT_SPEECH;
         speechText.textContent = val;
-        try { localStorage.setItem(SPEECH_KEY, val); } catch (e) {}
+
+        try {
+          localStorage.setItem(SPEECH_KEY, val);
+        } catch (e) {}
+
         startBubbleHideTimer();
       }
+
       speechText.addEventListener('click', (e) => {
         if (isEditing) return;
         e.stopPropagation();
         enterEdit();
       });
+
       speechText.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault(); exitEditAndSave(); speechText.blur();
+          e.preventDefault();
+          exitEditAndSave();
+          speechText.blur();
         }
         if (e.key === 'Escape') {
-          e.preventDefault(); exitEditAndSave(); speechText.blur();
+          e.preventDefault();
+          exitEditAndSave();
+          speechText.blur();
         }
       });
-      speechText.addEventListener('blur', () => { exitEditAndSave(); });
+
+      speechText.addEventListener('blur', () => {
+        exitEditAndSave();
+      });
 
       // ============================================================
-      // Clouds — draggable + drifting
+      // CLOUDS — draggable AND drifting
       // ============================================================
       const CLOUD_KEY = 'mukbang_clouds_v2';
       const clouds = document.querySelectorAll('.cloud');
+
       (function loadClouds() {
         let saved = null;
         try {
           const raw = localStorage.getItem(CLOUD_KEY);
           if (raw) saved = JSON.parse(raw);
         } catch (e) {}
+
         clouds.forEach(cloud => {
           const id = cloud.dataset.cloud;
           if (saved && saved[id]) {
@@ -908,34 +1027,48 @@
           }
         });
       })();
+
       function saveClouds() {
         const data = {};
         clouds.forEach(cloud => {
-          data[cloud.dataset.cloud] = { left: cloud.style.left, top: cloud.style.top };
+          data[cloud.dataset.cloud] = {
+            left: cloud.style.left,
+            top: cloud.style.top
+          };
         });
         try { localStorage.setItem(CLOUD_KEY, JSON.stringify(data)); } catch (e) {}
       }
+
       clouds.forEach(cloud => {
         let dragging = false;
-        let startX = 0, startY = 0, startLeft = 0, startTop = 0, pid = null;
+        let startX = 0, startY = 0;
+        let startLeft = 0, startTop = 0;
+        let pid = null;
+
         cloud.addEventListener('pointerdown', (e) => {
           if (e.pointerType === 'mouse' && e.button !== 0) return;
           e.preventDefault();
           e.stopPropagation();
+
           dragging = true;
           pid = e.pointerId;
           cloud.classList.add('dragging');
           cloud.setPointerCapture(e.pointerId);
+
           const sceneRect = scene.getBoundingClientRect();
           const cloudRect = cloud.getBoundingClientRect();
+
           startLeft = parseFloat(cloud.style.left) || (cloudRect.left - sceneRect.left);
           startTop  = parseFloat(cloud.style.top)  || (cloudRect.top  - sceneRect.top);
+
           startX = e.clientX;
           startY = e.clientY;
+
           window.addEventListener('pointermove', onMove);
           window.addEventListener('pointerup', onUp);
           window.addEventListener('pointercancel', onUp);
         });
+
         function onMove(e) {
           if (!dragging || e.pointerId !== pid) return;
           e.preventDefault();
@@ -943,11 +1076,14 @@
           const cloudRect = cloud.getBoundingClientRect();
           let nx = startLeft + (e.clientX - startX);
           let ny = startTop  + (e.clientY - startY);
-          nx = Math.max(-cloudRect.width * 0.5, Math.min(sceneRect.width - cloudRect.width * 0.5, nx));
-          ny = Math.max(-cloudRect.height * 0.5, Math.min(sceneRect.height - cloudRect.height * 0.5, ny));
+          nx = Math.max(-cloudRect.width * 0.5,
+               Math.min(sceneRect.width - cloudRect.width * 0.5, nx));
+          ny = Math.max(-cloudRect.height * 0.5,
+               Math.min(sceneRect.height - cloudRect.height * 0.5, ny));
           cloud.style.left = nx + 'px';
           cloud.style.top = ny + 'px';
         }
+
         function onUp(e) {
           if (!dragging || e.pointerId !== pid) return;
           dragging = false;
@@ -961,7 +1097,7 @@
       });
 
       // ============================================================
-      // Character state & movement
+      // CHARACTER MOVEMENT
       // ============================================================
       let charState = {
         x: 0,
@@ -984,17 +1120,20 @@
         const sw = scene.clientWidth;
         return { minX: sw * 0.08, maxX: sw * 0.92 };
       }
+
       function getDoorSceneX() {
         const sceneRect = scene.getBoundingClientRect();
         const doorRect = doorFrame.getBoundingClientRect();
         return (doorRect.left - sceneRect.left) + doorRect.width / 2;
       }
+
       function initPosition() {
         const b = getBounds();
         charState.x = (b.minX + b.maxX) / 2;
         pickNewCharTarget();
         charState.pauseTimer = 0.4;
       }
+
       function pickNewCharTarget() {
         const b = getBounds();
         const currentNorm = (charState.x - b.minX) / (b.maxX - b.minX);
@@ -1005,6 +1144,9 @@
         charState.running = true;
       }
 
+      // ============================================================
+      // EXIT SEQUENCE — triggered by X key OR door tap
+      // ============================================================
       function startExitSequence() {
         if (charState.mode !== 'done') return;
         charState.mode = 'exiting';
@@ -1018,7 +1160,9 @@
       window.addEventListener('keydown', (e) => {
         if (e.key === 'x' || e.key === 'X') {
           if (isEditing) return;
-          if (charState.mode === 'done') startExitSequence();
+          if (charState.mode === 'done') {
+            startExitSequence();
+          }
         }
       });
 
@@ -1034,13 +1178,17 @@
         e.stopPropagation();
         e.preventDefault();
         if (isEditing) return;
-        if (charState.mode === 'done') startExitSequence();
+        if (charState.mode === 'done') {
+          startExitSequence();
+        }
       });
       doorFrame.addEventListener('pointercancel', () => { doorPressed = false; });
       doorFrame.addEventListener('click', (e) => {
         e.stopPropagation();
         if (isEditing) return;
-        if (charState.mode === 'done') startExitSequence();
+        if (charState.mode === 'done') {
+          startExitSequence();
+        }
       });
 
       let lastTime = performance.now();
@@ -1051,6 +1199,7 @@
         lastTime = now;
         const elapsed = (now - startTime) / 1000;
 
+        // At 5s → walk to house
         if (elapsed >= 5 && charState.mode === 'wander') {
           charState.mode = 'walking-to-house';
           showBubbleTemporarily();
@@ -1059,6 +1208,7 @@
           charState.pauseTimer = 0.8;
         }
 
+        // ---------------- MOVEMENT PHASES ----------------
         if (charState.mode === 'wander') {
           if (charState.pauseTimer > 0) {
             charState.pauseTimer -= dt;
@@ -1139,9 +1289,12 @@
           const bounceIndex = Math.floor(cycleT);
           const localT = cycleT - bounceIndex;
 
-          // Play sound once per jump
+          // ============================================================
+          // PLAY BOUNCE SOUND ONCE PER JUMP (per bounce cycle)
+          // ============================================================
           if (bounceIndex !== lastBounceIndex && bounceIndex < 5) {
             lastBounceIndex = bounceIndex;
+            console.log('[bounce] jump', bounceIndex + 1, '→ playing sound');
             playBounce();
           }
 
@@ -1158,11 +1311,15 @@
             const progress = (bounceIndex + localT) / 5;
             const currentX = doorX + (targetX - doorX) * progress;
             charWrap.style.left = currentX + 'px';
+
+            const scale = 1;
             const bounceHeight = 45 * Math.sin(localT * Math.PI);
             const tilt = Math.sin(localT * Math.PI * 2) * 5;
+
             charState.facing = doorX < targetX ? 1 : -1;
+
             charWrap.style.transform =
-              `translate(-50%, ${-bounceHeight}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(1)`;
+              `translate(-50%, ${-bounceHeight}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(${scale})`;
           }
         } else if (charState.mode === 'staying') {
           charState.stayPhase += dt;
@@ -1197,11 +1354,12 @@
         }
 
         updateEyesFromPointer();
+
         requestAnimationFrame(tick);
       }
 
       // ============================================================
-      // Eye tracking
+      // EYE TRACKING
       // ============================================================
       let pointerX = window.innerWidth / 2;
       let pointerY = window.innerHeight / 2;
@@ -1241,7 +1399,7 @@
       window.addEventListener('touchend', () => { hasPointer = false; });
 
       // ============================================================
-      // Start
+      // START
       // ============================================================
       requestAnimationFrame(() => {
         initPosition();
