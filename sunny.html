@@ -685,9 +685,6 @@
 
   <script>
     (function() {
-      // ============================================================
-      // DOM references
-      // ============================================================
       const pupils = document.querySelectorAll('.eye .pupil');
       const charWrap = document.getElementById('charWrap');
       const scene = document.getElementById('scene');
@@ -700,7 +697,7 @@
       const tree2 = document.getElementById('tree2');
 
       // ============================================================
-      // Prevent double-tap zoom (allow trees to pass through)
+      // Prevent double-tap zoom
       // ============================================================
       let lastTouchEnd = 0;
       document.addEventListener('touchend', (e) => {
@@ -773,8 +770,10 @@
       })();
 
       function showBubbleTemporarily() {
-        speechWrap.classList.add('visible');
-        startBubbleHideTimer();
+        requestAnimationFrame(() => {
+          speechWrap.classList.add('visible');
+          startBubbleHideTimer();
+        });
       }
       function startBubbleHideTimer() {
         if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
@@ -904,56 +903,97 @@
       });
 
       // ============================================================
-      // Character state & movement
+      // Character state
       // ============================================================
       let charState = {
         x: 0,
-        targetX: 0,
-        speed: 95,
-        bobbingPhase: 0,
-        running: false,
-        pauseTimer: 0,
         facing: 1,
-        mode: 'wander',
+        mode: 'jumping-wander',
+        jumpStartX: 0,
+        jumpEndX: 0,
+        jumpPhase: 0,
+        jumpCount: 0,
+        // Fraction (0..1) of the current leg at the moment we retargeted.
+        // On the next tick we shift jumpPhase so the leg restarts at 0,
+        // but the character stays at the same X (no visual snap) because
+        // the current X is already partway through the arc.
         enteringPhase: 0,
         exitingPhase: 0,
         bouncingPhase: 0,
-        stayPhase: 0
+        stayPhase: 0,
+        // pending retarget — applied on the next landing
+        pendingRetargetToHouse: false
       };
 
       const startTime = performance.now();
 
-      // ---- Shared jump/bounce constants (used for BOTH the
-      //      walk-to-house jump and the exit bounce) ----------------
       const JUMP_CYCLE_SEC = 0.65;
       const JUMP_HEIGHT_PX = 45;
       const JUMP_TILT_DEG  = 5;
-      const WALK_TO_HOUSE_JUMPS = 6;   // how many jumps on the way in
-      const EXIT_JUMPS          = 5;   // how many jumps on the way out
+      const EXIT_JUMPS     = 5;
+      const SPEECH_TRIGGER_TIME = 5;
+      const JUMP_TO_HOUSE_STRIDE_PX = 130;
+      const ENTER_DURATION_SEC = 0.9;
 
       function getBounds() {
         const sw = scene.clientWidth;
         return { minX: sw * 0.08, maxX: sw * 0.92 };
       }
+
       function getDoorSceneX() {
         const sceneRect = scene.getBoundingClientRect();
         const doorRect = doorFrame.getBoundingClientRect();
         return (doorRect.left - sceneRect.left) + doorRect.width / 2;
       }
-      function initPosition() {
-        const b = getBounds();
-        charState.x = (b.minX + b.maxX) / 2;
-        pickNewCharTarget();
-        charState.pauseTimer = 0.4;
+
+      // Returns the vertical distance from scene bottom to the door's
+      // bottom edge, in pixels — i.e. the "bottom" value the character
+      // would need to sit flush with the door threshold.
+      function getDoorBottomPx() {
+        const sceneRect = scene.getBoundingClientRect();
+        const doorRect = doorFrame.getBoundingClientRect();
+        return sceneRect.bottom - doorRect.bottom;
       }
-      function pickNewCharTarget() {
+
+      function pickNewJumpTarget() {
         const b = getBounds();
         const currentNorm = (charState.x - b.minX) / (b.maxX - b.minX);
         let targetNorm;
         if (currentNorm < 0.5) targetNorm = 0.55 + Math.random() * 0.45;
         else targetNorm = Math.random() * 0.45;
-        charState.targetX = b.minX + targetNorm * (b.maxX - b.minX);
-        charState.running = true;
+        const targetX = b.minX + targetNorm * (b.maxX - b.minX);
+
+        charState.jumpStartX = charState.x;
+        charState.jumpEndX = targetX;
+        charState.jumpPhase = 0;
+        const dist = Math.abs(targetX - charState.x);
+        charState.jumpCount = Math.max(2, Math.round(dist / 110) + 1);
+        charState.facing = Math.sign(targetX - charState.x) || 1;
+      }
+
+      // Retarget to the door on the NEXT LANDING. We set a flag; the
+      // jump-wander phase applies it the moment the current leg finishes,
+      // so there's zero mid-air snapping.
+      function scheduleRetargetToHouse() {
+        charState.pendingRetargetToHouse = true;
+      }
+
+      function applyRetargetToHouse() {
+        charState.pendingRetargetToHouse = false;
+        charState.mode = 'jumping-to-house';
+        charState.jumpStartX = charState.x;
+        charState.jumpEndX = getDoorSceneX();
+        const dist = Math.abs(charState.jumpEndX - charState.x);
+        charState.jumpCount = Math.max(1, Math.ceil(dist / JUMP_TO_HOUSE_STRIDE_PX));
+        charState.facing = Math.sign(charState.jumpEndX - charState.x) || 1;
+        charState.jumpPhase = 0;  // fresh leg — safe because we're on the ground
+      }
+
+      function initPosition() {
+        const b = getBounds();
+        charState.x = (b.minX + b.maxX) / 2;
+        charWrap.style.left = charState.x + 'px';
+        pickNewJumpTarget();
       }
 
       function startExitSequence() {
@@ -962,7 +1002,7 @@
         charState.exitingPhase = 0;
         charWrap.style.display = '';
         charWrap.style.opacity = '0';
-        charWrap.style.transform = 'translate(-50%, 0) scale(0.25)';
+        charWrap.style.transform = `translate(-50%, 0) scale(0.25)`;
         door.classList.add('open');
       }
 
@@ -996,83 +1036,101 @@
 
       let lastTime = performance.now();
 
+      function applyJumpTransform(localT) {
+        const bounceHeight = JUMP_HEIGHT_PX * Math.sin(localT * Math.PI);
+        const tilt = Math.sin(localT * Math.PI * 2) * JUMP_TILT_DEG;
+        charWrap.style.transform =
+          `translate(-50%, ${-bounceHeight}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(1)`;
+      }
+
+      // Vertical offset (in px, negative = push down) to make the
+      // character's feet sit at the door's bottom edge, given the current
+      // CSS `bottom: 18%` default.
+      function getDoorThresholdOffsetPx() {
+        const sceneH = scene.clientHeight;
+        const defaultBottomPx = sceneH * 0.18;
+        const doorBottomPx = getDoorBottomPx();
+        // Positive if the door threshold is ABOVE where the character
+        // currently sits; we translate down by the difference so the feet
+        // sit at the threshold.
+        return doorBottomPx - defaultBottomPx;
+      }
+
       function tick(now) {
         const dt = Math.min(0.05, (now - lastTime) / 1000);
         lastTime = now;
         const elapsed = (now - startTime) / 1000;
 
-        // After 5 seconds, switch to jumping toward the house
-        if (elapsed >= 5 && charState.mode === 'wander') {
-          charState.mode = 'jumping-to-house';
+        // 5s → show bubble + schedule a retarget to the door on the next landing
+        if (elapsed >= SPEECH_TRIGGER_TIME &&
+            charState.mode === 'jumping-wander' &&
+            !charState.pendingRetargetToHouse) {
           showBubbleTemporarily();
-          charState.running = false;
-          charState.jumpingPhase = 0;
-          charState.jumpStartX = charState.x;              // remember where we begin
-          charState.jumpEndX   = getDoorSceneX();          // door position
-          charState.lastJumpIndex = -1;
+          scheduleRetargetToHouse();
         }
 
         // ---------------- MOVEMENT PHASES ----------------
-        if (charState.mode === 'wander') {
-          if (charState.pauseTimer > 0) {
-            charState.pauseTimer -= dt;
-            charState.bobbingPhase += dt * 3;
-          } else if (charState.running) {
-            const dx = charState.targetX - charState.x;
-            const dist = Math.abs(dx);
-            if (dist < 4) {
-              charState.running = false;
-              charState.pauseTimer = 0.4 + Math.random() * 1.0;
-            } else {
-              const step = charState.speed * dt;
-              const dir = Math.sign(dx);
-              charState.x += dir * Math.min(step, dist);
-              charState.facing = dir;
-              charState.bobbingPhase += dt * 16;
-            }
-          }
-          if (!charState.running && charState.pauseTimer <= 0) pickNewCharTarget();
-        } else if (charState.mode === 'jumping-to-house') {
-          // ---- Same jump animation as the exit, but traveling toward the door ----
-          charState.jumpingPhase += dt;
-          const cycleT = charState.jumpingPhase / JUMP_CYCLE_SEC;
+        if (charState.mode === 'jumping-wander') {
+          charState.jumpPhase += dt;
+          const cycleT = charState.jumpPhase / JUMP_CYCLE_SEC;
           const jumpIndex = Math.floor(cycleT);
           const localT = cycleT - jumpIndex;
 
-          // Flip facing based on direction of travel
-          const dir = Math.sign(charState.jumpEndX - charState.jumpStartX) || 1;
-          charState.facing = dir;
+          if (jumpIndex >= charState.jumpCount) {
+            // Landed — snap X to leg end (feet on ground, no visual snap).
+            charState.x = charState.jumpEndX;
+            charWrap.style.left = charState.x + 'px';
 
-          if (jumpIndex >= WALK_TO_HOUSE_JUMPS) {
-            // Arrived at the door → enter the house
-            charState.mode = 'entering';
-            charState.enteringPhase = 0;
-            door.classList.add('open');
+            if (charState.pendingRetargetToHouse) {
+              applyRetargetToHouse();
+            } else {
+              pickNewJumpTarget();
+            }
           } else {
-            // Interpolate horizontal position across all jumps
-            const overallProgress = Math.min(1,
-              (jumpIndex + localT) / WALK_TO_HOUSE_JUMPS);
+            const overallProgress = (jumpIndex + localT) / charState.jumpCount;
             const currentX = charState.jumpStartX +
               (charState.jumpEndX - charState.jumpStartX) * overallProgress;
             charState.x = currentX;
             charWrap.style.left = currentX + 'px';
+            applyJumpTransform(localT);
+          }
+        } else if (charState.mode === 'jumping-to-house') {
+          charState.jumpPhase += dt;
+          const cycleT = charState.jumpPhase / JUMP_CYCLE_SEC;
+          const jumpIndex = Math.floor(cycleT);
+          const localT = cycleT - jumpIndex;
 
-            const bounceHeight = JUMP_HEIGHT_PX * Math.sin(localT * Math.PI);
-            const tilt = Math.sin(localT * Math.PI * 2) * JUMP_TILT_DEG;
-            charWrap.style.transform =
-              `translate(-50%, ${-bounceHeight}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(1)`;
+          if (jumpIndex >= charState.jumpCount) {
+            charState.mode = 'entering';
+            charState.enteringPhase = 0;
+            door.classList.add('open');
+          } else {
+            const overallProgress = (jumpIndex + localT) / charState.jumpCount;
+            const currentX = charState.jumpStartX +
+              (charState.jumpEndX - charState.jumpStartX) * overallProgress;
+            charState.x = currentX;
+            charWrap.style.left = currentX + 'px';
+            applyJumpTransform(localT);
           }
         } else if (charState.mode === 'entering') {
-          charState.enteringPhase += dt / 1.6;
+          // Character stands on the ground at door X. Shrink straight down
+          // into the doorway — NO flying, NO rising. Just tween the
+          // vertical offset so the feet drop to the door threshold while
+          // the character shrinks into the floor.
+          charState.enteringPhase += dt / ENTER_DURATION_SEC;
           const t = Math.min(1, charState.enteringPhase);
-          const doorX = getDoorSceneX();
-          charState.x += (doorX - charState.x) * dt * 4;
-          const shrink = 1 - t * 0.75;
-          const sinkY = t * 22;
-          const fadeOpacity = 1 - Math.pow(t, 2);
+
+          const thresholdOffset = getDoorThresholdOffsetPx();
+          const yOffset = thresholdOffset * t; // 0 → threshold offset
+          const shrink = 1 - t * 0.9;
+          const fadeOpacity = 1 - Math.pow(t, 1.6);
+
           charWrap.style.opacity = fadeOpacity;
+          // translate down by yOffset, then shrink. transform-origin is
+          // center bottom, so it shrinks into the floor cleanly.
           charWrap.style.transform =
-            `translate(-50%, ${sinkY}px) scaleX(${charState.facing}) scale(${shrink})`;
+            `translate(-50%, ${yOffset}px) scaleX(${charState.facing}) scale(${shrink})`;
+
           if (t >= 1) {
             charState.mode = 'done';
             charWrap.style.opacity = '0';
@@ -1082,17 +1140,20 @@
         } else if (charState.mode === 'exiting') {
           charState.exitingPhase += dt / 1.2;
           const t = Math.min(1, charState.exitingPhase);
-          const doorX = getDoorSceneX();
-          charState.x += (doorX - charState.x) * dt * 4;
-          charWrap.style.left = charState.x + 'px';
-          const grow = 0.25 + t * 0.75;
-          const riseY = (1 - t) * 22;
-          charWrap.style.opacity = t;
+          const ease = 1 - Math.pow(1 - t, 3);
+
+          const thresholdOffset = getDoorThresholdOffsetPx();
+          const yOffset = thresholdOffset * (1 - ease);
+          const grow = 0.25 + ease * 0.75;
+
+          charWrap.style.opacity = ease;
           charWrap.style.transform =
-            `translate(-50%, ${riseY}px) scaleX(1) scale(${grow})`;
+            `translate(-50%, ${yOffset}px) scaleX(1) scale(${grow})`;
+
           if (t >= 1) {
             charState.mode = 'bouncing';
             charState.bouncingPhase = 0;
+            charState.facing = 1;
             door.classList.remove('open');
           }
         } else if (charState.mode === 'bouncing') {
@@ -1133,26 +1194,6 @@
 
         const flipSign = (charState.facing === -1) ? -1 : 1;
         subscribeBubble.style.setProperty('--flip', flipSign);
-
-        // Clamp + keep left position updated during ground-based phases
-        if (charState.mode === 'wander' ||
-            charState.mode === 'entering') {
-          const b = getBounds();
-          charState.x = Math.max(b.minX, Math.min(b.maxX, charState.x));
-          charWrap.style.left = charState.x + 'px';
-        }
-
-        if (charState.mode === 'wander') {
-          const isMoving = charState.running;
-          const bobAmp = isMoving ? 4 : 1.5;
-          const bobFreq = isMoving ? 1 : 0.5;
-          const bob = Math.abs(Math.sin(charState.bobbingPhase * bobFreq)) * bobAmp;
-          const squashX = isMoving ? 1 + Math.sin(charState.bobbingPhase * 2) * 0.05 : 1;
-          const squashY = isMoving ? 1 - Math.sin(charState.bobbingPhase * 2) * 0.05 : 1;
-          const tilt = isMoving ? Math.sin(charState.bobbingPhase) * 5 : Math.sin(charState.bobbingPhase * 0.5) * 1.5;
-          charWrap.style.transform =
-            `translate(-50%, ${-bob}px) rotate(${tilt}deg) scaleX(${charState.facing}) scale(${squashX}, ${squashY})`;
-        }
 
         updateEyesFromPointer();
         requestAnimationFrame(tick);
@@ -1210,7 +1251,6 @@
       window.addEventListener('resize', () => {
         const b = getBounds();
         charState.x = Math.max(b.minX, Math.min(b.maxX, charState.x));
-        charState.targetX = Math.max(b.minX, Math.min(b.maxX, charState.targetX));
       });
     })();
   </script>
