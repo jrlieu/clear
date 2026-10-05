@@ -716,77 +716,126 @@
   <script>
     (function() {
       // ============================================================
-      // AUDIO SETUP — bounce.aac preloaded and primed for instant play
+      // AUDIO SETUP — bounce sound
       // ============================================================
-      // Use HTMLAudioElement with a single instance. We preload it and
-      // "unlock" it on the first user gesture so it can play instantly later.
-      const bounceSound = new Audio('bounce.aac');
-      bounceSound.preload = 'auto';
-      bounceSound.volume = 0.7;
-      try { bounceSound.load(); } catch (e) {}
+      // Priority list of candidate files. First one that loads wins.
+      // Add/remove as needed. .mp3 is universally supported; .aac has
+      // spotty support in Firefox desktop and some Chrome builds.
+      const BOUNCE_FILES = ['bounce.mp3', 'bounce.aac', 'bounce.m4a', 'bounce.wav'];
 
-      // Prime the audio: on the FIRST user gesture, play it silently
-      // (muted) and reset it. This satisfies browser autoplay policies.
+      // Detect the first working source up-front so later plays are instant.
+      let resolvedBounceSrc = null;
+      let probeIndex = 0;
+
+      function probeNext() {
+        if (probeIndex >= BOUNCE_FILES.length) {
+          console.error('[bounce] No playable audio file found. Tried:', BOUNCE_FILES.join(', '));
+          return;
+        }
+        const candidate = BOUNCE_FILES[probeIndex++];
+        const probe = new Audio();
+        probe.preload = 'auto';
+        probe.muted = true;
+
+        let settled = false;
+        const finish = (ok) => {
+          if (settled) return;
+          settled = true;
+          if (ok) {
+            resolvedBounceSrc = candidate;
+            console.log('[bounce] Using audio source:', candidate);
+          } else {
+            probeNext();
+          }
+        };
+
+        probe.addEventListener('canplaythrough', () => finish(true), { once: true });
+        probe.addEventListener('loadeddata',      () => finish(true), { once: true });
+        probe.addEventListener('error',           () => finish(false), { once: true });
+
+        // Also try a silent play/pause to catch codec-not-supported errors.
+        probe.src = candidate;
+        probe.load();
+
+        const playAttempt = probe.play();
+        if (playAttempt && playAttempt.then) {
+          playAttempt.then(() => {
+            try { probe.pause(); probe.currentTime = 0; } catch (e) {}
+            finish(true);
+          }).catch(err => {
+            // NotAllowedError just means "needs gesture" — file itself may still be fine.
+            // NotSupportedError means codec problem — try next file.
+            if (err && err.name === 'NotSupportedError') {
+              finish(false);
+            } else {
+              // assume file exists; playback will work after a gesture
+              finish(true);
+            }
+          });
+        }
+
+        // Fallback timeout in case no event fires
+        setTimeout(() => finish(false), 2500);
+      }
+
+      probeNext();
+
+      // ============================================================
+      // AUDIO PRIMING (unlock on first user gesture)
+      // ============================================================
       let audioPrimed = false;
 
       function primeAudio() {
         if (audioPrimed) return;
+        if (!resolvedBounceSrc) {
+          // Try again later once a source resolves; don't lock the flag yet.
+          return;
+        }
         audioPrimed = true;
 
-        const prevMuted = bounceSound.muted;
-        const prevVolume = bounceSound.volume;
-        bounceSound.muted = true;
-        bounceSound.volume = 0;
-
-        const p = bounceSound.play();
-        if (p && typeof p.then === 'function') {
+        const unlock = new Audio(resolvedBounceSrc);
+        unlock.muted = true;
+        unlock.volume = 0;
+        const p = unlock.play();
+        if (p && p.then) {
           p.then(() => {
-            bounceSound.pause();
-            bounceSound.currentTime = 0;
-            bounceSound.muted = prevMuted;
-            bounceSound.volume = prevVolume;
-            console.log('Audio primed successfully');
+            try { unlock.pause(); unlock.currentTime = 0; } catch (e) {}
+            console.log('[bounce] Audio unlocked via', resolvedBounceSrc);
           }).catch(err => {
-            audioPrimed = false;
-            bounceSound.muted = prevMuted;
-            bounceSound.volume = prevVolume;
-            console.warn('Audio priming failed, will retry:', err);
+            audioPrimed = false; // allow retry on next gesture
+            console.warn('[bounce] Unlock failed:', err.name, err.message);
           });
         } else {
-          bounceSound.pause();
-          bounceSound.currentTime = 0;
-          bounceSound.muted = prevMuted;
-          bounceSound.volume = prevVolume;
+          try { unlock.pause(); unlock.currentTime = 0; } catch (e) {}
         }
       }
 
-      window.addEventListener('pointerdown', primeAudio, { once: true, passive: true });
-      window.addEventListener('touchstart',  primeAudio, { once: true, passive: true });
-      window.addEventListener('mousedown',   primeAudio, { once: true, passive: true });
-      window.addEventListener('keydown',     primeAudio, { once: true, passive: true });
+      ['pointerdown','touchstart','mousedown','keydown'].forEach(evt => {
+        window.addEventListener(evt, primeAudio, { passive: true });
+      });
 
       // ============================================================
-      // AUDIO PLAYBACK HELPER
+      // PLAY BOUNCE — creates a fresh Audio each time
       // ============================================================
-      // Clones the audio for overlapping plays and resets currentTime so
-      // each jump gets a fresh, instantaneous sound.
       function playBounce() {
+        const src = resolvedBounceSrc || BOUNCE_FILES[0];
         try {
-          if (!audioPrimed) {
-            primeAudio();
-          }
-          const snd = bounceSound.cloneNode();
+          const snd = new Audio(src);
           snd.volume = 0.7;
           const p = snd.play();
-          if (p && typeof p.catch === 'function') {
-            p.catch(() => { /* ignore */ });
+          if (p && p.catch) {
+            p.catch(err => {
+              console.warn('[bounce] Play failed for', src, '→', err.name, err.message);
+              // If codec was bad, try the next candidate on the spot.
+              if (err.name === 'NotSupportedError') {
+                resolvedBounceSrc = null;
+                probeIndex = 0;
+                probeNext();
+              }
+            });
           }
         } catch (e) {
-          try {
-            bounceSound.currentTime = 0;
-            const p = bounceSound.play();
-            if (p && typeof p.catch === 'function') p.catch(() => {});
-          } catch (e2) {}
+          console.warn('[bounce] playBounce threw:', e);
         }
       }
 
@@ -1245,6 +1294,7 @@
           // ============================================================
           if (bounceIndex !== lastBounceIndex && bounceIndex < 5) {
             lastBounceIndex = bounceIndex;
+            console.log('[bounce] jump', bounceIndex + 1, '→ playing sound');
             playBounce();
           }
 
