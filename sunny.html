@@ -718,50 +718,77 @@
       // ============================================================
       // AUDIO SETUP — bounce.aac preloaded and primed for instant play
       // ============================================================
-      const bounceSound = new Audio();
-      // Use a relative path to bounce.aac. The file is assumed to be in the same directory.
-      bounceSound.src = 'bounce.aac';
+      // Use HTMLAudioElement with a single instance. We preload it and
+      // "unlock" it on the first user gesture so it can play instantly later.
+      const bounceSound = new Audio('bounce.aac');
       bounceSound.preload = 'auto';
       bounceSound.volume = 0.7;
-      bounceSound.load(); // begin loading immediately
+      try { bounceSound.load(); } catch (e) {}
 
-      // Attempt to "prime" the audio on the first user interaction
-      // so that later playback (e.g., during jumps) is instantaneous.
+      // Prime the audio: on the FIRST user gesture, play it silently
+      // (muted) and reset it. This satisfies browser autoplay policies.
       let audioPrimed = false;
+
       function primeAudio() {
         if (audioPrimed) return;
         audioPrimed = true;
-        // Play and immediately pause to unlock audio on iOS / mobile.
-        bounceSound.play()
-          .then(() => {
+
+        const prevMuted = bounceSound.muted;
+        const prevVolume = bounceSound.volume;
+        bounceSound.muted = true;
+        bounceSound.volume = 0;
+
+        const p = bounceSound.play();
+        if (p && typeof p.then === 'function') {
+          p.then(() => {
             bounceSound.pause();
             bounceSound.currentTime = 0;
+            bounceSound.muted = prevMuted;
+            bounceSound.volume = prevVolume;
             console.log('Audio primed successfully');
-          })
-          .catch(err => {
-            // If autoplay fails, we retry on next interaction
+          }).catch(err => {
             audioPrimed = false;
-            console.warn('Audio priming failed, will retry on next interaction', err);
+            bounceSound.muted = prevMuted;
+            bounceSound.volume = prevVolume;
+            console.warn('Audio priming failed, will retry:', err);
           });
+        } else {
+          bounceSound.pause();
+          bounceSound.currentTime = 0;
+          bounceSound.muted = prevMuted;
+          bounceSound.volume = prevVolume;
+        }
       }
 
-      // Attach to various early events to catch the first user gesture
-      window.addEventListener('pointerdown', primeAudio, { once: false, passive: true });
-      window.addEventListener('touchstart', primeAudio, { once: false, passive: true });
-      window.addEventListener('mousedown', primeAudio, { once: false, passive: true });
-      window.addEventListener('keydown', primeAudio, { once: false, passive: true });
+      window.addEventListener('pointerdown', primeAudio, { once: true, passive: true });
+      window.addEventListener('touchstart',  primeAudio, { once: true, passive: true });
+      window.addEventListener('mousedown',   primeAudio, { once: true, passive: true });
+      window.addEventListener('keydown',     primeAudio, { once: true, passive: true });
 
-      // Also try to prime after a very short delay (in case the page already has permission)
-      setTimeout(() => {
-        // If we haven't primed yet, try silently (might fail due to autoplay policy)
-        if (!audioPrimed) {
-          bounceSound.play().then(() => {
-            bounceSound.pause();
+      // ============================================================
+      // AUDIO PLAYBACK HELPER
+      // ============================================================
+      // Clones the audio for overlapping plays and resets currentTime so
+      // each jump gets a fresh, instantaneous sound.
+      function playBounce() {
+        try {
+          if (!audioPrimed) {
+            primeAudio();
+          }
+          const snd = bounceSound.cloneNode();
+          snd.volume = 0.7;
+          const p = snd.play();
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => { /* ignore */ });
+          }
+        } catch (e) {
+          try {
             bounceSound.currentTime = 0;
-            audioPrimed = true;
-          }).catch(() => {});
+            const p = bounceSound.play();
+            if (p && typeof p.catch === 'function') p.catch(() => {});
+          } catch (e2) {}
         }
-      }, 200);
+      }
 
       // ============================================================
       // DOM REFERENCES
@@ -1116,6 +1143,7 @@
       });
 
       let lastTime = performance.now();
+      let lastBounceIndex = -1;
 
       function tick(now) {
         const dt = Math.min(0.05, (now - lastTime) / 1000);
@@ -1202,6 +1230,7 @@
           if (t >= 1) {
             charState.mode = 'bouncing';
             charState.bouncingPhase = 0;
+            lastBounceIndex = -1;
             door.classList.remove('open');
           }
         } else if (charState.mode === 'bouncing') {
@@ -1212,16 +1241,11 @@
           const localT = cycleT - bounceIndex;
 
           // ============================================================
-          // PLAY BOUNCE SOUND ON EVERY JUMP (each bounce cycle)
-          // Reset currentTime and play to ensure immediate playback
+          // PLAY BOUNCE SOUND ONCE PER JUMP (per bounce cycle)
           // ============================================================
-          // We play the sound when a new bounce cycle starts (localT near 0)
-          // Use a small threshold to detect the start of a new bounce.
-          if (localT < 0.02 && bounceIndex < 5) {
-            try {
-              bounceSound.currentTime = 0;
-              bounceSound.play().catch(e => { /* ignore autoplay errors */ });
-            } catch (e) {}
+          if (bounceIndex !== lastBounceIndex && bounceIndex < 5) {
+            lastBounceIndex = bounceIndex;
+            playBounce();
           }
 
           if (bounceIndex >= 5) {
