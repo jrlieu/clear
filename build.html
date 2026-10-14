@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blueprint · rect · square · global drag</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    body {
+      background: #0d1a22;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh; width: 100vw;
+      overflow: hidden;
+      color: #d8e9f0;
+      display: flex;
+    }
+    .canvas-area { flex: 1; background: #0e1b23; position: relative; overflow: hidden; }
+    canvas { display: block; width: 100%; height: 100%; background: #eaf2f7; }
+    .panel {
+      width: 260px;
+      background: #162a35;
+      padding: 16px 14px;
+      display: flex; flex-direction: column; gap: 14px;
+      overflow-y: auto;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.3);
+      border-left: 1px solid #24424f;
+      flex-shrink: 0;
+    }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-thumb { background: #2e4e60; border-radius: 8px; }
+    .group { display: flex; flex-direction: column; gap: 8px; }
+    .group-title {
+      font-size: 0.65rem; text-transform: uppercase;
+      letter-spacing: 1px; font-weight: 600; color: #7fa3b9;
+      padding-bottom: 2px;
+    }
+    .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .btn {
+      background: #1f3a48; border: none; border-radius: 30px;
+      padding: 8px 14px; font-size: 0.78rem; font-weight: 600;
+      color: #d3e9f5; cursor: pointer; transition: background 0.1s;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 4px; white-space: nowrap; border: 1px solid #2f5062; line-height: 1;
+    }
+    .btn:hover { background: #2e5064; border-color: #4e7a92; }
+    .btn.active { background: #3f7d9e; border-color: #8cc2e0; color: white; }
+    .btn.sm { padding: 6px 10px; font-size: 0.72rem; }
+    .btn-add { background: #2a6b3f; border-color: #3d8a56; color: #d4f5df; }
+    .btn-add:hover { background: #358a50; border-color: #5ab878; }
+    .input-unit {
+      display: flex; align-items: center;
+      background: #0f1e26; border: 1px solid #2d4e60;
+      border-radius: 40px; padding: 0 8px 0 12px; width: 100%;
+    }
+    .input-unit input {
+      background: transparent; border: none; padding: 8px 0;
+      color: white; font-size: 0.82rem; font-weight: 500;
+      width: 100%; outline: none;
+    }
+    .input-unit span { color: #7da3b9; font-size: 0.75rem; margin-left: 4px; }
+    .color-row { display: flex; gap: 8px; }
+    .color-box {
+      flex: 1; display: flex; align-items: center;
+      background: #0f1e26; border: 1px solid #2d4e60;
+      border-radius: 40px; padding: 4px 8px 4px 12px;
+    }
+    .color-box label { font-size: 0.7rem; color: #8eb3c9; margin-right: 6px; }
+    .color-box input[type="color"] {
+      width: 30px; height: 28px; border: none;
+      background: transparent; cursor: pointer; padding: 0;
+    }
+    .divider { height: 1px; background: #24424f; margin: 4px 0; }
+    .btn-danger { background: #4d2a2a; border-color: #7a4545; color: #ffc6c6; }
+    .btn-danger:hover { background: #6b3535; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; height: 18px; }
+    .small-text { font-size: 0.65rem; color: #6d8fa3; text-align: right; line-height: 1.2; }
+    .hint {
+      font-size: 0.7rem; color: #8eb5c9; background: #0f1e26;
+      padding: 8px 12px; border-radius: 14px; line-height: 1.5;
+      border: 1px solid #24424f;
+    }
+    .hint b { color: #9ed3ee; }
+    .count-badge {
+      background: #1a3a4c; border-radius: 20px; padding: 3px 10px;
+      font-size: 0.68rem; color: #9ec8de; font-weight: 600;
+    }
+    .quick-row { display: flex; gap: 5px; }
+    .quick-btn {
+      flex: 1; background: #172d39; border: 1px solid #2a4a5c;
+      border-radius: 20px; padding: 6px 4px; font-size: 0.68rem;
+      color: #b6d3e3; cursor: pointer; text-align: center;
+      font-weight: 500; transition: all 0.1s;
+    }
+    .quick-btn:hover { background: #224355; border-color: #3f6e86; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #0f1e26; border: 1px solid #24424f; border-radius: 14px;
+      padding: 8px 12px;
+      margin-bottom: 4px;
+    }
+    .toggle-row span { font-size: 0.72rem; color: #a7c8d9; }
+    .switch {
+      width: 34px; height: 18px; background: #2d4e60;
+      border-radius: 20px; position: relative; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; background: #8ba9bb;
+      border-radius: 50%; transition: all 0.2s;
+    }
+    .switch.on { background: #3f7d9e; }
+    .switch.on::after { left: 18px; background: #d4eefc; }
+
+    /* ZOOM HUD */
+    .zoom-hud {
+      position: absolute;
+      bottom: 16px; left: 16px;
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(22, 42, 53, 0.92);
+      border: 1px solid #2e4d5e;
+      border-radius: 40px;
+      padding: 6px 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      z-index: 10;
+    }
+    .zoom-hud button {
+      background: #1f3a48; border: 1px solid #2f5062;
+      color: #d3e9f5; border-radius: 50%;
+      width: 30px; height: 30px; font-size: 1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .zoom-hud button:hover { background: #2e5064; }
+    .zoom-hud .zoom-label {
+      font-size: 0.75rem; color: #9ec8de; font-weight: 600;
+      font-family: 'SF Mono', monospace;
+      min-width: 52px; text-align: center;
+    }
+    .zoom-hud .rot-group {
+      display: flex; align-items: center; gap: 4px;
+      background: #0f1e26; border: 1px solid #2f5062;
+      border-radius: 30px; padding: 0 6px 0 12px;
+      height: 30px;
+    }
+    .zoom-hud .rot-group label {
+      font-size: 0.68rem; color: #8eb3c9; font-weight: 600;
+    }
+    .zoom-hud .rot-group input {
+      background: transparent; border: none;
+      color: white; font-size: 0.78rem; font-weight: 600;
+      width: 48px; outline: none;
+      font-family: 'SF Mono', monospace;
+    }
+    .zoom-hud .rot-group span {
+      font-size: 0.68rem; color: #7da3b9;
+    }
+
+    /* EDIT MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(4, 12, 18, 0.6);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #162a35;
+      border-radius: 22px;
+      width: 360px;
+      padding: 20px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px #2e4d5e;
+      color: #d8e9f0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .modal-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      color: #cfe6f2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title .type-tag {
+      font-size: 0.65rem;
+      background: #24566e;
+      color: #b8e0f5;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .modal-field { display: flex; flex-direction: column; gap: 5px; }
+    .modal-field label {
+      font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #7fa3b9; font-weight: 600;
+    }
+    .modal-field .input-unit { padding: 0 8px 0 14px; }
+    .modal-row { display: flex; gap: 8px; }
+    .modal-row .modal-field { flex: 1; }
+    .modal-actions { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+    .modal-actions .btn { flex: 1; padding: 9px 6px; font-size: 0.72rem; min-width: 0; }
+    .btn-apply { background: #3f7d9e; border-color: #6fa8c6; color: white; }
+    .btn-apply:hover { background: #4a8eb3; }
+    .btn-dup { background: #4a5a2a; border-color: #7a9a45; color: #e8f5c6; }
+    .btn-dup:hover { background: #5e7a35; border-color: #9dbf5f; }
+    .btn-del { background: #4d2a2a; border-color: #7a4545; color: #ffc6c6; }
+    .btn-del:hover { background: #6b3535; }
+    .btn-cancel { background: #22323d; border-color: #35505f; }
+    .modal-hint { font-size: 0.65rem; color: #6d8fa3; line-height: 1.4; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="canvas-area">
+    <canvas id="bpCanvas"></canvas>
+    <div class="zoom-hud">
+      <button id="zoomOut">−</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button id="zoomIn">+</button>
+      <div class="rot-group">
+        <label>rot</label>
+        <input type="number" id="rotationInput" value="0" min="-180" max="180" step="1">
+        <span>°</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="group">
+      <div class="group-title">shape type</div>
+      <div class="row">
+        <button id="toolLine" class="btn active">📏 line</button>
+        <button id="toolRect" class="btn">▭ rect</button>
+      </div>
+      <div class="row">
+        <button id="toolSquare" class="btn">⬛ square</button>
+        <button id="toolCircle" class="btn">⭕ circle</button>
+      </div>
+      <div class="row">
+        <button id="toolAngle" class="btn" style="flex:1;">📐 angle</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="group">
+      <div class="group-title">auto size</div>
+
+      <!-- Single size (used by line, square, circle, angle) -->
+      <div id="singleSizeRow">
+        <div class="row" style="gap: 6px;">
+          <div class="input-unit" style="flex:1.5;">
+            <input type="number" id="feetInput" value="10" min="0.1" step="0.5">
+            <span>ft</span>
+          </div>
+          <div class="input-unit" style="flex:1;">
+            <input type="number" id="inchInput" value="0" min="0" max="11" step="1">
+            <span>in</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rect size: width + height -->
+      <div id="rectSizeRow" style="display:none;">
+        <div class="small-text" style="text-align:left; margin-bottom:4px;">width</div>
+        <div class="row" style="gap: 6px;">
+          <div class="input-unit" style="flex:1.5;">
+            <input type="number" id="rectWidthInput" value="12" min="0.1" step="0.5">
+            <span>ft</span>
+          </div>
+          <div class="input-unit" style="flex:1;">
+            <input type="number" id="rectWidthInchInput" value="0" min="0" max="11" step="1">
+            <span>in</span>
+          </div>
+        </div>
+        <div class="small-text" style="text-align:left; margin:6px 0 4px;">height</div>
+        <div class="row" style="gap: 6px;">
+          <div class="input-unit" style="flex:1.5;">
+            <input type="number" id="rectHeightInput" value="8" min="0.1" step="0.5">
+            <span>ft</span>
+          </div>
+          <div class="input-unit" style="flex:1;">
+            <input type="number" id="rectHeightInchInput" value="0" min="0" max="11" step="1">
+            <span>in</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Angle — always visible for ALL shapes -->
+      <div class="small-text" style="text-align:left; margin-top:2px;">angle</div>
+      <div class="row">
+        <div class="input-unit" style="flex:1;">
+          <input type="number" id="angleInput" value="0" min="0" max="359" step="1">
+          <span>deg</span>
+        </div>
+      </div>
+
+      <div class="quick-row">
+        <div class="quick-btn" data-preset="10,0,0">10ft</div>
+        <div class="quick-btn" data-preset="20,0,0">20ft</div>
+        <div class="quick-btn" data-preset="30,0,0">30ft</div>
+      </div>
+      <div class="quick-row">
+        <div class="quick-btn" data-angle="90">90°</div>
+        <div class="quick-btn" data-angle="45">45°</div>
+        <div class="quick-btn" data-angle="30">30°</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="group">
+      <div class="group-title">auto placement</div>
+      <div class="row">
+        <button id="autoAddBtn" class="btn btn-add" style="flex:1;">✨ add to canvas</button>
+        <button id="autoToggle" class="btn sm active">🔁 auto</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="group">
+      <div class="group-title">interaction</div>
+      <div class="toggle-row">
+        <span>🔗 snap to endpoints</span>
+        <div id="snapSwitch" class="switch on"></div>
+      </div>
+      <div class="toggle-row">
+        <span>📏 snap to line body</span>
+        <div id="bodySnapSwitch" class="switch on"></div>
+      </div>
+      <div class="toggle-row">
+        <span>📐 ruler guides</span>
+        <div id="rulerSwitch" class="switch on"></div>
+      </div>
+      <div class="hint">
+        <b>Drag empty space</b> to pan canvas.<br>
+        <b>Drag shape</b> to move · <b>dbl-click</b> to edit.<br>
+        <b>Scroll</b> to zoom.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="group">
+      <div class="group-title">style</div>
+      <div class="color-row">
+        <div class="color-box">
+          <label>line</label>
+          <input type="color" id="strokeColor" value="#1e3d5e">
+        </div>
+        <div class="color-box">
+          <label>fill</label>
+          <input type="color" id="fillColor" value="#b3d9f0">
+        </div>
+      </div>
+      <div class="row">
+        <button id="fillToggle" class="btn sm active">🟦 fill on</button>
+        <button id="strokeWidthBtn" class="btn sm">🖌️ 2px</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="group">
+      <div class="row" style="justify-content: space-between;">
+        <button id="clearBtn" class="btn sm btn-danger">🗑️ clear all</button>
+        <span class="count-badge" id="countBadge">0 shapes</span>
+      </div>
+      <div class="small-text">left-drag empty space to pan</div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-title">
+        <span>✏️ edit shape</span>
+        <span class="type-tag" id="editTypeTag">line</span>
+      </div>
+
+      <!-- Single length (line, square, circle) -->
+      <div id="editSingleLengthField">
+        <div class="modal-field">
+          <label>length</label>
+          <div class="input-unit">
+            <input type="number" id="editLength" min="0.1" step="0.5">
+            <span>ft</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rect: width + height -->
+      <div id="editRectFields" style="display:none;">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label>width</label>
+            <div class="input-unit">
+              <input type="number" id="editRectWidth" min="0.1" step="0.5">
+              <span>ft</span>
+            </div>
+          </div>
+          <div class="modal-field">
+            <label>height</label>
+            <div class="input-unit">
+              <input type="number" id="editRectHeight" min="0.1" step="0.5">
+              <span>ft</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Angle — ALWAYS visible for every shape -->
+      <div class="modal-field" id="editAngleField">
+        <label>angle</label>
+        <div class="input-unit">
+          <input type="number" id="editAngle" min="0" max="359" step="1">
+          <span>deg</span>
+        </div>
+      </div>
+
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>line color</label>
+          <div class="input-unit" style="padding: 3px 8px 3px 14px;">
+            <input type="color" id="editStrokeColor" style="width: 100%; height: 28px; padding: 0; border: none; background: transparent; cursor: pointer;">
+          </div>
+        </div>
+        <div class="modal-field" id="editFillField">
+          <label>fill color</label>
+          <div class="input-unit" style="padding: 3px 8px 3px 14px;">
+            <input type="color" id="editFillColor" style="width: 100%; height: 28px; padding: 0; border: none; background: transparent; cursor: pointer;">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-del" id="editDelete">🗑️</button>
+        <button class="btn btn-dup" id="editDuplicate">📋 duplicate</button>
+        <button class="btn btn-cancel" id="editCancel">cancel</button>
+        <button class="btn btn-apply" id="editApply">apply</button>
+      </div>
+      <div class="modal-hint">edit numbers, then click apply</div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('bpCanvas');
+      const ctx = canvas.getContext('2d');
+      const container = canvas.parentElement;
+
+      let zoom = 1;
+      let panX = 0, panY = 0;
+      let rotation = 0;
+      const MIN_ZOOM = 0.15, MAX_ZOOM = 6;
+      let isPanning = false;
+      let panStart = { x: 0, y: 0 };
+      let panStartOffset = { x: 0, y: 0 };
+
+      const BASE_PX_PER_FT = 28;
+      const SNAP_RADIUS_FT = 0.6;
+      const BODY_SNAP_RADIUS_FT = 0.5;
+      const RULER_TOLERANCE_FT = 0.08;
+
+      let elements = [];
+      let currentTool = 'line';
+      let autoMode = true;
+      let placementIndex = 0;
+      let snapEnabled = true;
+      let bodySnapEnabled = true;
+      let rulerEnabled = true;
+
+      let dragTarget = null;
+      let dragOffset = { x: 0, y: 0 };
+      let hoverTarget = null;
+      let activeGuides = [];
+
+      let editingElement = null;
+
+      let strokeColor = '#1e3d5e';
+      let fillColor = '#b3d9f0';
+      let fillEnabled = true;
+      let lineWidth = 2;
+
+      let mouseFt = { x: 0, y: 0 };
+
+      const toolLine = document.getElementById('toolLine');
+      const toolRect = document.getElementById('toolRect');
+      const toolSquare = document.getElementById('toolSquare');
+      const toolCircle = document.getElementById('toolCircle');
+      const toolAngle = document.getElementById('toolAngle');
+      const feetInput = document.getElementById('feetInput');
+      const inchInput = document.getElementById('inchInput');
+      const angleInput = document.getElementById('angleInput');
+      const singleSizeRow = document.getElementById('singleSizeRow');
+      const rectSizeRow = document.getElementById('rectSizeRow');
+      const rectWidthInput = document.getElementById('rectWidthInput');
+      const rectWidthInchInput = document.getElementById('rectWidthInchInput');
+      const rectHeightInput = document.getElementById('rectHeightInput');
+      const rectHeightInchInput = document.getElementById('rectHeightInchInput');
+      const autoAddBtn = document.getElementById('autoAddBtn');
+      const autoToggle = document.getElementById('autoToggle');
+      const snapSwitch = document.getElementById('snapSwitch');
+      const bodySnapSwitch = document.getElementById('bodySnapSwitch');
+      const rulerSwitch = document.getElementById('rulerSwitch');
+      const strokeColorInput = document.getElementById('strokeColor');
+      const fillColorInput = document.getElementById('fillColor');
+      const fillToggle = document.getElementById('fillToggle');
+      const strokeWidthBtn = document.getElementById('strokeWidthBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const countBadge = document.getElementById('countBadge');
+      const quickBtns = document.querySelectorAll('.quick-btn');
+
+      const zoomIn = document.getElementById('zoomIn');
+      const zoomOut = document.getElementById('zoomOut');
+      const zoomLabel = document.getElementById('zoomLabel');
+      const rotationInput = document.getElementById('rotationInput');
+
+      const editModal = document.getElementById('editModal');
+      const editTypeTag = document.getElementById('editTypeTag');
+      const editLength = document.getElementById('editLength');
+      const editSingleLengthField = document.getElementById('editSingleLengthField');
+      const editRectFields = document.getElementById('editRectFields');
+      const editRectWidth = document.getElementById('editRectWidth');
+      const editRectHeight = document.getElementById('editRectHeight');
+      const editAngle = document.getElementById('editAngle');
+      const editAngleField = document.getElementById('editAngleField');
+      const editStrokeColor = document.getElementById('editStrokeColor');
+      const editFillColor = document.getElementById('editFillColor');
+      const editFillField = document.getElementById('editFillField');
+      const editApply = document.getElementById('editApply');
+      const editCancel = document.getElementById('editCancel');
+      const editDelete = document.getElementById('editDelete');
+      const editDuplicate = document.getElementById('editDuplicate');
+
+      function resizeCanvas() {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        draw();
+      }
+
+      function ppf() { return BASE_PX_PER_FT * zoom; }
+
+      function ftToScreen(fx, fy) {
+        const sx = fx * ppf();
+        const sy = fy * ppf();
+        const rad = rotation * Math.PI / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        return {
+          x: sx * cos - sy * sin + panX,
+          y: sx * sin + sy * cos + panY,
+        };
+      }
+
+      function screenToFt(px, py) {
+        const rad = -rotation * Math.PI / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        const dx = px - panX;
+        const dy = py - panY;
+        return {
+          x: (dx * cos - dy * sin) / ppf(),
+          y: (dx * sin + dy * cos) / ppf(),
+        };
+      }
+
+      function ftToCanvas(fx, fy) { return ftToScreen(fx, fy); }
+      function canvasToFt(px, py) { return screenToFt(px, py); }
+
+      function getSingleLength() {
+        const ft = parseFloat(feetInput.value) || 0;
+        const inch = parseFloat(inchInput.value) || 0;
+        return ft + inch / 12;
+      }
+      function getRectWidth() {
+        const ft = parseFloat(rectWidthInput.value) || 0;
+        const inch = parseFloat(rectWidthInchInput.value) || 0;
+        return ft + inch / 12;
+      }
+      function getRectHeight() {
+        const ft = parseFloat(rectHeightInput.value) || 0;
+        const inch = parseFloat(rectHeightInchInput.value) || 0;
+        return ft + inch / 12;
+      }
+
+      function getAngleRad() {
+        return (parseFloat(angleInput.value) || 0) * Math.PI / 180;
+      }
+      function pointAtAngle(start, rad, lenFt) {
+        return { x: start.x + Math.cos(rad) * lenFt, y: start.y + Math.sin(rad) * lenFt };
+      }
+
+      function updateCount() {
+        countBadge.textContent = `${elements.length} shape${elements.length !== 1 ? 's' : ''}`;
+      }
+      function updateZoomLabel() {
+        zoomLabel.textContent = Math.round(zoom * 100) + '%';
+      }
+
+      function getElementBounds(el) {
+        const xs = el.points.map(p => p.x);
+        const ys = el.points.map(p => p.y);
+        return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+      }
+
+      function pointNearLine(pt, a, b, distFt) {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const lenSq = dx*dx + dy*dy;
+        if (lenSq < 1e-9) return Math.hypot(pt.x - a.x, pt.y - a.y) < distFt;
+        let t = ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        const projX = a.x + t * dx, projY = a.y + t * dy;
+        return Math.hypot(pt.x - projX, pt.y - projY) < distFt;
+      }
+
+      function closestPointOnSegment(pt, a, b) {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const lenSq = dx*dx + dy*dy;
+        if (lenSq < 1e-9) return { x: a.x, y: a.y, t: 0 };
+        let t = ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        return { x: a.x + t * dx, y: a.y + t * dy, t };
+      }
+
+      // Get rotated corner points of a rect/square element (in world ft)
+      function getRectCorners(el) {
+        const [p1, p2] = el.points;
+        // p1 is origin corner; direction from angle
+        const ang = el.angleRad || 0;
+        const w = Math.abs(p2.x - p1.x); // width along axis at angle 0
+        const h = Math.abs(p2.y - p1.y); // height along axis at angle 0
+        // Actually we store p1 as top-left corner, p2 as bottom-right at angle 0.
+        // For rotation we treat the rect as defined by its width/height and p1 as top-left,
+        // then rotate around p1.
+        const cos = Math.cos(ang), sin = Math.sin(ang);
+        // Local corners (before rotation)
+        const localCorners = [
+          { x: 0, y: 0 },
+          { x: w, y: 0 },
+          { x: w, y: h },
+          { x: 0, y: h },
+        ];
+        // Rotate around p1 and translate
+        return localCorners.map(c => ({
+          x: p1.x + c.x * cos - c.y * sin,
+          y: p1.y + c.x * sin + c.y * cos,
+        }));
+      }
+
+      function hitTest(el, pt) {
+        const hitRadius = Math.max(0.15, 8 / ppf());
+        if (el.type === 'line') {
+          return pointNearLine(pt, el.points[0], el.points[1], hitRadius);
+        }
+        if (el.type === 'angle') {
+          return pointNearLine(pt, el.points[0], el.points[1], hitRadius) ||
+                 pointNearLine(pt, el.points[0], el.points[2], hitRadius);
+        }
+        if (el.type === 'rect' || el.type === 'square') {
+          const corners = getRectCorners(el);
+          // check each edge
+          for (let i = 0; i < 4; i++) {
+            const a = corners[i], b = corners[(i + 1) % 4];
+            if (pointNearLine(pt, a, b, hitRadius)) return true;
+          }
+          // inside test (for filled)
+          if (el.filled) {
+            // point-in-polygon
+            let inside = false;
+            for (let i = 0, j = 3; i < 4; j = i++) {
+              const xi = corners[i].x, yi = corners[i].y;
+              const xj = corners[j].x, yj = corners[j].y;
+              const intersect = ((yi > pt.y) !== (yj > pt.y)) &&
+                (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
+              if (intersect) inside = !inside;
+            }
+            if (inside) return true;
+          }
+          return false;
+        }
+        if (el.type === 'circle') {
+          const c = el.points[0], e = el.points[1];
+          const r = Math.hypot(e.x - c.x, e.y - c.y);
+          const d = Math.hypot(pt.x - c.x, pt.y - c.y);
+          if (Math.abs(d - r) < hitRadius) return true;
+          if (el.filled && d < r) return true;
+          return false;
+        }
+        return false;
+      }
+
+      function findHitElement(pt) {
+        for (let i = elements.length - 1; i >= 0; i--) {
+          if (hitTest(elements[i], pt)) return elements[i];
+        }
+        return null;
+      }
+
+      function getAllSnapTargets(excludeEl) {
+        const endpoints = [];
+        const bodies = [];
+        elements.forEach(el => {
+          if (el === excludeEl) return;
+          if (el.type === 'line') {
+            endpoints.push({ x: el.points[0].x, y: el.points[0].y });
+            endpoints.push({ x: el.points[1].x, y: el.points[1].y });
+            bodies.push({ a: el.points[0], b: el.points[1] });
+          } else if (el.type === 'angle') {
+            endpoints.push({ x: el.points[0].x, y: el.points[0].y });
+            endpoints.push({ x: el.points[1].x, y: el.points[1].y });
+            endpoints.push({ x: el.points[2].x, y: el.points[2].y });
+            bodies.push({ a: el.points[0], b: el.points[1] });
+            bodies.push({ a: el.points[0], b: el.points[2] });
+          } else if (el.type === 'rect' || el.type === 'square') {
+            const corners = getRectCorners(el);
+            corners.forEach(c => endpoints.push({ x: c.x, y: c.y }));
+            for (let i = 0; i < 4; i++) {
+              bodies.push({ a: corners[i], b: corners[(i + 1) % 4] });
+            }
+          } else if (el.type === 'circle') {
+            endpoints.push({ x: el.points[0].x, y: el.points[0].y });
+          }
+        });
+        return { endpoints, bodies };
+      }
+
+      function applySnap(el, proposedPoints) {
+        if (!snapEnabled && !bodySnapEnabled) return { points: proposedPoints, snappedTo: null };
+        const targets = getAllSnapTargets(el);
+        let bestSnap = null;
+        let bestDist = Infinity;
+
+        if (snapEnabled) {
+          proposedPoints.forEach(sp => {
+            targets.endpoints.forEach(ep => {
+              const d = Math.hypot(sp.x - ep.x, sp.y - ep.y);
+              if (d < SNAP_RADIUS_FT && d < bestDist) {
+                bestDist = d;
+                bestSnap = { targetX: ep.x, targetY: ep.y, srcX: sp.x, srcY: sp.y };
+              }
+            });
+          });
+        }
+
+        if (!bestSnap && bodySnapEnabled) {
+          proposedPoints.forEach(sp => {
+            targets.bodies.forEach(bd => {
+              const cp = closestPointOnSegment(sp, bd.a, bd.b);
+              const d = Math.hypot(sp.x - cp.x, sp.y - cp.y);
+              if (d < BODY_SNAP_RADIUS_FT && d < bestDist) {
+                bestDist = d;
+                bestSnap = { targetX: cp.x, targetY: cp.y, srcX: sp.x, srcY: sp.y };
+              }
+            });
+          });
+        }
+
+        if (!bestSnap) return { points: proposedPoints, snappedTo: null };
+
+        const dx = bestSnap.targetX - bestSnap.srcX;
+        const dy = bestSnap.targetY - bestSnap.srcY;
+        const points = proposedPoints.map(p => ({ x: p.x + dx, y: p.y + dy }));
+        return { points, snappedTo: { x: bestSnap.targetX, y: bestSnap.targetY } };
+      }
+
+      function addElement(type, points, filled = true, angleRad = 0) {
+        elements.push({
+          type,
+          points: points.map(p => ({ x: p.x, y: p.y })),
+          color: strokeColor,
+          fillColor: fillColor,
+          width: lineWidth,
+          filled: filled && fillEnabled,
+          angleRad: angleRad,
+        });
+        updateCount();
+      }
+
+      function getAutoPosition() {
+        const worldW = canvas.width / ppf();
+        const worldH = canvas.height / ppf();
+        const marginFt = 2 / zoom;
+        const cols = 3;
+        const col = placementIndex % cols;
+        const row = Math.floor(placementIndex / cols) % 3;
+        const cellW = (worldW - marginFt * 2) / cols;
+        const cellH = (worldH - marginFt * 2) / 3;
+        return {
+          x: -panX / ppf() + marginFt + col * cellW + cellW * 0.15,
+          y: -panY / ppf() + marginFt + row * cellH + cellH * 0.15,
+        };
+      }
+
+      function autoPlaceShape() {
+        const ang = getAngleRad();
+        const pos = getAutoPosition();
+        placementIndex++;
+
+        let pts, filled = false;
+
+        if (currentTool === 'line') {
+          const len = getSingleLength();
+          if (len < 0.01) return;
+          pts = [pos, pointAtAngle(pos, ang, len)];
+        } else if (currentTool === 'rect') {
+          const w = getRectWidth();
+          const h = getRectHeight();
+          if (w < 0.01 || h < 0.01) return;
+          pts = [pos, { x: pos.x + w, y: pos.y + h }];
+          filled = true;
+        } else if (currentTool === 'square') {
+          const len = getSingleLength();
+          if (len < 0.01) return;
+          pts = [pos, { x: pos.x + len, y: pos.y + len }];
+          filled = true;
+        } else if (currentTool === 'circle') {
+          const len = getSingleLength();
+          if (len < 0.01) return;
+          pts = [pos, { x: pos.x + len, y: pos.y }];
+          filled = true;
+        } else if (currentTool === 'angle') {
+          const len = getSingleLength();
+          if (len < 0.01) return;
+          pts = [pos, pointAtAngle(pos, ang, len), pointAtAngle(pos, ang + Math.PI / 3, len)];
+        }
+
+        const result = applySnap(null, pts);
+        addElement(currentTool, result.points, filled, ang);
+        draw();
+      }
+
+      function computeGuides(el) {
+        if (!rulerEnabled) return [];
+        const guides = [];
+        let draggedXs = [];
+        let draggedYs = [];
+
+        // For rotated rects/squares, use corner points. For others, use their points.
+        if (el.type === 'rect' || el.type === 'square') {
+          const corners = getRectCorners(el);
+          corners.forEach(c => { draggedXs.push(c.x); draggedYs.push(c.y); });
+        } else {
+          el.points.forEach(p => { draggedXs.push(p.x); draggedYs.push(p.y); });
+        }
+
+        const refXs = new Set();
+        const refYs = new Set();
+        elements.forEach(other => {
+          if (other === el) return;
+          if (other.type === 'rect' || other.type === 'square') {
+            const corners = getRectCorners(other);
+            corners.forEach(c => { refXs.add(c.x); refYs.add(c.y); });
+          } else {
+            other.points.forEach(p => {
+              refXs.add(p.x);
+              refYs.add(p.y);
+            });
+          }
+        });
+
+        const usedRefXs = new Set();
+        const usedRefYs = new Set();
+
+        draggedXs.forEach((dx) => {
+          refXs.forEach(rx => {
+            if (Math.abs(dx - rx) < RULER_TOLERANCE_FT && !usedRefXs.has(rx)) {
+              usedRefXs.add(rx);
+              guides.push({ axis: 'x', value: rx });
+            }
+          });
+        });
+        draggedYs.forEach((dy) => {
+          refYs.forEach(ry => {
+            if (Math.abs(dy - ry) < RULER_TOLERANCE_FT && !usedRefYs.has(ry)) {
+              usedRefYs.add(ry);
+              guides.push({ axis: 'y', value: ry });
+            }
+          });
+        });
+
+        return guides;
+      }
+
+      function drawGuides(guides) {
+        if (!guides.length) return;
+        const w = canvas.width, h = canvas.height;
+        ctx.save();
+        guides.forEach(g => {
+          ctx.strokeStyle = 'rgba(255, 60, 140, 0.85)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([6, 4]);
+          if (g.axis === 'x') {
+            const sx = ftToScreen(g.value, 0).x;
+            ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, h); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(255, 60, 140, 0.95)';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText(`${g.value.toFixed(1)} ft`, sx + 4, 14);
+          } else {
+            const sy = ftToScreen(0, g.value).y;
+            ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(w, sy); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(255, 60, 140, 0.95)';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText(`${g.value.toFixed(1)} ft`, 4, sy - 4);
+          }
+        });
+        ctx.restore();
+      }
+
+      function drawRotatedRect(el, isHover, isDrag) {
+        ctx.save();
+        ctx.strokeStyle = el.color;
+        ctx.lineWidth = el.width * Math.max(0.6, Math.min(1.5, Math.sqrt(zoom))) + (isDrag ? 1.5 : 0);
+        ctx.fillStyle = el.fillColor;
+        if (isHover || isDrag) {
+          ctx.shadowColor = 'rgba(80, 170, 220, 0.6)';
+          ctx.shadowBlur = 10;
+        }
+        const corners = getRectCorners(el).map(c => ftToScreen(c.x, c.y));
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+        ctx.closePath();
+        if (el.filled) ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function draw() {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // GRID
+        ctx.save();
+        const stepPx = ppf();
+        const corners = [
+          screenToFt(0, 0), screenToFt(w, 0),
+          screenToFt(0, h), screenToFt(w, h),
+        ];
+        let minWX = Math.min(...corners.map(c => c.x));
+        let maxWX = Math.max(...corners.map(c => c.x));
+        let minWY = Math.min(...corners.map(c => c.y));
+        let maxWY = Math.max(...corners.map(c => c.y));
+
+        if (stepPx >= 6) {
+          ctx.strokeStyle = '#d9e5ee';
+          ctx.lineWidth = 0.5;
+          const startX = Math.floor(minWX), endX = Math.ceil(maxWX);
+          const startY = Math.floor(minWY), endY = Math.ceil(maxWY);
+          for (let x = startX; x <= endX; x++) {
+            const p1 = ftToScreen(x, minWY), p2 = ftToScreen(x, maxWY);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+          }
+          for (let y = startY; y <= endY; y++) {
+            const p1 = ftToScreen(minWX, y), p2 = ftToScreen(maxWX, y);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+          }
+        }
+        const step5 = ppf() * 5;
+        if (step5 >= 8) {
+          ctx.strokeStyle = '#b7cfdf';
+          ctx.lineWidth = 0.8;
+          const startX5 = Math.floor(minWX / 5) * 5, endX5 = Math.ceil(maxWX / 5) * 5;
+          const startY5 = Math.floor(minWY / 5) * 5, endY5 = Math.ceil(maxWY / 5) * 5;
+          for (let x = startX5; x <= endX5; x += 5) {
+            const p1 = ftToScreen(x, minWY), p2 = ftToScreen(x, maxWY);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+          }
+          for (let y = startY5; y <= endY5; y += 5) {
+            const p1 = ftToScreen(minWX, y), p2 = ftToScreen(maxWX, y);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+          }
+        }
+        ctx.restore();
+
+        // origin
+        ctx.save();
+        const o = ftToScreen(0, 0);
+        ctx.strokeStyle = '#8eb3c9';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(o.x - 6, o.y); ctx.lineTo(o.x + 6, o.y);
+        ctx.moveTo(o.x, o.y - 6); ctx.lineTo(o.x, o.y + 6);
+        ctx.stroke();
+        ctx.restore();
+
+        // elements
+        elements.forEach(el => {
+          const isHover = (el === hoverTarget && !dragTarget);
+          const isDrag = (el === dragTarget);
+
+          if (el.type === 'rect' || el.type === 'square') {
+            drawRotatedRect(el, isHover, isDrag);
+            return;
+          }
+
+          ctx.save();
+          ctx.strokeStyle = el.color;
+          ctx.lineWidth = el.width * Math.max(0.6, Math.min(1.5, Math.sqrt(zoom))) + (isDrag ? 1.5 : 0);
+          ctx.fillStyle = el.fillColor;
+          if (isHover || isDrag) {
+            ctx.shadowColor = 'rgba(80, 170, 220, 0.6)';
+            ctx.shadowBlur = 10;
+          }
+
+          if (el.type === 'line') {
+            const p1 = ftToScreen(el.points[0].x, el.points[0].y);
+            const p2 = ftToScreen(el.points[1].x, el.points[1].y);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+          } else if (el.type === 'circle') {
+            const c = ftToScreen(el.points[0].x, el.points[0].y);
+            const e = ftToScreen(el.points[1].x, el.points[1].y);
+            const rad = Math.hypot(e.x - c.x, e.y - c.y);
+            ctx.beginPath(); ctx.arc(c.x, c.y, rad, 0, 2 * Math.PI);
+            if (el.filled) ctx.fill();
+            ctx.stroke();
+          } else if (el.type === 'angle') {
+            const v = ftToScreen(el.points[0].x, el.points[0].y);
+            const r1 = ftToScreen(el.points[1].x, el.points[1].y);
+            const r2 = ftToScreen(el.points[2].x, el.points[2].y);
+            ctx.beginPath();
+            ctx.moveTo(r1.x, r1.y);
+            ctx.lineTo(v.x, v.y);
+            ctx.lineTo(r2.x, r2.y);
+            ctx.stroke();
+            const a1 = Math.atan2(r1.y - v.y, r1.x - v.x);
+            const a2 = Math.atan2(r2.y - v.y, r2.x - v.x);
+            let start = Math.min(a1, a2), end = Math.max(a1, a2);
+            if (end - start > Math.PI) {
+              if (a1 > a2) { start = a2; end = a1 + 2 * Math.PI; }
+              else { start = a1; end = a2 + 2 * Math.PI; }
+            }
+            const arcR = Math.max(12, Math.min(35, 20 * Math.sqrt(zoom)));
+            ctx.beginPath();
+            ctx.arc(v.x, v.y, arcR, start, end);
+            ctx.strokeStyle = el.color;
+            ctx.lineWidth = el.width * Math.max(0.6, Math.min(1.5, Math.sqrt(zoom))) * 0.8;
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+
+        // snap indicators
+        if (dragTarget && (snapEnabled || bodySnapEnabled)) {
+          const targets = getAllSnapTargets(dragTarget);
+          if (snapEnabled) {
+            targets.endpoints.forEach(ep => {
+              let near = false;
+              dragTarget.points.forEach(sp => {
+                if (Math.hypot(sp.x - ep.x, sp.y - ep.y) < SNAP_RADIUS_FT) near = true;
+              });
+              if (near) {
+                const c = ftToScreen(ep.x, ep.y);
+                ctx.save();
+                ctx.strokeStyle = '#f0a030';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(c.x, c.y, 7, 0, 2 * Math.PI); ctx.stroke();
+                ctx.restore();
+              }
+            });
+          }
+          if (bodySnapEnabled) {
+            targets.bodies.forEach(bd => {
+              dragTarget.points.forEach(sp => {
+                const cp = closestPointOnSegment(sp, bd.a, bd.b);
+                if (Math.hypot(sp.x - cp.x, sp.y - cp.y) < BODY_SNAP_RADIUS_FT) {
+                  const c = ftToScreen(cp.x, cp.y);
+                  ctx.save();
+                  ctx.strokeStyle = '#3fae6e';
+                  ctx.lineWidth = 2;
+                  ctx.beginPath(); ctx.arc(c.x, c.y, 6, 0, 2 * Math.PI); ctx.stroke();
+                  ctx.restore();
+                }
+              });
+            });
+          }
+        }
+
+        if (dragTarget && rulerEnabled) {
+          const guides = computeGuides(dragTarget);
+          activeGuides = guides;
+          drawGuides(guides);
+        }
+      }
+
+      function clampZoom(z) { return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)); }
+
+      function setZoom(newZoom, centerPx, centerPy) {
+        const oldZoom = zoom;
+        newZoom = clampZoom(newZoom);
+        if (newZoom === oldZoom) return;
+        if (centerPx === undefined) { centerPx = canvas.width / 2; centerPy = canvas.height / 2; }
+        const worldBefore = screenToFt(centerPx, centerPy);
+        zoom = newZoom;
+        const rad = rotation * Math.PI / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        const sx = worldBefore.x * ppf();
+        const sy = worldBefore.y * ppf();
+        panX = centerPx - (sx * cos - sy * sin);
+        panY = centerPy - (sx * sin + sy * cos);
+        updateZoomLabel();
+        draw();
+      }
+
+      zoomIn.addEventListener('click', () => setZoom(zoom * 1.25));
+      zoomOut.addEventListener('click', () => setZoom(zoom / 1.25));
+
+      rotationInput.addEventListener('change', () => {
+        const val = parseFloat(rotationInput.value);
+        if (isNaN(val)) return;
+        rotation = val;
+        draw();
+      });
+      rotationInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') rotationInput.blur();
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        setZoom(zoom * factor, cx, cy);
+      }, { passive: false });
+
+      function getMouseFtFromEvent(e) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+        return screenToFt(cx, cy);
+      }
+      function getMouseScreen(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (e.clientX - rect.left) * (canvas.width / rect.width),
+          y: (e.clientY - rect.top) * (canvas.height / rect.height),
+        };
+      }
+
+      function onMouseMove(e) {
+        const ft = getMouseFtFromEvent(e);
+        mouseFt = ft;
+
+        if (isPanning) {
+          const sp = getMouseScreen(e);
+          panX = panStartOffset.x + (sp.x - panStart.x);
+          panY = panStartOffset.y + (sp.y - panStart.y);
+          draw();
+          return;
+        }
+
+        if (dragTarget) {
+          const dx = ft.x - dragOffset.x;
+          const dy = ft.y - dragOffset.y;
+          const rawPoints = dragTarget.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+          const result = applySnap(dragTarget, rawPoints);
+          dragTarget.points = result.points;
+          dragOffset = ft;
+          draw();
+        } else {
+          const hit = findHitElement(ft);
+          if (hit !== hoverTarget) {
+            hoverTarget = hit;
+            canvas.style.cursor = hit ? 'grab' : 'default';
+            draw();
+          }
+        }
+      }
+
+      function onMouseDown(e) {
+        if (e.button !== 0) return;
+        const ft = getMouseFtFromEvent(e);
+        const hit = findHitElement(ft);
+
+        if (hit) {
+          dragTarget = hit;
+          dragOffset = ft;
+          canvas.style.cursor = 'grabbing';
+          draw();
+        } else {
+          isPanning = true;
+          const sp = getMouseScreen(e);
+          panStart = sp;
+          panStartOffset = { x: panX, y: panY };
+          canvas.style.cursor = 'grabbing';
+        }
+      }
+
+      function onMouseUp() {
+        if (isPanning) {
+          isPanning = false;
+          canvas.style.cursor = hoverTarget ? 'grab' : 'default';
+          return;
+        }
+        if (dragTarget) {
+          dragTarget = null;
+          activeGuides = [];
+          canvas.style.cursor = hoverTarget ? 'grab' : 'default';
+          draw();
+        }
+      }
+
+      function onMouseLeave() {
+        if (dragTarget) dragTarget = null;
+        if (isPanning) isPanning = false;
+        hoverTarget = null;
+        activeGuides = [];
+        canvas.style.cursor = 'default';
+        draw();
+      }
+
+      function onDoubleClick(e) {
+        const ft = getMouseFtFromEvent(e);
+        const hit = findHitElement(ft);
+        if (!hit) return;
+        editingElement = hit;
+        openEditModal(hit);
+      }
+
+      function openEditModal(el) {
+        editTypeTag.textContent = el.type;
+
+        editSingleLengthField.style.display = 'none';
+        editRectFields.style.display = 'none';
+        editAngleField.style.display = 'none';
+
+        if (el.type === 'line') {
+          const len = Math.hypot(el.points[1].x - el.points[0].x, el.points[1].y - el.points[0].y);
+          const ang = Math.atan2(el.points[1].y - el.points[0].y, el.points[1].x - el.points[0].x) * 180 / Math.PI;
+          editLength.value = len.toFixed(2);
+          editAngle.value = Math.round(((ang % 360) + 360) % 360);
+          editSingleLengthField.style.display = '';
+          editAngleField.style.display = '';
+        } else if (el.type === 'rect') {
+          const w = Math.abs(el.points[1].x - el.points[0].x);
+          const h = Math.abs(el.points[1].y - el.points[0].y);
+          editRectWidth.value = w.toFixed(2);
+          editRectHeight.value = h.toFixed(2);
+          const angDeg = (el.angleRad || 0) * 180 / Math.PI;
+          editAngle.value = Math.round(((angDeg % 360) + 360) % 360);
+          editRectFields.style.display = '';
+          editAngleField.style.display = '';
+        } else if (el.type === 'square') {
+          const len = Math.abs(el.points[1].x - el.points[0].x);
+          editLength.value = len.toFixed(2);
+          const angDeg = (el.angleRad || 0) * 180 / Math.PI;
+          editAngle.value = Math.round(((angDeg % 360) + 360) % 360);
+          editSingleLengthField.style.display = '';
+          editAngleField.style.display = '';
+        } else if (el.type === 'circle') {
+          const r = Math.hypot(el.points[1].x - el.points[0].x, el.points[1].y - el.points[0].y);
+          editLength.value = r.toFixed(2);
+          editAngle.value = 0;
+          editSingleLengthField.style.display = '';
+          editAngleField.style.display = '';
+        } else if (el.type === 'angle') {
+          const len1 = Math.hypot(el.points[1].x - el.points[0].x, el.points[1].y - el.points[0].y);
+          const ang1 = Math.atan2(el.points[1].y - el.points[0].y, el.points[1].x - el.points[0].x) * 180 / Math.PI;
+          editLength.value = len1.toFixed(2);
+          editAngle.value = Math.round(((ang1 % 360) + 360) % 360);
+          editSingleLengthField.style.display = '';
+          editAngleField.style.display = '';
+        }
+
+        editStrokeColor.value = el.color;
+        editFillColor.value = el.fillColor || '#b3d9f0';
+        editFillField.style.display = (el.type === 'line' || el.type === 'angle') ? 'none' : '';
+        editModal.classList.add('open');
+        setTimeout(() => {
+          if (el.type === 'rect') editRectWidth.focus();
+          else editLength.focus();
+        }, 50);
+      }
+
+      function closeEditModal() {
+        editModal.classList.remove('open');
+        editingElement = null;
+      }
+
+      function applyEdit() {
+        if (!editingElement) return;
+        const el = editingElement;
+        const newAng = (parseFloat(editAngle.value) || 0) * Math.PI / 180;
+
+        if (el.type === 'line') {
+          const newLen = parseFloat(editLength.value) || 1;
+          el.points[1] = pointAtAngle(el.points[0], newAng, newLen);
+        } else if (el.type === 'rect') {
+          const newW = parseFloat(editRectWidth.value) || 1;
+          const newH = parseFloat(editRectHeight.value) || 1;
+          el.points[1] = { x: el.points[0].x + newW, y: el.points[0].y + newH };
+          el.angleRad = newAng;
+        } else if (el.type === 'square') {
+          const newLen = parseFloat(editLength.value) || 1;
+          el.points[1] = { x: el.points[0].x + newLen, y: el.points[0].y + newLen };
+          el.angleRad = newAng;
+        } else if (el.type === 'circle') {
+          const newLen = parseFloat(editLength.value) || 1;
+          el.points[1] = { x: el.points[0].x + newLen, y: el.points[0].y };
+          el.angleRad = newAng;
+        } else if (el.type === 'angle') {
+          const newLen = parseFloat(editLength.value) || 1;
+          el.points[1] = pointAtAngle(el.points[0], newAng, newLen);
+          el.points[2] = pointAtAngle(el.points[0], newAng + Math.PI / 3, newLen);
+        }
+
+        el.color = editStrokeColor.value;
+        el.fillColor = editFillColor.value;
+        closeEditModal();
+        draw();
+      }
+
+      function deleteEditing() {
+        if (!editingElement) return;
+        const idx = elements.indexOf(editingElement);
+        if (idx >= 0) elements.splice(idx, 1);
+        updateCount();
+        closeEditModal();
+        draw();
+      }
+
+      function duplicateEditing() {
+        if (!editingElement) return;
+        const src = editingElement;
+        const OFFSET_FT = 2;
+        const newPoints = src.points.map(p => ({ x: p.x + OFFSET_FT, y: p.y + OFFSET_FT }));
+        const dup = {
+          type: src.type, points: newPoints,
+          color: editStrokeColor.value, fillColor: editFillColor.value,
+          width: src.width, filled: src.filled,
+          angleRad: src.angleRad || 0,
+        };
+        const result = applySnap(dup, dup.points);
+        dup.points = result.points;
+        elements.push(dup);
+        updateCount();
+        closeEditModal();
+        draw();
+      }
+
+      editApply.addEventListener('click', applyEdit);
+      editCancel.addEventListener('click', closeEditModal);
+      editDelete.addEventListener('click', deleteEditing);
+      editDuplicate.addEventListener('click', duplicateEditing);
+      editModal.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
+      [editLength, editRectWidth, editRectHeight, editAngle].forEach(inp => {
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyEdit(); });
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && editModal.classList.contains('open')) closeEditModal();
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd' && editModal.classList.contains('open')) {
+          e.preventDefault();
+          duplicateEditing();
+        }
+      });
+
+      function updateSizeRows() {
+        if (currentTool === 'rect') {
+          singleSizeRow.style.display = 'none';
+          rectSizeRow.style.display = '';
+        } else {
+          singleSizeRow.style.display = '';
+          rectSizeRow.style.display = 'none';
+        }
+      }
+
+      function setTool(tool) {
+        currentTool = tool;
+        [toolLine, toolRect, toolSquare, toolCircle, toolAngle].forEach(b => b.classList.remove('active'));
+        if (tool === 'line') toolLine.classList.add('active');
+        if (tool === 'rect') toolRect.classList.add('active');
+        if (tool === 'square') toolSquare.classList.add('active');
+        if (tool === 'circle') toolCircle.classList.add('active');
+        if (tool === 'angle') toolAngle.classList.add('active');
+        updateSizeRows();
+        if (autoMode) autoPlaceShape();
+      }
+
+      toolLine.addEventListener('click', () => setTool('line'));
+      toolRect.addEventListener('click', () => setTool('rect'));
+      toolSquare.addEventListener('click', () => setTool('square'));
+      toolCircle.addEventListener('click', () => setTool('circle'));
+      toolAngle.addEventListener('click', () => setTool('angle'));
+
+      autoToggle.addEventListener('click', () => {
+        autoMode = !autoMode;
+        autoToggle.classList.toggle('active', autoMode);
+        autoToggle.textContent = autoMode ? '🔁 auto' : '⏸ manual';
+      });
+
+      autoAddBtn.addEventListener('click', () => autoPlaceShape());
+
+      feetInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+      inchInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+      rectWidthInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+      rectWidthInchInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+      rectHeightInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+      rectHeightInchInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+      angleInput.addEventListener('change', () => { if (autoMode) autoPlaceShape(); });
+
+      quickBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.preset) {
+            const [ft, inch, ang] = btn.dataset.preset.split(',');
+            if (ft !== undefined) feetInput.value = ft;
+            if (inch !== undefined) inchInput.value = inch;
+            if (ang !== undefined) angleInput.value = ang;
+          } else if (btn.dataset.angle) {
+            angleInput.value = btn.dataset.angle;
+          }
+          if (autoMode) autoPlaceShape();
+        });
+      });
+
+      snapSwitch.addEventListener('click', () => {
+        snapEnabled = !snapEnabled;
+        snapSwitch.classList.toggle('on', snapEnabled);
+        draw();
+      });
+      bodySnapSwitch.addEventListener('click', () => {
+        bodySnapEnabled = !bodySnapEnabled;
+        bodySnapSwitch.classList.toggle('on', bodySnapEnabled);
+        draw();
+      });
+      rulerSwitch.addEventListener('click', () => {
+        rulerEnabled = !rulerEnabled;
+        rulerSwitch.classList.toggle('on', rulerEnabled);
+        draw();
+      });
+
+      strokeColorInput.addEventListener('input', e => strokeColor = e.target.value);
+      fillColorInput.addEventListener('input', e => fillColor = e.target.value);
+
+      fillToggle.addEventListener('click', () => {
+        fillEnabled = !fillEnabled;
+        fillToggle.classList.toggle('active', fillEnabled);
+        fillToggle.textContent = fillEnabled ? '🟦 fill on' : '⬜ fill off';
+      });
+
+      strokeWidthBtn.addEventListener('click', () => {
+        lineWidth = lineWidth === 2 ? 4 : (lineWidth === 4 ? 6 : 2);
+        strokeWidthBtn.textContent = `🖌️ ${lineWidth}px`;
+      });
+
+      clearBtn.addEventListener('click', () => {
+        elements = [];
+        placementIndex = 0;
+        dragTarget = null;
+        hoverTarget = null;
+        updateCount();
+        draw();
+      });
+
+      const resizeObserver = new ResizeObserver(() => resizeCanvas());
+      resizeObserver.observe(container);
+
+      window.addEventListener('load', () => {
+        resizeCanvas();
+        updateZoomLabel();
+        updateSizeRows();
+        setTimeout(() => autoPlaceShape(), 100);
+      });
+
+      canvas.addEventListener('mousemove', onMouseMove);
+      canvas.addEventListener('mousedown', onMouseDown);
+      canvas.addEventListener('mouseup', onMouseUp);
+      canvas.addEventListener('mouseleave', onMouseLeave);
+      canvas.addEventListener('dblclick', onDoubleClick);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    })();
+  </script>
+</body>
+</html>
